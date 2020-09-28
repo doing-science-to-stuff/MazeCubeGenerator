@@ -105,8 +105,14 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
     }
 
     /* determine where move would end up */
+    int *midPos = calloc(maze->numDimensions, sizeof(int));
     int *nextPos = calloc(maze->numDimensions, sizeof(int));
+    memcpy(midPos, pos, maze->numDimensions*sizeof(int));
     memcpy(nextPos, pos, maze->numDimensions*sizeof(int));
+    if( move >= 0 )
+        midPos[move-1] += 1;
+    else
+        midPos[-move-1] -= 1;
     if( move >= 0 )
         nextPos[move-1] += 2;
     else
@@ -114,6 +120,7 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
 
     /* check to see if that position can be savely cleared */
     int allowed = 1;
+    int breaksWall = 0;
     for(int face = 0; allowed && face < maze->numFaces; ++face) {
         if( abs(move)-1 != maze->faces[face].d1
             && abs(move)-1 != maze->faces[face].d2 )
@@ -127,11 +134,17 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
                     ++filledCells;
             }
         }
-        if( filledCells < 9 )
+        int destCell = face_get_cell(&maze->faces[face], row, col);
+        int midRow = midPos[maze->faces[face].d1];
+        int midCol = midPos[maze->faces[face].d2];
+        int midCell = face_get_cell(&maze->faces[face], midRow, midCol);
+        if( !(filledCells == 9 || (midCell==0 || destCell==0)) )
             allowed = 0;
+        if( filledCells == 9 )
+            breaksWall = 1;
     }
 
-    return allowed;
+    return (allowed&&breaksWall);
 }
 
 
