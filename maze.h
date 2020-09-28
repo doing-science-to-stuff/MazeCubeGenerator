@@ -8,6 +8,7 @@ typedef struct maze_face {
 } face_t;
 
 int face_init(face_t *face, int *sizes, int d1, int d2);
+int face_free(face_t *face);
 
 typedef struct maze {
     int numFaces;
@@ -17,6 +18,7 @@ typedef struct maze {
 } maze_t;
 
 int maze_init(maze_t *maze, int numDimensions, int *sizes);
+int maze_free(maze_t *maze);
 int maze_generate(maze_t *maze);
 int maze_export_stl(maze_t *maze, char *filename);
 

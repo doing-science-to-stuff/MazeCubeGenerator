@@ -15,6 +15,13 @@ int face_init(face_t *face, int *sizes, int d1, int d2) {
 }
 
 
+int face_free(face_t *face) {
+    free(face->cells); face->cells = NULL;
+    memset(face, '\0', sizeof(*face));
+
+    return 0;
+}
+
 static int face_set_cell(face_t *face, int row, int col, int value) {
     int pos = row*face->cols + col;
     int old = face->cells[pos];
@@ -51,6 +58,17 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes) {
             face_init(&maze->faces[face++], sizes, d1, d2);
         }
     }
+
+    return 0;
+}
+
+
+int maze_free(maze_t *maze) {
+    for(int face=0; face<maze->numFaces; ++face) {
+        face_free(&maze->faces[face]);
+    }
+    free(maze->faces); maze->faces=NULL;
+    memset(maze,'\0', sizeof(*maze));
 
     return 0;
 }

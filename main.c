@@ -10,5 +10,7 @@ int main(int argc, char **argv) {
 
     maze_export_stl(&maze, "output.stl");
 
+    maze_free(&maze);
+
     return 0;
 }
