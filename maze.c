@@ -158,6 +158,87 @@ int maze_generate(maze_t *maze) {
 }
 
 
+static void maze_export_stl_triangle(FILE *fp,
+                                    double x1, double y1, double z1,
+                                    double x2, double y2, double z2,
+                                    double x3, double y3, double z3,
+                                    double nx, double ny, double nz) {
+    fprintf(fp, "facet normal %g %g %g\n", nx, ny, nz);
+    fprintf(fp, "  outer loop\n");
+    fprintf(fp, "    vertex %g %g %g\n", x1, y1, z1);
+    fprintf(fp, "    vertex %g %g %g\n", x2, y2, z2);
+    fprintf(fp, "    vertex %g %g %g\n", x3, y3, z3);
+    fprintf(fp, "  endloop\n");
+    fprintf(fp, "endfacet\n");
+}
+
+static void maze_export_stl_cube(FILE *fp, int x, int y, int z, double scale) {
+    double d = scale/2.0;
+#if 1
+    /* top (+z face) */
+    maze_export_stl_triangle(fp, x-d, y-d, z+d,
+                                 x+d, y-d, z+d,
+                                 x+d, y+d, z+d,
+                                 0, 0, 1);
+    maze_export_stl_triangle(fp, x-d, y+d, z+d,
+                                 x-d, y-d, z+d,
+                                 x+d, y+d, z+d,
+                                 0, 0, 1);
+    /* bottom (-z) */
+    maze_export_stl_triangle(fp, x-d, y-d, z-d,
+                                 x+d, y+d, z-d,
+                                 x+d, y-d, z-d,
+                                 0, 0, -1);
+    maze_export_stl_triangle(fp, x-d, y+d, z-d,
+                                 x+d, y+d, z-d,
+                                 x-d, y-d, z-d,
+                                 0, 0, -1);
+#endif /* 1 */
+
+#if 1
+    /* front (-y) */
+    maze_export_stl_triangle(fp, x-d, y-d, z-d,
+                                 x+d, y-d, z+d,
+                                 x-d, y-d, z+d,
+                                 0, -1, 0);
+    maze_export_stl_triangle(fp, x-d, y-d, z-d,
+                                 x+d, y-d, z-d,
+                                 x+d, y-d, z+d,
+                                 0, -1, 0);
+    /* back (+y) */
+    maze_export_stl_triangle(fp, x-d, y+d, z-d,
+                                 x-d, y+d, z+d,
+                                 x+d, y+d, z+d,
+                                 0, 1, 0);
+    maze_export_stl_triangle(fp, x-d, y+d, z-d,
+                                 x+d, y+d, z+d,
+                                 x+d, y+d, z-d,
+                                 0, 1, 0);
+#endif /* 1 */
+
+#if 1
+    /* left (-x) */
+    maze_export_stl_triangle(fp, x-d, y-d, z-d,
+                                 x-d, y-d, z+d,
+                                 x-d, y+d, z+d,
+                                 -1, 0, 0);
+    maze_export_stl_triangle(fp, x-d, y-d, z-d,
+                                 x-d, y+d, z+d,
+                                 x-d, y+d, z-d,
+                                 -1, 0, 0);
+    /* right (+x) */
+    maze_export_stl_triangle(fp, x+d, y-d, z-d,
+                                 x+d, y+d, z+d,
+                                 x+d, y-d, z+d,
+                                 1, 0, 0);
+    maze_export_stl_triangle(fp, x+d, y-d, z-d,
+                                 x+d, y+d, z-d,
+                                 x+d, y+d, z+d,
+                                 1, 0, 0);
+#endif /* 1 */
+}
+
+
 int maze_export_stl(maze_t *maze, char *filename) {
     if( maze->numDimensions != 3 ) {
         fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
@@ -165,7 +246,54 @@ int maze_export_stl(maze_t *maze, char *filename) {
     }
     printf("Exporting %iD maze to STL files `%s`.\n", maze->numDimensions, filename);
 
-    fprintf(stderr,"%s: STL export not implemented yet!\n", __FUNCTION__);
+    /* open file */
+    FILE *fp = fopen(filename,"w");
+
+    /* open solid */
+    fprintf(fp,"solid puzzle\n");
+
+    double scale = 1.0;
+    /* for each face */
+    for(int face=0; face<maze->numFaces; ++face) {
+        int d1 = maze->faces[face].d1;
+        int d2 = maze->faces[face].d2;
+        /* for each cell */
+        for(int row=0; row<maze->faces[face].rows; ++row) {
+            for(int col=0; col<maze->faces[face].cols; ++col) {
+                if( face_get_cell(&maze->faces[face], row, col)!=0 ) {
+                    /* output small cube for high and low faces */
+                    int x1=0,y1=0,z1=0;
+                    int x2=0,y2=0,z2=0;
+                    if( d1 == 0 && d2 == 1 ) {
+                        x1 = x2 = row;
+                        y1 = y2 = col;
+                        z1 = 0;
+                        z2 = maze->dimensions[2]-1;
+                    } else if( d1 == 0 && d2 == 2 ) {
+                        x1 = x2 = row;
+                        y1 = 0;
+                        y2 = maze->dimensions[1]-1;
+                        z1 = z2 = col;
+                    } else if( d1 == 1 && d2 == 2 ) {
+                        x1 = 0;
+                        x2 = maze->dimensions[0]-1;
+                        y1 = y2 = row;
+                        z1 = z2 = col;
+                    } else {
+                        fprintf(stderr, "Unhandled dimension combination d1=%i,d2=%i\n", d1, d2);
+                    }
+                    maze_export_stl_cube(fp, x1, y1, z1, scale);
+                    maze_export_stl_cube(fp, x2, y2, z2, scale);
+                }
+            }
+        }
+    }
+
+    /* close solid */
+    fprintf(fp,"endsolid puzzle\n");
+
+    /* close file */
+    fclose(fp); fp=NULL;
 
     return 0;
 }
