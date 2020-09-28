@@ -138,7 +138,7 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
         int midRow = midPos[maze->faces[face].d1];
         int midCol = midPos[maze->faces[face].d2];
         int midCell = face_get_cell(&maze->faces[face], midRow, midCol);
-        if( !(filledCells == 9 || (midCell==0 || destCell==0)) )
+        if( !(filledCells == 9 || (midCell==0 && destCell==0)) )
             allowed = 0;
         if( filledCells == 9 )
             breaksWall = 1;
@@ -164,7 +164,6 @@ static int maze_gen_step(maze_t *maze, int *pos) {
             validMoves[numMoves++] = -(i+1);
         }
     }
-    printf("numMoves=%i\n", numMoves);
 
     /* if valid move to neighbor found */
     if( numMoves > 0) {
