@@ -35,7 +35,14 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes) {
     maze->numDimensions = numDimensions;
     maze->numFaces = (numDimensions*(numDimensions-1))/2;
     maze->dimensions = calloc(numDimensions,sizeof(int));
-    memcpy(maze->dimensions,sizes,numDimensions*sizeof(int));
+    for(int i=0; i<numDimensions; ++i) {
+        if( (sizes[i]%2) == 0 ) {
+            fprintf(stderr, "Warning: dimension sizes must be odd, adjusting dimension %i from %i to %i.\n", i, sizes[i], sizes[i]+1);
+            sizes[i] += 1;
+        }
+        maze->dimensions[i] = sizes[i];
+    }
+
     maze->faces = calloc(maze->numFaces,sizeof(face_t));
     int face=0;
     for(int d1 = 0; d1 < numDimensions; ++d1) {
@@ -72,10 +79,10 @@ static int maze_clear_cell(maze_t *maze, int *pos) {
 static int maze_allow_clear(maze_t *maze, int *pos, int move) {
     /* check for border violations */
     if( move < 0 ) {
-        if( pos[-(move-1)] <= 1 )
+        if( pos[-move-1] <= 2 )
             return 0;
     } else {
-        if( pos[move-1] >= maze->dimensions[move-1])
+        if( pos[move-1] >= maze->dimensions[move-1]-2)
             return 0;
     }
 
@@ -83,13 +90,16 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
     int *nextPos = calloc(maze->numDimensions, sizeof(int));
     memcpy(nextPos, pos, maze->numDimensions*sizeof(int));
     if( move >= 0 )
-        nextPos[move-1] += 1;
+        nextPos[move-1] += 2;
     else
-        nextPos[-(move-1)] -= 1;
+        nextPos[-move-1] -= 2;
 
     /* check to see if that position can be savely cleared */
     int allowed = 1;
     for(int face = 0; allowed && face < maze->numFaces; ++face) {
+        if( abs(move)-1 != maze->faces[face].d1
+            && abs(move)-1 != maze->faces[face].d2 )
+            continue;
         int row = nextPos[maze->faces[face].d1];
         int col = nextPos[maze->faces[face].d2];
         int filledCells = 0;
@@ -99,7 +109,7 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
                     ++filledCells;
             }
         }
-        if( filledCells < 7 )
+        if( filledCells < 9 )
             allowed = 0;
     }
 
@@ -123,20 +133,28 @@ static int maze_gen_step(maze_t *maze, int *pos) {
             validMoves[numMoves++] = -(i+1);
         }
     }
+    printf("numMoves=%i\n", numMoves);
 
     /* if valid move to neighbor found */
     if( numMoves > 0) {
         /* pick move randomly */
         int move = validMoves[rand()%numMoves];
+        printf("move: %i\n", move);
 
         /* recurse to new position */
         int *nextPos = calloc(maze->numDimensions,sizeof(int));
         memcpy(nextPos,pos,maze->numDimensions*sizeof(int));
-        if( move >= 0 )
+        if( move > 0 )
             nextPos[move-1] += 1;
         else
-            nextPos[-(move-1)] -= 1;
+            nextPos[-move-1] -= 1;
+        maze_clear_cell(maze,nextPos);
+        if( move > 0 )
+            nextPos[move-1] += 1;
+        else
+            nextPos[-move-1] -= 1;
         maze_gen_step(maze,nextPos);
+        free(nextPos); nextPos=NULL;
 
         /* recurse to current position, to check for remaining valid moves */
         maze_gen_step(maze,pos);
@@ -147,6 +165,7 @@ static int maze_gen_step(maze_t *maze, int *pos) {
 
 int maze_generate(maze_t *maze) {
     printf("Generating %iD maze.\n", maze->numDimensions);
+
     /* set starting point */
     int *start = calloc(maze->numDimensions,sizeof(int));
     for(int i=0; i<maze->numDimensions; ++i) {
@@ -154,7 +173,10 @@ int maze_generate(maze_t *maze) {
     }
 
     /* recursively clear cells */
-    return maze_gen_step(maze,start);
+    int ret = maze_gen_step(maze,start);
+    free(start); start=NULL;
+
+    return ret;
 }
 
 
