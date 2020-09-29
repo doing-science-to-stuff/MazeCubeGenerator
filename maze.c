@@ -193,6 +193,119 @@ static int maze_gen_step(maze_t *maze, int *pos) {
     return 0;
 }
 
+
+int maze_unfinished(maze_t *maze) {
+
+    /* check all faces for 2x2 regions of all uncleared cells */
+    for(int face = 0; face < maze->numFaces; ++face) {
+        int rows = maze->faces[face].rows;
+        int cols = maze->faces[face].cols;
+        for(int row = 0; row < rows-1; ++row) {
+            for(int col = 0; col < cols-1; ++col) {
+                if( face_get_cell(&maze->faces[face],row,col)
+                    && face_get_cell(&maze->faces[face],row+1,col)
+                    && face_get_cell(&maze->faces[face],row,col+1)
+                    && face_get_cell(&maze->faces[face],row+1,col+1) ) {
+                    /* unfinished section found */
+                    return 1;
+                }
+            }
+        }
+    }
+
+    /* no unfinished sections found */
+    return 0;
+}
+
+
+int maze_position_clear(maze_t *maze, int *pos) {
+    int isClear = 1;
+    for(int face = 0; isClear && face < maze->numFaces; ++face) {
+        int row = pos[maze->faces[face].d1];
+        int col = pos[maze->faces[face].d2];
+        if( face_get_cell(&maze->faces[face], row, col)!=0 )
+            isClear = 0;
+    }
+
+    return isClear;
+}
+
+
+int maze_get_restart_location(maze_t *maze, int *pos) {
+
+    /* start position counter at all 1s */
+    for(int i = 0; i<maze->numDimensions; ++i) {
+        pos[i] = 1;
+    }
+
+    /* make list of valid moves */
+    int *moves = calloc(2*maze->numDimensions, sizeof(int));
+    for(int i=0; i<2*maze->numDimensions; i+=2) {
+        moves[i] = i+1;
+        moves[i] = -(i+1);
+    }
+
+    /* create list of possible locations */
+    int posListCap = 10;
+    int posListNum = 0;
+    int **posList = calloc(posListCap,sizeof(int*));
+
+    /* for every cleared cell */
+    int done = 0;
+    while( !done ) {
+
+        if( maze_position_clear(maze, pos) ) {
+
+            /* check all moves from current pos */
+            for(int m = 0; m<2*maze->numDimensions; ++m) {
+
+                /* if a valid move from it exists */
+                if( maze_allow_clear(maze, pos, moves[m]) ) {
+
+                    /* add to list of restart locations */
+                    if( posListNum == posListCap ) {
+                        int newCap = posListCap*2+1;
+                        void *tmp = realloc(posList,newCap*sizeof(int*));
+                        if( tmp==NULL ) {
+                            perror("calloc");
+                            exit(1);
+                        }
+                        posList = tmp;
+                        posListCap = newCap;
+                    }
+                    posList[posListNum] = calloc(maze->numDimensions,sizeof(int));
+                    memcpy(posList[posListNum], pos, maze->numDimensions*sizeof(int));
+                    ++posListNum;
+                }
+            }
+        }
+
+        /* update pos */
+        int j=0;
+        while(pos[j]==maze->dimensions[j]-1) {
+            pos[j++] = 1;
+        }
+        if( j < maze->numDimensions )
+            ++pos[j];
+        else
+            done = 1;
+    }
+
+    /* pick random restart location */
+    int which = rand()%posListNum;
+    memcpy(pos, posList[which], maze->numDimensions*sizeof(int));
+
+    /* free list of possible locations */
+    free(moves); moves = NULL;
+    for(int i=0; i<posListNum; ++i) {
+        free(posList[i]); posList[i] = NULL;
+    }
+    free(posList); posList = NULL;
+
+    return 0;
+}
+
+
 int maze_generate(maze_t *maze) {
     printf("Generating %iD maze.\n", maze->numDimensions);
 
@@ -204,6 +317,20 @@ int maze_generate(maze_t *maze) {
 
     /* recursively clear cells */
     int ret = maze_gen_step(maze,start);
+    free(start); start=NULL;
+
+    /* pick start and end locations */
+
+    /* find and record solution */
+
+    /* while not complely full (i.e., any 2x2 region is full) */
+    int *restartPos = calloc(maze->numDimensions,sizeof(int));
+    while(maze_unfinished(maze)) {
+        maze_get_restart_location(maze, restartPos);
+
+        /* try using as an unreachable starting point */
+        ret = maze_gen_step(maze, restartPos);
+    }
     free(start); start=NULL;
 
     return ret;
