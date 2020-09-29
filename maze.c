@@ -1,3 +1,9 @@
+/*
+ * maze.c
+ * PuzzleMaze: A 3D puzzle model generator
+ *
+ * Copyright (c) 2020 Bryan Franklin. All rights reserved.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

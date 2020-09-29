@@ -1,3 +1,9 @@
+/*
+ * maze.h
+ * PuzzleMaze: A 3D puzzle model generator
+ *
+ * Copyright (c) 2020 Bryan Franklin. All rights reserved.
+ */
 #ifndef MAZE_H
 #define MAZE_H
 

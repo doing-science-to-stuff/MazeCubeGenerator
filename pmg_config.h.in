@@ -1,3 +1,9 @@
+/*
+ * pmg_config.h.in
+ * PuzzleMaze: A 3D puzzle model genrator
+ *
+ * Copyright (c) 2020 Bryan Franklin. All rights reserved.
+ */
 /* the configured options and settings for ndt */
 #define PMG_VERSION_MAJOR @PMG_VERSION_MAJOR@
 #define PMG_VERSION_MINOR @PMG_VERSION_MINOR@

@@ -1,6 +1,6 @@
 #
 # CMakeLists.txt
-# PuzzleMaze: A 3D puzzle model genrator
+# PuzzleMaze: A 3D puzzle model generator
 #
 # Copyright (c) 2020 Bryan Franklin. All rights reserved.
 #
