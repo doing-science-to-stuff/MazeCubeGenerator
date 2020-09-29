@@ -76,17 +76,10 @@ int maze_free(maze_t *maze) {
 
 static int maze_clear_cell(maze_t *maze, int *pos) {
     int ret = 0;
-    printf("  clearing position ");
-    for(int i=0; i<maze->numDimensions; ++i)
-        printf("%i ", pos[i]);
-    printf("\n");
+
     for(int face = 0; face < maze->numFaces; ++face) {
         int row = pos[maze->faces[face].d1];
         int col = pos[maze->faces[face].d2];
-        #if 0
-        if( face_get_cell(&maze->faces[face], row, col)!=0 )
-            printf("    clearing position %i,%i in face %i\n", row, col, face);
-        #endif /* 0 */
         ret |= face_set_cell(&maze->faces[face], row, col, 0);
     }
 
@@ -169,7 +162,6 @@ static int maze_gen_step(maze_t *maze, int *pos) {
     if( numMoves > 0) {
         /* pick move randomly */
         int move = validMoves[rand()%numMoves];
-        printf("move: %i\n", move);
 
         /* recurse to new position */
         int *nextPos = calloc(maze->numDimensions,sizeof(int));
