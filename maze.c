@@ -37,6 +37,12 @@ static int face_set_cell(face_t *face, int row, int col, int value) {
 
 
 int face_get_cell(face_t *face, int row, int col) {
+    if( row < 0 || row>=face->rows
+        || col < 0 || col >=face->cols ) {
+        fprintf(stderr, "Request for out of bounds face cell %i,%i (size: %ix%i)\n",
+            row, col, face->rows, face->cols);
+        return 0;
+    }
     int pos = row*face->cols + col;
     return face->cells[pos];
 }
@@ -44,6 +50,7 @@ int face_get_cell(face_t *face, int row, int col) {
 
 int maze_init(maze_t *maze, int numDimensions, int *sizes) {
 
+    /* initialize maze structure */
     printf("Initializing %iD maze.\n", numDimensions);
     maze->numDimensions = numDimensions;
     maze->numFaces = (numDimensions*(numDimensions-1))/2;
@@ -56,6 +63,11 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes) {
         maze->dimensions[i] = sizes[i];
     }
 
+    /* allocate start and end positions */
+    maze->startPos = calloc(numDimensions,sizeof(int));
+    maze->endPos = calloc(numDimensions,sizeof(int));
+
+    /* allocate and initialize faces */
     maze->faces = calloc(maze->numFaces,sizeof(face_t));
     int face=0;
     for(int d1 = 0; d1 < numDimensions; ++d1) {
@@ -73,6 +85,8 @@ int maze_free(maze_t *maze) {
     for(int face=0; face<maze->numFaces; ++face) {
         face_free(&maze->faces[face]);
     }
+    free(maze->startPos); maze->startPos=NULL;
+    free(maze->endPos); maze->endPos=NULL;
     free(maze->faces); maze->faces=NULL;
     memset(maze,'\0', sizeof(*maze));
 
@@ -117,7 +131,7 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
     else
         nextPos[-move-1] -= 2;
 
-    /* check to see if that position can be savely cleared */
+    /* check to see if that position can be safely cleared */
     int allowed = 1;
     int breaksWall = 0;
     for(int face = 0; allowed && face < maze->numFaces; ++face) {
@@ -126,6 +140,9 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
             continue;
         int row = nextPos[maze->faces[face].d1];
         int col = nextPos[maze->faces[face].d2];
+        if( row >= maze->faces[face].rows-1 
+            || col >= maze->faces[face].cols-1 )
+            continue;
         int filledCells = 0;
         for(int i=-1; i<=1; ++i) {
             for(int j=-1; j<=1; ++j) {
@@ -152,7 +169,7 @@ static int maze_gen_step(maze_t *maze, int *pos) {
     /* clear cell at position pos */
     maze_clear_cell(maze,pos);
 
-    /* enumerate neighbor that can be moved to */
+    /* enumerate neighbors that can be moved to */
     int *validMoves = calloc(maze->numDimensions*2, sizeof(int));
     int numMoves = 0;
     for(int i=0; i<maze->numDimensions; ++i) {
@@ -198,13 +215,14 @@ int maze_unfinished(maze_t *maze) {
     for(int face = 0; face < maze->numFaces; ++face) {
         int rows = maze->faces[face].rows;
         int cols = maze->faces[face].cols;
-        for(int row = 0; row < rows-1; ++row) {
-            for(int col = 0; col < cols-1; ++col) {
+        for(int row = 1; row < rows-1; ++row) {
+            for(int col = 1; col < cols-1; ++col) {
                 if( face_get_cell(&maze->faces[face],row,col)
                     && face_get_cell(&maze->faces[face],row+1,col)
                     && face_get_cell(&maze->faces[face],row,col+1)
                     && face_get_cell(&maze->faces[face],row+1,col+1) ) {
                     /* unfinished section found */
+                    //printf("position %i,%i of face %i is unfinished.\n", row, col, face);
                     return 1;
                 }
             }
@@ -239,8 +257,10 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
     /* make list of valid moves */
     int *moves = calloc(2*maze->numDimensions, sizeof(int));
     for(int i=0; i<2*maze->numDimensions; i+=2) {
-        moves[i] = i+1;
-        moves[i] = -(i+1);
+        int dir = i/2;
+        moves[i] = dir+1;
+        moves[i+1] = -(dir+1);
+        //printf("moves[%i & %i] = %i & %i\n", i, i+1, moves[i], moves[i+1]);
     }
 
     /* create list of possible locations */
@@ -254,9 +274,17 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
 
         if( maze_position_clear(maze, pos) ) {
 
+            #if 0
+            printf("clear position at: ");
+            for(int i=0; i<maze->numDimensions; ++i)
+                printf("%i ", pos[i]);
+            printf("\n");
+            #endif // 0
+
             /* check all moves from current pos */
             for(int m = 0; m<2*maze->numDimensions; ++m) {
 
+                //printf("\ttrying move %i\n", moves[m]);
                 /* if a valid move from it exists */
                 if( maze_allow_clear(maze, pos, moves[m]) ) {
 
@@ -265,7 +293,7 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
                         int newCap = posListCap*2+1;
                         void *tmp = realloc(posList,newCap*sizeof(int*));
                         if( tmp==NULL ) {
-                            perror("calloc");
+                            perror("realloc");
                             exit(1);
                         }
                         posList = tmp;
@@ -280,7 +308,7 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
 
         /* update pos */
         int j=0;
-        while(pos[j]==maze->dimensions[j]-1) {
+        while(j<maze->numDimensions && pos[j]==maze->dimensions[j]-1) {
             pos[j++] = 1;
         }
         if( j < maze->numDimensions )
@@ -289,9 +317,13 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
             done = 1;
     }
 
-    /* pick random restart location */
-    int which = rand()%posListNum;
-    memcpy(pos, posList[which], maze->numDimensions*sizeof(int));
+    if( posListNum >= 1 ) {
+        /* pick random restart location */
+        int which = rand()%posListNum;
+        memcpy(pos, posList[which], maze->numDimensions*sizeof(int));
+    } else {
+        fprintf(stderr, "No restart locations found!\n");
+    }
 
     /* free list of possible locations */
     free(moves); moves = NULL;
@@ -300,6 +332,97 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
     }
     free(posList); posList = NULL;
 
+    return 0;
+}
+
+
+int maze_pick_goals(maze_t *maze) {
+
+    #if 1
+    /* start position counter at all 1s */
+    int *pos = calloc(maze->numDimensions,sizeof(int));
+    for(int i = 0; i<maze->numDimensions; ++i) {
+        pos[i] = 1;
+    }
+
+    /* create list of possible locations */
+    int posListCap = 10;
+    int posListNum = 0;
+    int **posList = calloc(posListCap,sizeof(int*));
+
+    /* for every cleared cell */
+    int done = 0;
+    while( !done ) {
+
+#if 1
+        if( maze_position_clear(maze, pos) ) {
+
+            /* resize list, if needed */
+            if( posListNum == posListCap ) {
+                int newCap = posListCap*2+1;
+                void *tmp = realloc(posList,newCap*sizeof(int*));
+                if( tmp==NULL ) {
+                    perror("realloc");
+                    exit(1);
+                }
+                posList = tmp;
+                posListCap = newCap;
+            }
+
+            printf("Adding: ");
+            for(int i=0; i<maze->numDimensions; ++i) {
+                printf("%i ", pos[i]);
+            }
+            printf("\n");
+
+            /* add to list of cleared locations */
+            posList[posListNum] = calloc(maze->numDimensions,sizeof(int));
+            memcpy(posList[posListNum], pos, maze->numDimensions*sizeof(int));
+            ++posListNum;
+        }
+#endif
+
+        /* update pos */
+        int j=0;
+        while(j<maze->numDimensions && pos[j]==maze->dimensions[j]-1) {
+            pos[j++] = 1;
+        }
+        if( j < maze->numDimensions )
+            ++pos[j];
+        else
+            done = 1;
+    }
+
+    #if 1
+    if( posListNum > 2 ) {
+        printf("posListNum=%i\n", posListNum);
+        /* pick random start location */
+        int which = rand()%posListNum;
+        printf("which=%i\n", which);
+        memcpy(maze->startPos, posList[which], maze->numDimensions*sizeof(int));
+
+        /* pick random end location */
+        which = rand()%posListNum;
+        printf("which=%i\n", which);
+        memcpy(maze->endPos, posList[which], maze->numDimensions*sizeof(int));
+
+        /* free list of possible locations */
+        for(int i=0; i<posListNum; ++i) {
+            free(posList[i]); posList[i] = NULL;
+        }
+    } else {
+        printf("Insufficient free spaces to pick start/end locations.\n");
+    }
+    #endif // 1
+    free(posList); posList = NULL;
+    free(pos); pos = NULL;
+    #endif // 1
+
+    return 0;
+}
+
+
+int maze_solve(maze_t *maze) {
     return 0;
 }
 
@@ -317,18 +440,39 @@ int maze_generate(maze_t *maze) {
     int ret = maze_gen_step(maze,start);
     free(start); start=NULL;
 
-    /* pick start and end locations */
+    int done = 0;
+    int retries = 10;
+    while(!done && --retries) {
+        /* pick start and end locations */
+        maze_pick_goals(maze);
 
-    /* find and record solution */
+        printf("Start: ");
+        for(int i=0; i<maze->numDimensions; ++i) {
+            printf("%i ", maze->startPos[i]);
+        }
+        printf("\nEnd:   ");
+        for(int i=0; i<maze->numDimensions; ++i) {
+            printf("%i ", maze->endPos[i]);
+        }
+        printf("\n");
 
-    /* while not complely full (i.e., any 2x2 region is full) */
+        /* find and record solution */
+        maze_solve(maze);
+
+        done = 1;
+    }
+
+    #if 1
+    /* while not completely full (i.e., any 2x2 region is full) */
     int *restartPos = calloc(maze->numDimensions,sizeof(int));
-    while(maze_unfinished(maze)) {
+    retries = 10;
+    while(maze_unfinished(maze) && --retries) {
         maze_get_restart_location(maze, restartPos);
 
         /* try using as an unreachable starting point */
         ret = maze_gen_step(maze, restartPos);
     }
+    #endif 
     free(start); start=NULL;
 
     return ret;
@@ -470,13 +614,16 @@ int maze_export_stl(maze_t *maze, char *filename) {
                     /* compute face mask for cube */
                     char mask1 = 0;
                     char mask2 = 0;
+#if 0
                     int d1 = maze->faces[face].d1;
                     int d2 = maze->faces[face].d2;
+                    int rows = maze->faces[face].rows;
+                    int cols = maze->faces[face].cols;
                     if( row > 0
                         && face_get_cell(&maze->faces[face], row-1, col) !=0 ) {
                         mask1 |= 1<<(2*d1);
                     }
-                    if( row < maze->faces[face].rows-1
+                    if( row < rows-1
                         && face_get_cell(&maze->faces[face], row+1, col) !=0 ) {
                         mask1 |= 1<<(2*d1+1);
                     }
@@ -484,11 +631,33 @@ int maze_export_stl(maze_t *maze, char *filename) {
                         && face_get_cell(&maze->faces[face], row, col-1) !=0 ) {
                         mask1 |= 1<<(2*d2);
                     }
-                    if( col < maze->faces[face].cols-1
+                    if( col < cols-1
                         && face_get_cell(&maze->faces[face], row, col+1) !=0 ) {
                         mask1 |= 1<<(2*d2);
                     }
                     mask2 = mask1;
+#endif /* 1 */
+#if 0
+                    if( row==0 || col==0
+                        || row == rows-1 || col == cols-1 ) {
+                        /* is a border cell */
+                        if( d1 == 0 && d2 == 1 ) {
+                            /* mask z */
+                            mask1 |= (1<<4);
+                            mask2 |= (1<<5);
+                        } else if( d1 == 0 && d2 == 2 ) {
+                            /* mask y */
+                            mask1 |= (1<<2);
+                            mask2 |= (1<<3);
+                        } else if( d1 == 1 && d2 == 2 ) {
+                            /* mask x */
+                            mask1 |= (1<<0);
+                            mask2 |= (1<<1);
+                        } else {
+                            fprintf(stderr, "Unhandled dimension combo! (d1=%i,d2=%i)\n",d1,d2);
+                        }
+                    }
+#endif /* 1 */
 
                     /* export cubes */
                     maze_export_stl_cube(fp, x1, y1, z1, mask1, scale);

@@ -20,11 +20,15 @@ typedef struct maze {
     int numFaces;
     int numDimensions;
     int *dimensions;
+    int *startPos;
+    int *endPos;
     face_t *faces;
 } maze_t;
 
 int maze_init(maze_t *maze, int numDimensions, int *sizes);
 int maze_free(maze_t *maze);
+int maze_pick_goals(maze_t *maze);
+int maze_solve(maze_t *maze);
 int maze_generate(maze_t *maze);
 int maze_export_stl(maze_t *maze, char *filename);
 
