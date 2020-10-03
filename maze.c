@@ -48,7 +48,7 @@ int face_get_cell(face_t *face, int row, int col) {
 }
 
 
-int pos_list_init(position_list_t *list, int numDimensions) {
+static int pos_list_init(position_list_t *list, int numDimensions) {
     list->numDimensions = numDimensions;
     list->posListCap = 10;
     list->posListNum = 0;
@@ -57,14 +57,14 @@ int pos_list_init(position_list_t *list, int numDimensions) {
 }
 
 
-int pos_list_free(position_list_t *list) {
+static int pos_list_free(position_list_t *list) {
     free(list->positions); list->positions=NULL;
     memset(list,'\0',sizeof(*list));
     return 0;
 }
 
 
-int pos_list_push(position_list_t *list, position_t pos) {
+static int pos_list_push(position_list_t *list, position_t pos) {
     /* add to list of restart locations */
     if( list->posListNum == list->posListCap ) {
         int newCap = list->posListCap*2+1;
@@ -83,7 +83,7 @@ int pos_list_push(position_list_t *list, position_t pos) {
 }
 
 
-int pos_list_pop(position_list_t *list, position_t pos) {
+static int pos_list_pop(position_list_t *list, position_t pos) {
     if( list->posListNum < 0 )
         return 0;
     memcpy(pos,list->positions[list->posListNum-1],list->numDimensions*sizeof(int));
@@ -93,7 +93,7 @@ int pos_list_pop(position_list_t *list, position_t pos) {
 }
 
 
-int pos_list_random(position_list_t *list, position_t pos) {
+static int pos_list_random(position_list_t *list, position_t pos) {
     if( list->posListNum <= 0 )
         return 0;
     int which = rand()%list->posListNum;
@@ -102,8 +102,12 @@ int pos_list_random(position_list_t *list, position_t pos) {
 }
 
 
-int pos_list_rfind(position_list_t *list, position_t pos) {
-    return 0;
+static int pos_list_rfind(position_list_t *list, position_t pos) {
+    for(int i=list->posListNum-1; i>=0; --i) {
+        if( memcmp(list->positions[i], pos, list->numDimensions*sizeof(int)) == 0 )
+        return i;
+    }
+    return -1;
 }
 
 
