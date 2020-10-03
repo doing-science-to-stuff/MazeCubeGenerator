@@ -107,6 +107,20 @@ int pos_list_rfind(position_list_t *list, position_t pos) {
 }
 
 
+int position_increment(maze_t *maze, position_t pos) {
+    int done = 0;
+    int j=0;
+    while(j<maze->numDimensions && pos[j]==maze->dimensions[j]-1) {
+        pos[j++] = 1;
+    }
+    if( j < maze->numDimensions )
+        ++pos[j];
+    else
+        done = 1;
+    return done;
+}
+
+
 int maze_init(maze_t *maze, int numDimensions, int *sizes) {
 
     /* initialize maze structure */
@@ -353,14 +367,7 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
         }
 
         /* update pos */
-        int j=0;
-        while(j<maze->numDimensions && pos[j]==maze->dimensions[j]-1) {
-            pos[j++] = 1;
-        }
-        if( j < maze->numDimensions )
-            ++pos[j];
-        else
-            done = 1;
+        done = position_increment(maze, pos);
     }
 
     if( !pos_list_random(&posList, pos)) {
@@ -404,14 +411,7 @@ int maze_pick_goals(maze_t *maze) {
         }
 
         /* update pos */
-        int j=0;
-        while(j<maze->numDimensions && pos[j]==maze->dimensions[j]-1) {
-            pos[j++] = 1;
-        }
-        if( j < maze->numDimensions )
-            ++pos[j];
-        else
-            done = 1;
+        done = position_increment(maze, pos);
     }
 
     #if 1
