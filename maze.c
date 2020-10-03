@@ -48,6 +48,65 @@ int face_get_cell(face_t *face, int row, int col) {
 }
 
 
+int pos_list_init(position_list_t *list, int numDimensions) {
+    list->numDimensions = numDimensions;
+    list->posListCap = 10;
+    list->posListNum = 0;
+    list->positions = calloc(list->posListCap,sizeof(position_t));
+    return (list->positions!=NULL);
+}
+
+
+int pos_list_free(position_list_t *list) {
+    free(list->positions); list->positions=NULL;
+    memset(list,'\0',sizeof(*list));
+    return 0;
+}
+
+
+int pos_list_push(position_list_t *list, position_t pos) {
+    /* add to list of restart locations */
+    if( list->posListNum == list->posListCap ) {
+        int newCap = list->posListCap*2+1;
+        void *tmp = realloc(list->positions,newCap*sizeof(int*));
+        if( tmp==NULL ) {
+            perror("realloc");
+            return 0;
+        }
+        list->positions = tmp;
+        list->posListCap = newCap;
+    }
+    list->positions[list->posListNum] = calloc(list->numDimensions,sizeof(int));
+    memcpy(list->positions[list->posListNum], pos, list->numDimensions*sizeof(int));
+    ++list->posListNum;
+    return 1;
+}
+
+
+int pos_list_pop(position_list_t *list, position_t pos) {
+    if( list->posListNum < 0 )
+        return 0;
+    memcpy(pos,list->positions[list->posListNum-1],list->numDimensions*sizeof(int));
+    free(list->positions[list->posListNum-1]); list->positions[list->posListNum-1]=NULL;
+    --list->posListNum;
+    return 1;
+}
+
+
+int pos_list_random(position_list_t *list, position_t pos) {
+    if( list->posListNum <= 0 )
+        return 0;
+    int which = rand()%list->posListNum;
+    memcpy(pos, list->positions[which], list->numDimensions*sizeof(int));
+    return 1;
+}
+
+
+int pos_list_rfind(position_list_t *list, position_t pos) {
+    return 0;
+}
+
+
 int maze_init(maze_t *maze, int numDimensions, int *sizes) {
 
     /* initialize maze structure */
@@ -264,9 +323,8 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
     }
 
     /* create list of possible locations */
-    int posListCap = 10;
-    int posListNum = 0;
-    int **posList = calloc(posListCap,sizeof(int*));
+    position_list_t posList;
+    pos_list_init(&posList, maze->numDimensions);
 
     /* for every cleared cell */
     int done = 0;
@@ -289,19 +347,7 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
                 if( maze_allow_clear(maze, pos, moves[m]) ) {
 
                     /* add to list of restart locations */
-                    if( posListNum == posListCap ) {
-                        int newCap = posListCap*2+1;
-                        void *tmp = realloc(posList,newCap*sizeof(int*));
-                        if( tmp==NULL ) {
-                            perror("realloc");
-                            exit(1);
-                        }
-                        posList = tmp;
-                        posListCap = newCap;
-                    }
-                    posList[posListNum] = calloc(maze->numDimensions,sizeof(int));
-                    memcpy(posList[posListNum], pos, maze->numDimensions*sizeof(int));
-                    ++posListNum;
+                    pos_list_push(&posList, pos);
                 }
             }
         }
@@ -317,20 +363,13 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
             done = 1;
     }
 
-    if( posListNum >= 1 ) {
-        /* pick random restart location */
-        int which = rand()%posListNum;
-        memcpy(pos, posList[which], maze->numDimensions*sizeof(int));
-    } else {
+    if( !pos_list_random(&posList, pos)) {
         fprintf(stderr, "No restart locations found!\n");
     }
 
     /* free list of possible locations */
     free(moves); moves = NULL;
-    for(int i=0; i<posListNum; ++i) {
-        free(posList[i]); posList[i] = NULL;
-    }
-    free(posList); posList = NULL;
+    pos_list_free(&posList);
 
     return 0;
 }
@@ -346,28 +385,14 @@ int maze_pick_goals(maze_t *maze) {
     }
 
     /* create list of possible locations */
-    int posListCap = 10;
-    int posListNum = 0;
-    int **posList = calloc(posListCap,sizeof(int*));
+    position_list_t posList;
+    pos_list_init(&posList, maze->numDimensions);
 
     /* for every cleared cell */
     int done = 0;
     while( !done ) {
 
-#if 1
         if( maze_position_clear(maze, pos) ) {
-
-            /* resize list, if needed */
-            if( posListNum == posListCap ) {
-                int newCap = posListCap*2+1;
-                void *tmp = realloc(posList,newCap*sizeof(int*));
-                if( tmp==NULL ) {
-                    perror("realloc");
-                    exit(1);
-                }
-                posList = tmp;
-                posListCap = newCap;
-            }
 
             printf("Adding: ");
             for(int i=0; i<maze->numDimensions; ++i) {
@@ -375,12 +400,8 @@ int maze_pick_goals(maze_t *maze) {
             }
             printf("\n");
 
-            /* add to list of cleared locations */
-            posList[posListNum] = calloc(maze->numDimensions,sizeof(int));
-            memcpy(posList[posListNum], pos, maze->numDimensions*sizeof(int));
-            ++posListNum;
+            pos_list_push(&posList, pos);
         }
-#endif
 
         /* update pos */
         int j=0;
@@ -394,27 +415,18 @@ int maze_pick_goals(maze_t *maze) {
     }
 
     #if 1
-    if( posListNum > 2 ) {
-        printf("posListNum=%i\n", posListNum);
+    if( posList.posListNum > 2 ) {
+        printf("posListNum=%i\n", posList.posListNum);
         /* pick random start location */
-        int which = rand()%posListNum;
-        printf("which=%i\n", which);
-        memcpy(maze->startPos, posList[which], maze->numDimensions*sizeof(int));
+        pos_list_random(&posList, maze->startPos);
 
         /* pick random end location */
-        which = rand()%posListNum;
-        printf("which=%i\n", which);
-        memcpy(maze->endPos, posList[which], maze->numDimensions*sizeof(int));
-
-        /* free list of possible locations */
-        for(int i=0; i<posListNum; ++i) {
-            free(posList[i]); posList[i] = NULL;
-        }
+        pos_list_random(&posList, maze->endPos);
     } else {
         printf("Insufficient free spaces to pick start/end locations.\n");
     }
     #endif // 1
-    free(posList); posList = NULL;
+    pos_list_free(&posList);
     free(pos); pos = NULL;
     #endif // 1
 

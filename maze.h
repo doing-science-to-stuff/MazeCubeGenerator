@@ -16,12 +16,20 @@ typedef struct maze_face {
 int face_init(face_t *face, int *sizes, int d1, int d2);
 int face_free(face_t *face);
 
+typedef int* position_t;
+typedef struct position_list {
+    int numDimensions;
+    int posListCap;
+    int posListNum;
+    position_t *positions;
+} position_list_t;
+
 typedef struct maze {
     int numFaces;
     int numDimensions;
     int *dimensions;
-    int *startPos;
-    int *endPos;
+    position_t startPos;
+    position_t endPos;
     face_t *faces;
 } maze_t;
 
