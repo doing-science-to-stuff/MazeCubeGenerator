@@ -179,12 +179,6 @@ int maze_free(maze_t *maze) {
 static int maze_clear_cell(maze_t *maze, int *pos) {
     int ret = 0;
 
-    #if 0
-    printf("%s: clearing cell ", __FUNCTION__);
-    for(int i=0; i<maze->numDimensions; ++i)
-        printf("%i ", pos[i]);
-    printf("\n");
-    #endif // 0
     for(int face = 0; face < maze->numFaces; ++face) {
         int row = pos[maze->faces[face].d1];
         int col = pos[maze->faces[face].d2];
@@ -361,14 +355,6 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
     while( !done ) {
 
         if( maze_position_clear(maze, pos) ) {
-
-            #if 0
-            printf("clear at: ");
-            for(int i=0; i<maze->numDimensions; ++i)
-                printf("%i ", pos[i]);
-            printf("\n");
-            #endif // 0
-
             /* check all moves from current pos */
             for(int m = 0; m<2*maze->numDimensions; ++m) {
 
@@ -415,17 +401,8 @@ static int maze_solve_dfs(maze_t *maze, position_t pos) {
 
     pos_list_push(&maze->solution, pos);
 
-    #if 0
-    printf("%s: at position ", __FUNCTION__);
-    for(int i=0; i<maze->numDimensions; ++i) {
-        printf("%i ", pos[i]);
-    }
-    printf("\n");
-    #endif // 0
-
     /* check for endPos */
     if( memcmp(maze->endPos, pos, maze->numDimensions*sizeof(int))==0 ) {
-        printf("Found solution!\n");
         return 1;
     }
 
@@ -442,15 +419,6 @@ static int maze_solve_dfs(maze_t *maze, position_t pos) {
             ++newPos[move-1];
         else
             --newPos[(-move)-1];
-
-        #if 0
-        printf("\tmove %i\n", move);
-        printf("\tnewPos: ");
-        for(int i=0; i<maze->numDimensions; ++i) {
-            printf("%i ", newPos[i]);
-        }
-        printf("\n");
-        #endif // 0
 
         /* if move valid */
         if( !maze_position_clear(maze,newPos) ) {
@@ -526,18 +494,12 @@ int maze_generate(maze_t *maze) {
         //maze->endPos[0] = 5;
         printf("\n");
 
-        #if 1
-        int *restartPos = calloc(maze->numDimensions,sizeof(int));
-        maze_get_restart_location(maze, restartPos);
-        #endif // 0
-
         /* find and record solution */
         maze_solve(maze);
 
         done = 1;
     }
 
-    #if 1
     /* while not completely full (i.e., any uncleared 2x2 region exists) */
     int *restartPos = calloc(maze->numDimensions,sizeof(int));
     retries = 10;
@@ -547,7 +509,6 @@ int maze_generate(maze_t *maze) {
         /* try using as an unreachable starting point */
         ret = maze_gen_step(maze, restartPos);
     }
-    #endif 
     free(start); start=NULL;
 
     return ret;
@@ -575,7 +536,7 @@ int maze_write(maze_t *maze, char *filename) {
         }
     }
 
-    /* write start and end positions */
+    /* write solution from stat to end positions */
     for(int m=0; m<maze->solution.posListNum; ++m) {
         for(int i=0; i<maze->numDimensions; ++i) {
             fprintf(fp, "%i ", maze->solution.positions[m][i]);
@@ -583,7 +544,6 @@ int maze_write(maze_t *maze, char *filename) {
         fprintf(fp, "\n");
     }
 
-    /* write solution */
 
     /* close file */
     fclose(fp); fp=NULL;
