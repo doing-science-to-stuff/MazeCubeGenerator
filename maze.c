@@ -86,7 +86,8 @@ static int pos_list_push(position_list_t *list, position_t pos) {
 static int pos_list_pop(position_list_t *list, position_t pos) {
     if( list->posListNum < 0 )
         return 0;
-    memcpy(pos,list->positions[list->posListNum-1],list->numDimensions*sizeof(int));
+    if( pos!=NULL )
+        memcpy(pos,list->positions[list->posListNum-1],list->numDimensions*sizeof(int));
     free(list->positions[list->posListNum-1]); list->positions[list->posListNum-1]=NULL;
     --list->posListNum;
     return 1;
@@ -144,6 +145,10 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes) {
     maze->startPos = calloc(numDimensions,sizeof(int));
     maze->endPos = calloc(numDimensions,sizeof(int));
 
+    /* initialize solution */
+    pos_list_init(&maze->reachable, numDimensions);
+    pos_list_init(&maze->solution, numDimensions);
+
     /* allocate and initialize faces */
     maze->faces = calloc(maze->numFaces,sizeof(face_t));
     int face=0;
@@ -174,6 +179,12 @@ int maze_free(maze_t *maze) {
 static int maze_clear_cell(maze_t *maze, int *pos) {
     int ret = 0;
 
+    #if 0
+    printf("%s: clearing cell ", __FUNCTION__);
+    for(int i=0; i<maze->numDimensions; ++i)
+        printf("%i ", pos[i]);
+    printf("\n");
+    #endif // 0
     for(int face = 0; face < maze->numFaces; ++face) {
         int row = pos[maze->faces[face].d1];
         int col = pos[maze->faces[face].d2];
@@ -245,6 +256,7 @@ static int maze_gen_step(maze_t *maze, int *pos) {
 
     /* clear cell at position pos */
     maze_clear_cell(maze,pos);
+    pos_list_push(&maze->reachable, pos);
 
     /* enumerate neighbors that can be moved to */
     int *validMoves = calloc(maze->numDimensions*2, sizeof(int));
@@ -351,7 +363,7 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
         if( maze_position_clear(maze, pos) ) {
 
             #if 0
-            printf("clear position at: ");
+            printf("clear at: ");
             for(int i=0; i<maze->numDimensions; ++i)
                 printf("%i ", pos[i]);
             printf("\n");
@@ -388,57 +400,96 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
 
 int maze_pick_goals(maze_t *maze) {
 
-    #if 1
-    /* start position counter at all 1s */
-    int *pos = calloc(maze->numDimensions,sizeof(int));
-    for(int i = 0; i<maze->numDimensions; ++i) {
-        pos[i] = 1;
+    if( maze->reachable.posListNum < 2 )
+        return 0;
+
+    pos_list_random(&maze->reachable, maze->startPos);
+    pos_list_random(&maze->reachable, maze->endPos);
+
+    return 1;
+}
+
+
+static int* validMoves = NULL;
+static int maze_solve_dfs(maze_t *maze, position_t pos) {
+
+    pos_list_push(&maze->solution, pos);
+
+    #if 0
+    printf("%s: at position ", __FUNCTION__);
+    for(int i=0; i<maze->numDimensions; ++i) {
+        printf("%i ", pos[i]);
+    }
+    printf("\n");
+    #endif // 0
+
+    /* check for endPos */
+    if( memcmp(maze->endPos, pos, maze->numDimensions*sizeof(int))==0 ) {
+        printf("Found solution!\n");
+        return 1;
     }
 
-    /* create list of possible locations */
-    position_list_t posList;
-    pos_list_init(&posList, maze->numDimensions);
+    /* copy position */
+    position_t newPos;
+    newPos = calloc(maze->numDimensions,sizeof(int));
 
-    /* for every cleared cell */
-    int done = 0;
-    while( !done ) {
+    /* enumerate moves */
+    for(int i=0; i<maze->numDimensions*2; ++i ) {
+        /* update position */
+        memcpy(newPos, pos, maze->numDimensions*sizeof(int));
+        int move = validMoves[i];
+        if( move > 0 )
+            ++newPos[move-1];
+        else
+            --newPos[(-move)-1];
 
-        if( maze_position_clear(maze, pos) ) {
+        #if 0
+        printf("\tmove %i\n", move);
+        printf("\tnewPos: ");
+        for(int i=0; i<maze->numDimensions; ++i) {
+            printf("%i ", newPos[i]);
+        }
+        printf("\n");
+        #endif // 0
 
-            printf("Adding: ");
-            for(int i=0; i<maze->numDimensions; ++i) {
-                printf("%i ", pos[i]);
-            }
-            printf("\n");
-
-            pos_list_push(&posList, pos);
+        /* if move valid */
+        if( !maze_position_clear(maze,newPos) ) {
+            //printf("move %i invalid\n", move);
+            continue;
         }
 
-        /* update pos */
-        done = position_increment(maze, pos);
+        /* check solution for next position */
+        if( pos_list_rfind(&maze->solution, newPos) >= 0 ) {
+            //printf("move %i backtracks\n", move);
+            continue;
+        }
+
+        /* recurse */
+        if( maze_solve_dfs(maze, newPos) )
+            return 1;
     }
 
-    #if 1
-    if( posList.posListNum > 2 ) {
-        printf("posListNum=%i\n", posList.posListNum);
-        /* pick random start location */
-        pos_list_random(&posList, maze->startPos);
-
-        /* pick random end location */
-        pos_list_random(&posList, maze->endPos);
-    } else {
-        printf("Insufficient free spaces to pick start/end locations.\n");
-    }
-    #endif // 1
-    pos_list_free(&posList);
-    free(pos); pos = NULL;
-    #endif // 1
-
+    pos_list_pop(&maze->solution, NULL);
     return 0;
 }
 
 
 int maze_solve(maze_t *maze) {
+
+    /* initialize validMoves */
+    validMoves = calloc(2*maze->numDimensions, sizeof(int));
+    for(int i=0; i<maze->numDimensions; ++i) {
+        validMoves[i*2] = i+1;
+        validMoves[i*2+1] = -(i+1);
+    }
+
+    /* start at startPos */
+    if( maze_solve_dfs(maze, maze->startPos) ) {
+        printf("Found solution with length %i\n", maze->solution.posListNum);
+        return 1;
+    }
+
+    printf("No solution found!\n");
     return 0;
 }
 
@@ -446,7 +497,7 @@ int maze_solve(maze_t *maze) {
 int maze_generate(maze_t *maze) {
     printf("Generating %iD maze.\n", maze->numDimensions);
 
-    /* set starting point */
+    /* set starting point for generation */
     int *start = calloc(maze->numDimensions,sizeof(int));
     for(int i=0; i<maze->numDimensions; ++i) {
         start[i] = 1;
@@ -464,13 +515,21 @@ int maze_generate(maze_t *maze) {
 
         printf("Start: ");
         for(int i=0; i<maze->numDimensions; ++i) {
+            //maze->startPos[i] = 1;
             printf("%i ", maze->startPos[i]);
         }
         printf("\nEnd:   ");
         for(int i=0; i<maze->numDimensions; ++i) {
+            //maze->endPos[i] = 1;
             printf("%i ", maze->endPos[i]);
         }
+        //maze->endPos[0] = 5;
         printf("\n");
+
+        #if 1
+        int *restartPos = calloc(maze->numDimensions,sizeof(int));
+        maze_get_restart_location(maze, restartPos);
+        #endif // 0
 
         /* find and record solution */
         maze_solve(maze);
@@ -479,7 +538,7 @@ int maze_generate(maze_t *maze) {
     }
 
     #if 1
-    /* while not completely full (i.e., any 2x2 region is full) */
+    /* while not completely full (i.e., any uncleared 2x2 region exists) */
     int *restartPos = calloc(maze->numDimensions,sizeof(int));
     retries = 10;
     while(maze_unfinished(maze) && --retries) {
@@ -492,6 +551,44 @@ int maze_generate(maze_t *maze) {
     free(start); start=NULL;
 
     return ret;
+}
+
+
+int maze_write(maze_t *maze, char *filename) {
+    /* open file */
+    FILE *fp = fopen(filename,"w");
+
+    /* write dimensions */
+    fprintf(fp, "%i %i\n", maze->numDimensions, maze->numFaces);
+
+    /* write maze faces */
+    for(int face=0; face<maze->numFaces; ++face) {
+        int rows = maze->faces[face].rows;
+        int cols = maze->faces[face].cols;
+        fprintf(fp, "%i %i\n", rows, cols);
+        for(int row=0; row<rows; ++row) {
+            for(int col=0; col<cols; ++col) {
+                int cell = face_get_cell(&maze->faces[face], row, col);
+                fprintf(fp, "%c ", cell?'1':'0');
+            }
+            fprintf(fp, "\n");
+        }
+    }
+
+    /* write start and end positions */
+    for(int m=0; m<maze->solution.posListNum; ++m) {
+        for(int i=0; i<maze->numDimensions; ++i) {
+            fprintf(fp, "%i ", maze->solution.positions[m][i]);
+        }
+        fprintf(fp, "\n");
+    }
+
+    /* write solution */
+
+    /* close file */
+    fclose(fp); fp=NULL;
+
+    return 0;
 }
 
 

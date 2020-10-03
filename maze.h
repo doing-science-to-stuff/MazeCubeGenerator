@@ -30,6 +30,8 @@ typedef struct maze {
     int *dimensions;
     position_t startPos;
     position_t endPos;
+    position_list_t reachable;
+    position_list_t solution;
     face_t *faces;
 } maze_t;
 
@@ -38,6 +40,7 @@ int maze_free(maze_t *maze);
 int maze_pick_goals(maze_t *maze);
 int maze_solve(maze_t *maze);
 int maze_generate(maze_t *maze);
+int maze_write(maze_t *maze, char *filename);
 int maze_export_stl(maze_t *maze, char *filename);
 
 #endif /* MAZE_H */
