@@ -305,7 +305,6 @@ int maze_unfinished(maze_t *maze) {
                     && face_get_cell(&maze->faces[face],row,col+1)
                     && face_get_cell(&maze->faces[face],row+1,col+1) ) {
                     /* unfinished section found */
-                    //printf("position %i,%i of face %i is unfinished.\n", row, col, face);
                     return 1;
                 }
             }
@@ -343,7 +342,6 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
         int dir = i/2;
         moves[i] = dir+1;
         moves[i+1] = -(dir+1);
-        //printf("moves[%i & %i] = %i & %i\n", i, i+1, moves[i], moves[i+1]);
     }
 
     /* create list of possible locations */
@@ -358,7 +356,6 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
             /* check all moves from current pos */
             for(int m = 0; m<2*maze->numDimensions; ++m) {
 
-                //printf("\ttrying move %i\n", moves[m]);
                 /* if a valid move from it exists */
                 if( maze_allow_clear(maze, pos, moves[m]) ) {
 
@@ -422,13 +419,11 @@ static int maze_solve_dfs(maze_t *maze, position_t pos) {
 
         /* if move valid */
         if( !maze_position_clear(maze,newPos) ) {
-            //printf("move %i invalid\n", move);
             continue;
         }
 
         /* check solution for next position */
         if( pos_list_rfind(&maze->solution, newPos) >= 0 ) {
-            //printf("move %i backtracks\n", move);
             continue;
         }
 
@@ -483,21 +478,16 @@ int maze_generate(maze_t *maze) {
 
         printf("Start: ");
         for(int i=0; i<maze->numDimensions; ++i) {
-            //maze->startPos[i] = 1;
             printf("%i ", maze->startPos[i]);
         }
         printf("\nEnd:   ");
         for(int i=0; i<maze->numDimensions; ++i) {
-            //maze->endPos[i] = 1;
             printf("%i ", maze->endPos[i]);
         }
-        //maze->endPos[0] = 5;
         printf("\n");
 
         /* find and record solution */
-        maze_solve(maze);
-
-        done = 1;
+        done = maze_solve(maze);
     }
 
     /* while not completely full (i.e., any uncleared 2x2 region exists) */
