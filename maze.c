@@ -94,6 +94,12 @@ static int pos_list_pop(position_list_t *list, position_t pos) {
 }
 
 
+static int pos_list_clear(position_list_t *list) {
+    while(pos_list_pop(list,NULL));
+    return 0;
+}
+
+
 static int pos_list_random(position_list_t *list, position_t pos) {
     if( list->posListNum <= 0 )
         return 0;
@@ -447,6 +453,7 @@ int maze_solve(maze_t *maze) {
     }
 
     /* start at startPos */
+    pos_list_clear(&maze->solution);
     if( maze_solve_dfs(maze, maze->startPos) ) {
         printf("Found solution with length %i\n", maze->solution.posListNum);
         return 1;
@@ -508,9 +515,16 @@ int maze_generate(maze_t *maze) {
 int maze_write(maze_t *maze, char *filename) {
     /* open file */
     FILE *fp = fopen(filename,"w");
+    if(fp==NULL ) {
+        perror("fopen");
+        return -1;
+    }
 
     /* write dimensions */
     fprintf(fp, "%i %i\n", maze->numDimensions, maze->numFaces);
+    for(int i=0; i<maze->numDimensions; ++i)
+        fprintf(fp, "%i ", maze->dimensions[i]);
+    fprintf(fp,"\n");
 
     /* write maze faces */
     for(int face=0; face<maze->numFaces; ++face) {
@@ -526,7 +540,8 @@ int maze_write(maze_t *maze, char *filename) {
         }
     }
 
-    /* write solution from stat to end positions */
+    /* write solution from start to end positions */
+    fprintf(fp, "%i\n", maze->solution.posListNum);
     for(int m=0; m<maze->solution.posListNum; ++m) {
         for(int i=0; i<maze->numDimensions; ++i) {
             fprintf(fp, "%i ", maze->solution.positions[m][i]);
@@ -534,6 +549,57 @@ int maze_write(maze_t *maze, char *filename) {
         fprintf(fp, "\n");
     }
 
+    /* close file */
+    fclose(fp); fp=NULL;
+
+    return 0;
+}
+
+
+int maze_load(maze_t *maze, char *filename) {
+    /* open file */
+    FILE *fp = fopen(filename,"r");
+    if(fp==NULL ) {
+        perror("fopen");
+        return -1;
+    }
+
+    /* read dimensions */
+    fscanf(fp, "%i %i\n", &maze->numDimensions, &maze->numFaces);
+    int *sizes = calloc(maze->numDimensions, sizeof(int));
+    for(int i=0; i<maze->numDimensions; ++i)
+        fscanf(fp,"%i ", &sizes[i]);   
+
+    /* initialize the maze */
+    maze_init(maze, maze->numDimensions, sizes);
+    free(sizes); sizes=NULL;
+
+    /* read maze faces */
+    for(int face=0; face<maze->numFaces; ++face) {
+        int rows, cols;
+        fscanf(fp, "%i %i\n", &rows, &cols);
+        for(int row=0; row<rows; ++row) {
+            for(int col=0; col<cols; ++col) {
+                char cell;
+                fscanf(fp, "%c ", &cell);
+                face_set_cell(&maze->faces[face], row, col, cell-'0');
+            }
+        }
+    }
+
+    /* read solution from start to end positions */
+    int numPos = 0;
+    position_t pos = calloc(maze->numDimensions,sizeof(int));
+    fscanf(fp, "%i\n", &numPos);
+    for(int m=0; m<numPos; ++m) {
+        for(int i=0; i<maze->numDimensions; ++i) {
+            fscanf(fp, "%i ", &pos[i]);
+        }
+        pos_list_push(&maze->solution, pos);
+    }
+    free(pos); pos=NULL;
+    memcpy(maze->startPos,maze->solution.positions[0],maze->numDimensions*sizeof(int));
+    memcpy(maze->endPos,maze->solution.positions[maze->solution.posListNum-1],maze->numDimensions*sizeof(int));
 
     /* close file */
     fclose(fp); fp=NULL;
