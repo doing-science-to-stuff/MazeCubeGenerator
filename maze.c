@@ -84,12 +84,14 @@ static int pos_list_push(position_list_t *list, position_t pos) {
 
 
 static int pos_list_pop(position_list_t *list, position_t pos) {
-    if( list->posListNum < 0 )
+    if( list->posListNum <= 0 )
         return 0;
     if( pos!=NULL )
         memcpy(pos,list->positions[list->posListNum-1],list->numDimensions*sizeof(int));
-    free(list->positions[list->posListNum-1]); list->positions[list->posListNum-1]=NULL;
-    --list->posListNum;
+    if( list->posListNum > 0 ) {
+        free(list->positions[list->posListNum-1]); list->positions[list->posListNum-1]=NULL;
+        --list->posListNum;
+    }
     return 1;
 }
 
@@ -513,6 +515,7 @@ int maze_generate(maze_t *maze) {
 
 
 int maze_write(maze_t *maze, char *filename) {
+
     /* open file */
     FILE *fp = fopen(filename,"w");
     if(fp==NULL ) {
@@ -703,7 +706,6 @@ int maze_export_stl(maze_t *maze, char *filename) {
         fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
         return -1;
     }
-    printf("Exporting %iD maze to STL files `%s`.\n", maze->numDimensions, filename);
 
     /* open file */
     FILE *fp = fopen(filename,"w");
