@@ -536,7 +536,9 @@ int maze_write(maze_t *maze, char *filename) {
         fprintf(fp, "%i %i\n", rows, cols);
         for(int row=0; row<rows; ++row) {
             for(int col=0; col<cols; ++col) {
-                int cell = face_get_cell(&maze->faces[face], row, col);
+                /* this will transpose the coordinates,
+                 * but it seems more correct. */
+                int cell = face_get_cell(&maze->faces[face], col, row);
                 fprintf(fp, "%c ", cell?'1':'0');
             }
             fprintf(fp, "\n");
@@ -585,7 +587,9 @@ int maze_load(maze_t *maze, char *filename) {
             for(int col=0; col<cols; ++col) {
                 char cell;
                 fscanf(fp, "%c ", &cell);
-                face_set_cell(&maze->faces[face], row, col, cell-'0');
+                /* this will transpose the coordinates,
+                 * but it seems more correct. */
+                face_set_cell(&maze->faces[face], col, row, cell-'0');
             }
         }
     }
