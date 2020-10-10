@@ -604,7 +604,7 @@ int maze_load(maze_t *maze, char *filename) {
                     /* is start location on face */
                     if( maze->startPos[d1]!=-1 && maze->startPos[d1]!=row
                         && maze->startPos[d2]!=-1 && maze->startPos[d2]!=col )
-                        fprintf(stderr, "%s: Inconsistency in maze start location.  start[%i,%i]=%i,%i and %i,%i\n", __FUNCTION__, d1, d2, maze->startPos[d1], maze->startPos[d2], row, col);
+                        fprintf(stderr, "%s: Inconsistency on face %i of maze start location.\n\tstart[%i,%i]=%i,%i and %i,%i\n", __FUNCTION__, face, d1, d2, maze->startPos[d1], maze->startPos[d2], row, col);
                     maze->startPos[d1] = row;
                     maze->startPos[d2] = col;
                     cell='0';
@@ -613,7 +613,7 @@ int maze_load(maze_t *maze, char *filename) {
                     /* is end location on face */
                     if( maze->endPos[d1]!=-1 && maze->endPos[d1]!=row
                         && maze->endPos[d2]!=-1 && maze->endPos[d2]!=col )
-                        fprintf(stderr, "%s: Inconsistency in maze end location.  end[%i,%i]=%i,%i and %i,%i\n", __FUNCTION__, d1, d2, maze->endPos[d1], maze->endPos[d2], row, col);
+                        fprintf(stderr, "%s: Inconsistency on face %i of maze end location.\n\tend[%i,%i]=%i,%i and %i,%i\n", __FUNCTION__, face, d1, d2, maze->endPos[d1], maze->endPos[d2], row, col);
                     maze->endPos[d1] = row;
                     maze->endPos[d2] = col;
                     cell='0';
