@@ -539,16 +539,14 @@ int maze_write(maze_t *maze, char *filename) {
         int cols = maze->faces[face].cols;
         int d1 = maze->faces[face].d1;
         int d2 = maze->faces[face].d2;
-        fprintf(fp, "%i %i\n", rows, cols);
+        fprintf(fp, "%i %i\n", cols, rows);
         for(int row=0; row<rows; ++row) {
             for(int col=0; col<cols; ++col) {
-                /* this will transpose the coordinates,
-                 * but it seems more correct. */
                 int cell = face_get_cell(&maze->faces[face], col, row);
                 int ch = cell?'1':'0';
-                if( maze->startPos[d1] == row && maze->startPos[d2] == col )
+                if( maze->startPos[d1] == col && maze->startPos[d2] == row )
                     ch = 'S';
-                if( maze->endPos[d1] == row && maze->endPos[d2] == col )
+                if( maze->endPos[d1] == col && maze->endPos[d2] == row )
                     ch = 'E';
                 fprintf(fp, "%c ", ch);
             }
@@ -595,31 +593,29 @@ int maze_load(maze_t *maze, char *filename) {
         int rows, cols;
         int d1 = maze->faces[face].d1;
         int d2 = maze->faces[face].d2;
-        fscanf(fp, "%i %i\n", &rows, &cols);
+        fscanf(fp, "%i %i\n", &cols, &rows);
         for(int row=0; row<rows; ++row) {
             for(int col=0; col<cols; ++col) {
                 char cell;
                 fscanf(fp, "%c ", &cell);
                 if(cell=='S') {
                     /* is start location on face */
-                    if( maze->startPos[d1]!=-1 && maze->startPos[d1]!=row
-                        && maze->startPos[d2]!=-1 && maze->startPos[d2]!=col )
-                        fprintf(stderr, "%s: Inconsistency on face %i of maze start location.\n\tstart[%i,%i]=%i,%i and %i,%i\n", __FUNCTION__, face, d1, d2, maze->startPos[d1], maze->startPos[d2], row, col);
-                    maze->startPos[d1] = row;
-                    maze->startPos[d2] = col;
+                    if( maze->startPos[d1]!=-1 && maze->startPos[d1]!=col
+                        && maze->startPos[d2]!=-1 && maze->startPos[d2]!=row )
+                        fprintf(stderr, "%s: Inconsistency on face %i of maze start location.\n\tstart[%i,%i]=%i,%i and %i,%i\n", __FUNCTION__, face, d1, d2, maze->startPos[d1], maze->startPos[d2], col, row);
+                    maze->startPos[d1] = col;
+                    maze->startPos[d2] = row;
                     cell='0';
                 }
                 if(cell=='E') {
                     /* is end location on face */
-                    if( maze->endPos[d1]!=-1 && maze->endPos[d1]!=row
-                        && maze->endPos[d2]!=-1 && maze->endPos[d2]!=col )
-                        fprintf(stderr, "%s: Inconsistency on face %i of maze end location.\n\tend[%i,%i]=%i,%i and %i,%i\n", __FUNCTION__, face, d1, d2, maze->endPos[d1], maze->endPos[d2], row, col);
-                    maze->endPos[d1] = row;
-                    maze->endPos[d2] = col;
+                    if( maze->endPos[d1]!=-1 && maze->endPos[d1]!=col
+                        && maze->endPos[d2]!=-1 && maze->endPos[d2]!=row )
+                        fprintf(stderr, "%s: Inconsistency on face %i of maze end location.\n\tend[%i,%i]=%i,%i and %i,%i\n", __FUNCTION__, face, d1, d2, maze->endPos[d1], maze->endPos[d2], col, row);
+                    maze->endPos[d1] = col;
+                    maze->endPos[d2] = row;
                     cell='0';
                 }
-                /* this will transpose the coordinates,
-                 * but it seems more correct. */
                 face_set_cell(&maze->faces[face], col, row, cell-'0');
             }
         }
