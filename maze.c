@@ -837,9 +837,9 @@ int maze_export_stl(maze_t *maze, char *filename) {
     double startX = maze->startPos[0];
     double startY = maze->startPos[1];
     double startZ = maze->startPos[2];
-    double sizeX = 2*maze->dimensions[0]+2;
-    double sizeY = 2*maze->dimensions[1]+2;
-    double sizeZ = 2*maze->dimensions[2]+2;
+    double sizeX = 2*maze->dimensions[0]-0.5;
+    double sizeY = 2*maze->dimensions[1]-0.5;
+    double sizeZ = 2*maze->dimensions[2]-0.5;
     double scale2 = scale*0.95;
     maze_export_stl_cube(fp, startX, startY, startZ, 0, sizeX*scale, scale2, scale2);
     maze_export_stl_cube(fp, startX, startY, startZ, 0, scale, sizeY*scale2, scale2);
