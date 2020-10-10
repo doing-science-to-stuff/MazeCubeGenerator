@@ -849,3 +849,33 @@ int maze_export_stl(maze_t *maze, char *filename) {
 
     return 0;
 }
+
+int maze_export_stl_solution(maze_t *maze, char *filename) {
+    if( maze->numDimensions != 3 ) {
+        fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
+        return -1;
+    }
+
+    /* open file */
+    FILE *fp = fopen(filename,"w");
+
+    /* open solid */
+    fprintf(fp,"solid puzzle\n");
+
+    double scale = 1.0;
+    for(int i=0; i<maze->solution.posListNum; ++i) {
+        double x, y, z;
+        x = maze->solution.positions[i][0];
+        y = maze->solution.positions[i][1];
+        z = maze->solution.positions[i][2];
+        maze_export_stl_cube(fp, x, y, z, 0, scale, scale, scale);
+    }
+
+    /* close solid */
+    fprintf(fp,"endsolid puzzle\n");
+
+    /* close file */
+    fclose(fp); fp=NULL;
+
+    return 0;
+}

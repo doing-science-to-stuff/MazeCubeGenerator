@@ -22,7 +22,8 @@ int main(int argc, char **argv) {
     int *sizes=NULL;
     char *inputFile = NULL;
     char *outputFile = NULL;
-    char *stlFile;
+    char *stlFile = NULL;
+    char *stlSolFile = NULL;
     int genMaze = 0;
     int doSolve = 0;
 
@@ -35,7 +36,7 @@ int main(int argc, char **argv) {
     genMaze = 1;
 
     char ch='\0';
-    while( (ch=getopt(argc, argv, "d:g:hi:m:o:s"))!=-1 ) {
+    while( (ch=getopt(argc, argv, "d:g:hi:m:o:p:s"))!=-1 ) {
         switch(ch) {
             case 'd':
                 dims = atoi(optarg);
@@ -62,12 +63,16 @@ int main(int argc, char **argv) {
                 genMaze = 0;
                 break;
             case 'm':
-                /* output STL model file to file given as argument */
+                /* output STL model to file given as argument */
                 stlFile = strdup(optarg);
                 break;
             case 'o':
                 /* output maze to file given as argument */
                 outputFile = strdup(optarg);
+                break;
+            case 'p':
+                /* output solution STL model to file given as argument */
+                stlSolFile = strdup(optarg);
                 break;
             case 's':
                 /* generate a solution */
@@ -106,6 +111,10 @@ int main(int argc, char **argv) {
     if( stlFile ) {
         printf("Exporting %iD maze to STL file `%s`.\n", maze.numDimensions, stlFile);
         maze_export_stl(&maze, stlFile);
+    }
+    if( stlSolFile ) {
+        printf("Exporting %iD maze solution to STL file `%s`.\n", maze.numDimensions, stlFile);
+        maze_export_stl_solution(&maze, stlSolFile);
     }
 
     maze_free(&maze);
