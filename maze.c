@@ -152,6 +152,10 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes) {
     /* allocate start and end positions */
     maze->startPos = calloc(numDimensions,sizeof(int));
     maze->endPos = calloc(numDimensions,sizeof(int));
+    for(int i=0; i<numDimensions; ++i) {
+        maze->startPos[i] = -1;
+        maze->endPos[i] = -1;
+    }
 
     /* initialize solution */
     pos_list_init(&maze->reachable, numDimensions);
@@ -598,17 +602,19 @@ int maze_load(maze_t *maze, char *filename) {
                 fscanf(fp, "%c ", &cell);
                 if(cell=='S') {
                     /* is start location on face */
-                    if( maze->startPos[d1]!=-1 &&
-                        maze->startPos[d1]!=row )
-                        fprintf(stderr, "%s: Inconsistency in maze start location.  start[%i]=%i and %i\n", d1, maze->startPos[d1], row);
+                    if( maze->startPos[d1]!=-1 && maze->startPos[d1]!=row
+                        && maze->startPos[d2]!=-1 && maze->startPos[d2]!=col )
+                        fprintf(stderr, "%s: Inconsistency in maze start location.  start[%i,%i]=%i,%i and %i,%i\n", __FUNCTION__, d1, d2, maze->startPos[d1], maze->startPos[d2], row, col);
                     maze->startPos[d1] = row;
+                    maze->startPos[d2] = col;
                     cell='0';
                 }
                 if(cell=='E') {
                     /* is end location on face */
-                    if( maze->endPos[d2]!=-1 &&
-                        maze->endPos[d2]!=col )
-                        fprintf(stderr, "%s: Inconsistency in maze start location.  end[%i]=%i and %i\n", d2, maze->endPos[d2], col);
+                    if( maze->endPos[d1]!=-1 && maze->endPos[d1]!=row
+                        && maze->endPos[d2]!=-1 && maze->endPos[d2]!=col )
+                        fprintf(stderr, "%s: Inconsistency in maze end location.  end[%i,%i]=%i,%i and %i,%i\n", __FUNCTION__, d1, d2, maze->endPos[d1], maze->endPos[d2], row, col);
+                    maze->endPos[d1] = row;
                     maze->endPos[d2] = col;
                     cell='0';
                 }
