@@ -21,28 +21,15 @@ int scene_frames(int dimensions, char *config) {
     return numFrames;
 }
 
-int add_mirror(scene *scn, int dimensions, int which, int which2,
-               double mirror_size, double mirror_height, double mirror_dist) {
+int add_mirror(scene *scn, int dimensions, int which, double mirror_dist) {
 
-    vectNd hcubeDir;
-    vectNd_alloc(&hcubeDir,dimensions);
-    vectNd sizes;
-    vectNd offset;
-    vectNd_calloc(&sizes,dimensions);
+    vectNd offset, normal;
     vectNd_calloc(&offset,dimensions);
+    vectNd_calloc(&normal,dimensions);
 
-    /* create a mirrored hcube */
+    /* create a mirrored hplane */
     object *mirror=NULL;
-    scene_alloc_object(scn,dimensions,&mirror,"hcube");
-    for(int i=0; i<dimensions; ++i)
-        object_add_size(mirror, mirror_size);
-    mirror->size[which2] = mirror_height;
-    mirror->size[which] = 0.1;
-    for(int i=0; i<dimensions; ++i) {
-        vectNd_reset(&hcubeDir);
-        vectNd_set(&hcubeDir, i, 1.0);
-        object_add_dir(mirror, &hcubeDir);
-    }
+    scene_alloc_object(scn,dimensions,&mirror,"hplane");
 
     mirror->red = 0.1;
     mirror->green = 0.1;
@@ -51,10 +38,15 @@ int add_mirror(scene *scn, int dimensions, int which, int which2,
     mirror->green_r = 0.95;
     mirror->blue_r = 0.95;
 
+    /* set normal */
     vectNd_reset(&offset);
-    object_add_pos(mirror,&offset);
+    vectNd_set(&normal, which, -mirror_dist);
+    object_add_dir(mirror, &normal);
+
+    /* set position */
+    vectNd_reset(&offset);
     vectNd_set(&offset,which,mirror_dist);
-    object_move(mirror, &offset);
+    object_add_pos(mirror,&offset);
 
     return 0;
 }
@@ -377,16 +369,14 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
 
     #if 1
     /* add mirrors */
-    double mirror_size = 160;
-    double mirror_height = 100;
     double mirror_dist = 66;
     /* positive z */
-    add_mirror(scn, dimensions, 2, 1, mirror_size, mirror_height, mirror_dist);
+    add_mirror(scn, dimensions, 2, mirror_dist);
     /* negative x */
-    add_mirror(scn, dimensions, 0, 1, mirror_size, mirror_height, -mirror_dist);
+    add_mirror(scn, dimensions, 0, -mirror_dist);
     #if 0
     /* positive w */
-    add_mirror(scn, dimensions, 3, 1, mirror_size, mirror_height, mirror_dist);
+    add_mirror(scn, dimensions, 3, mirror_dist);
     #endif /* 0 */
     #endif /* 0 */
 
