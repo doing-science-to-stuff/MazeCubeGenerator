@@ -9,7 +9,12 @@
 #include "../../PuzzleMaze/maze.c"
 
 static maze_t maze;
-static int framesPerMove = 4;  /* 30s for 91*2 moves in original puzzle */
+/* there are 91 moves in the original puzzle each direction */
+#if 1
+static int framesPerMove = 4;  /* 30s@24fps */
+#else
+static int framesPerMove = 10;  /* 30s@60fps */
+#endif
 double edge_size = 30;
 
 
