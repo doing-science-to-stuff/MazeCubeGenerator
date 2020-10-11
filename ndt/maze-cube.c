@@ -10,7 +10,7 @@
 
 static maze_t maze;
 /* there are 91 moves in the original puzzle each direction */
-#if 1
+#if 0
 static int framesPerMove = 4;  /* 30s@24fps */
 #else
 static int framesPerMove = 10;  /* 30s@60fps */
@@ -315,9 +315,9 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     light *lgt=NULL;
     scene_alloc_light(scn,&lgt);
     lgt->type = LIGHT_AMBIENT;
-    lgt->red = 0.4;
-    lgt->green = 0.4;
-    lgt->blue = 0.4;
+    lgt->red = 0.3;
+    lgt->green = 0.3;
+    lgt->blue = 0.3;
 
     scene_alloc_light(scn,&lgt);
     #if 0
@@ -340,18 +340,18 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     lgt->type = LIGHT_DIRECTIONAL;
     vectNd_calloc(&lgt->dir,dimensions);
     vectNd_setStr(&lgt->dir,"-180,-40,0,0");
-    lgt->red = 0.1;
-    lgt->green = 0.1;
-    lgt->blue = 0.1;
+    lgt->red = 0.15;
+    lgt->green = 0.15;
+    lgt->blue = 0.15;
     vectNd_free(&viewPoint);
 
     scene_alloc_light(scn,&lgt);
     lgt->type = LIGHT_DIRECTIONAL;
     vectNd_calloc(&lgt->dir,dimensions);
     vectNd_setStr(&lgt->dir,"0,-40,140,0");
-    lgt->red = 0.1;
-    lgt->green = 0.1;
-    lgt->blue = 0.1;
+    lgt->red = 0.15;
+    lgt->green = 0.15;
+    lgt->blue = 0.15;
     vectNd_free(&viewPoint);
 
     vectNd temp;
@@ -367,9 +367,10 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     vectNd_reset(&temp);
     vectNd_set(&temp,1,1);
     object_add_dir(ground,&temp);  /* normal */
-    ground->red = 0.0225;
-    ground->green = 1.0;
-    ground->blue = 0.04;
+    double grassScaling = 0.75;
+    ground->red = 0.0225 * grassScaling;
+    ground->green = 1.0 * grassScaling;
+    ground->blue = 0.04 * grassScaling;
     #endif /* 0 */
 
     #if 1
@@ -379,10 +380,10 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     add_mirror(scn, dimensions, 2, mirror_dist);
     /* negative x */
     add_mirror(scn, dimensions, 0, -mirror_dist);
-    #if 0
-    /* positive w */
-    add_mirror(scn, dimensions, 3, mirror_dist);
-    #endif /* 0 */
+    if( dimensions > 3 ) {
+        /* positive w */
+        add_mirror(scn, dimensions, 3, mirror_dist);
+    }
     #endif /* 0 */
 
     /* cluster will contain puzzle and be used to rotate it */
