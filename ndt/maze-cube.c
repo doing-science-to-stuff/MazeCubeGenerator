@@ -104,8 +104,8 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
                     vectNd cellPos;
                     vectNd_alloc(&cellPos,dim);
                     vectNd_reset(&cellPos);
-                    vectNd_set(&cellPos, d1, (row-0.5*rows)*scale);
-                    vectNd_set(&cellPos, d2, (col-0.5*cols)*scale);
+                    vectNd_set(&cellPos, d1, row*scale);
+                    vectNd_set(&cellPos, d2, col*scale);
                     object_add_pos(box, &cellPos);
                     //vectNd_print(&cellPos, "cellPos");
 
@@ -162,17 +162,18 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
                 int dimK = maze->dimensions[k]-1;
                 /* subtract 0.5 from counter to center at 0 */
                 /* subtract 0.5 to shift both faces by half of their thickness */
-                double dist = dimK*(counter.v[k]-0.5)-0.5;
+                //double dist = dimK*(counter.v[k]*1.02)-0.01;
+                double dist = dimK*counter.v[k]+(counter.v[k]?0.001:(-0.001));
                 //printf("copying counter[%i] (%g) into offset[%i], dimK=%i, dist=%g\n", k, counter.v[k], j, dimK, dist);
                 vectNd_set(&offset, j++, dist);
                 k++;
             }
+            //vectNd_print(&offset,"\toffset");
 
             /* move face into position */
             vectNd scaledOffset;
             vectNd_alloc(&scaledOffset,dim);
-            //vectNd_print(&offset,"\toffset");
-            vectNd_scale(&offset, scale+0.01, &scaledOffset);
+            vectNd_scale(&offset, scale, &scaledOffset);
             object_move(faceCluster, &scaledOffset);
             //vectNd_print(&scaledOffset,"\tscaledOffset");
 
@@ -209,30 +210,32 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
     /* for each dimension, add an hcube lengthened in that dimension */
     vectNd hcubeDir;
     vectNd_alloc(&hcubeDir, dimensions);
+    vectNd offset;
+    vectNd_alloc(&offset, dimensions);
     for(int d=0; d<dimensions; ++d) {
         object *obj = object_alloc(dimensions, "hcube", "movable slider part");
+        object_add_obj(slider, obj);
+
         for(int i=0; i<dimensions; ++i) {
             if( i==d )
                 object_add_size(obj, 2.0*edge_size);
             else
                 object_add_size(obj, scale);
-        }
-        for(int i=0; i<dimensions; ++i) {
+        
             vectNd_reset(&hcubeDir);
             vectNd_set(&hcubeDir, i, 1.0);
             object_add_dir(obj, &hcubeDir);
         }
-        vectNd offset;
-        vectNd_alloc(&offset, dimensions);
+
+        vectNd_reset(&offset);
 #if 0
         for(int i=0; i<dimensions; ++i)
-            vectNd_set(&offset, i, -edge_size);
+            vectNd_set(&offset, i, -0.5*edge_size);
 #endif // 0
         object_add_pos(obj,&offset);
         obj->red = 0.8;
         obj->blue = 0.8;
         obj->green = 0.8;
-        object_add_obj(slider, obj);
     }
 
     /* get location of center */
@@ -256,11 +259,11 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
     for(int i=0; i<dimensions; ++i) {
         vectNd_set(&pos, i,
             ((1.0-posW) * maze->solution.positions[pos1][i]
-            + posW * maze->solution.positions[pos2][i]
-            - maze->dimensions[i]/2.0)
-            * scale);
+            + posW * maze->solution.positions[pos2][i]));
     }
+    //vectNd_print(&pos, "slider pos is");
     printf("pos1: %i, pos2: %i, posW: %g\n", pos1, pos2, posW);
+    vectNd_scale(&pos, scale, &pos);
     vectNd_print(&pos, "slider at");
 
     /* move cluster to correct location */
@@ -336,6 +339,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     lgt->blue = 0.4;
     #endif
 
+    #if 1
     scene_alloc_light(scn,&lgt);
     lgt->type = LIGHT_DIRECTIONAL;
     vectNd_calloc(&lgt->dir,dimensions);
@@ -353,6 +357,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     lgt->green = 0.15;
     lgt->blue = 0.15;
     vectNd_free(&viewPoint);
+    #endif // 1
 
     vectNd temp;
     vectNd_calloc(&temp,dimensions);
@@ -421,6 +426,17 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     add_maze_faces(clstr, &maze, edge_size);
     #endif
     add_slider(clstr, &maze, edge_size, frame, frames);
+
+    #if 1
+    /* move puzzle to be centered at origin */
+    double scale = edge_size/maze.faces[0].rows;
+    vectNd centeringOffset;
+    vectNd_calloc(&centeringOffset, dimensions);
+    for(int i=0; i<dimensions; ++i) {
+        vectNd_set(&centeringOffset, i, -0.5*scale*maze.dimensions[i]);
+    }
+    object_move(clstr, &centeringOffset);
+    #endif // 1
 
     #if 1
     /* rotate puzzle into view orientation */
