@@ -196,21 +196,21 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
         
 }
 
-static void add_movable_piece(object *puzzle, maze_t *maze, double edge_size, int frame, int frames) {
+static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame, int frames) {
     
     double scale = edge_size / maze->faces[0].rows;
 
     int dimensions = maze->numDimensions;
-    /* create cluster to add sub-pieces to */
-    object *piece = object_alloc(dimensions, "cluster", "movable piece");
-    object_add_flag(piece, 1);
-    object_add_obj(puzzle, piece);
+    /* create cluster to add slider sub-pieces to */
+    object *slider = object_alloc(dimensions, "cluster", "slider");
+    object_add_flag(slider, 1);
+    object_add_obj(puzzle, slider);
 
     /* for each dimension, add an hcube lengthened in that dimension */
     vectNd hcubeDir;
     vectNd_alloc(&hcubeDir, dimensions);
     for(int d=0; d<dimensions; ++d) {
-        object *obj = object_alloc(dimensions, "hcube", "movable piece part");
+        object *obj = object_alloc(dimensions, "hcube", "movable slider part");
         for(int i=0; i<dimensions; ++i) {
             if( i==d )
                 object_add_size(obj, 2.0*edge_size);
@@ -232,7 +232,7 @@ static void add_movable_piece(object *puzzle, maze_t *maze, double edge_size, in
         obj->red = 0.8;
         obj->blue = 0.8;
         obj->green = 0.8;
-        object_add_obj(piece, obj);
+        object_add_obj(slider, obj);
     }
 
     /* get location of center */
@@ -261,10 +261,10 @@ static void add_movable_piece(object *puzzle, maze_t *maze, double edge_size, in
             * scale);
     }
     printf("pos1: %i, pos2: %i, posW: %g\n", pos1, pos2, posW);
-    vectNd_print(&pos, "piece at");
+    vectNd_print(&pos, "slider at");
 
     /* move cluster to correct location */
-    object_move(piece,&pos);
+    object_move(slider,&pos);
 }
 
 int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
@@ -420,7 +420,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     #else
     add_maze_faces(clstr, &maze, edge_size);
     #endif
-    add_movable_piece(clstr, &maze, edge_size, frame, frames);
+    add_slider(clstr, &maze, edge_size, frame, frames);
 
     #if 1
     /* rotate puzzle into view orientation */
