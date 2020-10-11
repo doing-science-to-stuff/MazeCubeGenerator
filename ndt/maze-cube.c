@@ -26,7 +26,7 @@ int scene_frames(int dimensions, char *config) {
     return numFrames;
 }
 
-int add_mirror(scene *scn, int dimensions, int which, double mirror_dist) {
+static int add_mirror(scene *scn, int dimensions, int which, double mirror_dist) {
 
     vectNd offset, normal;
     vectNd_calloc(&offset,dimensions);
@@ -56,7 +56,7 @@ int add_mirror(scene *scn, int dimensions, int which, double mirror_dist) {
     return 0;
 }
 
-void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
+static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
 
     printf("%s\n", __FUNCTION__);
     int dim = puzzle->dimensions;
@@ -196,7 +196,7 @@ void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
         
 }
 
-void add_movable_piece(object *puzzle, maze_t *maze, double edge_size, int frame, int frames) {
+static void add_movable_piece(object *puzzle, maze_t *maze, double edge_size, int frame, int frames) {
     
     double scale = edge_size / maze->faces[0].rows;
 
@@ -445,5 +445,6 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
 int scene_cleanup() {
     /* If any persistent resources were allocated,
      * they should be freed here. */
+    maze_free(&maze);
     return 0;
 }
