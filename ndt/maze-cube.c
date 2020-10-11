@@ -77,13 +77,13 @@ void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
         vectNd counter;
         vectNd_alloc(&counter,dim-2);
         int done = 0;
-        printf("d1=%i; d2=%i\n", d1, d2);
+        //printf("d1=%i; d2=%i\n", d1, d2);
         for(int i=0; i<dim; ++i)
             vectNd_set(&offset,i,-1.0);
         vectNd_set(&offset,d1,0.0);
         vectNd_set(&offset,d2,0.0);
         while( !done ) {
-            vectNd_print(&counter,"\tcounter");
+            //vectNd_print(&counter,"\tcounter");
 
             /* create cluster */
             char faceName[64];
@@ -291,8 +291,10 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     vectNd_calloc(&up_vect,dimensions);
     vectNd_alloc(&lookVec, dimensions);
 
-    vectNd_setStr(&viewTarget,"-20,-10,20,0");
-    vectNd_setStr(&viewPoint,"160,30,-120,0");
+    //vectNd_setStr(&viewTarget,"-5,-10,20,0");
+    //vectNd_setStr(&viewPoint,"160,30,-120,0");
+    vectNd_setStr(&viewTarget,"-5,-5,20,0");
+    vectNd_setStr(&viewPoint,"160,45,-120,0");
     vectNd_set(&up_vect,1,1);  /* 0,1,0,0... */
     vectNd_sub(&viewPoint, &viewTarget, &lookVec);
     //vectNd_rotate2(&viewPoint, &viewTarget, &lookVec, &up_vect, 10.0*M_PI/180.0, &viewPoint);
@@ -375,8 +377,8 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
 
     #if 1
     /* add mirrors */
-    double mirror_size = 140;
-    double mirror_height = 80;
+    double mirror_size = 160;
+    double mirror_height = 100;
     double mirror_dist = 66;
     /* positive z */
     add_mirror(scn, dimensions, 2, 1, mirror_size, mirror_height, mirror_dist);
@@ -437,7 +439,8 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     vectNd_set(&rotV1,1,0.0);
     double angle = (M_PI/2.0) - atan(1.0/sqrt(dimensions-1));
     object_rotate2(clstr, &rotateCenter, &rotV1, &rotV2, angle);
-    object_rotate(clstr, &rotateCenter, 0, 2, frame*2.0*M_PI/frames);
+    //object_rotate(clstr, &rotateCenter, 0, 2, frame*2.0*M_PI/frames);
+    object_rotate(clstr, &rotateCenter, 0, 2, 35*M_PI/180.0);
     #endif // 1
     
     return 1;
