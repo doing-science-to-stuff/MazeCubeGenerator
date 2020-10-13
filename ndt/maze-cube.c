@@ -10,7 +10,7 @@
 
 static maze_t maze;
 /* there are 91 moves in the original puzzle each direction */
-#if 0
+#if 1
 static int framesPerMove = 4;  /* 30s@24fps */
 #else
 static int framesPerMove = 10;  /* 30s@60fps */
@@ -56,6 +56,128 @@ static int add_mirror(scene *scn, int dimensions, int which, double mirror_dist)
     return 0;
 }
 
+static void set_face_color(object *obj, int face) {
+    switch(face) {
+        case 0: 
+            obj->red = 1.0;
+            obj->green = 1.0;
+            obj->blue = 1.0;
+            break;
+        case 1: 
+            obj->red = 0.0;
+            obj->green = 1.0;
+            obj->blue = 0.0;
+            break;
+        case 2: 
+            obj->red = 0.0;
+            obj->green = 0.0;
+            obj->blue = 1.0;
+            break;
+        default:
+            obj->red = 1.0;
+            obj->green = 0.0;
+            obj->blue = 0.0;
+            break;
+    }
+}
+
+static object *make_maze_marker(int face, double scale, int r, int c) {
+
+    int numSegs = 32;
+    double radius = 0.05;
+
+    object *marker = object_alloc(maze.numDimensions, "cluster", "maze marker");
+    object_add_flag(marker,numSegs/4);
+
+    printf("r,c = %i,%i\n", r, c);
+    int d1 = maze.faces[face].d1;
+    int d2 = maze.faces[face].d2;
+    #if 1
+    vectNd pos1, pos2, posm1;
+    vectNd_calloc(&pos1, maze.numDimensions);
+    vectNd_calloc(&pos2, maze.numDimensions);
+    vectNd_calloc(&posm1, maze.numDimensions);
+    for(int i=0; i<numSegs; ++i) {
+        double thetam1 =  2.0 * M_PI * (i-1) / numSegs;
+        double xm1 = cos(thetam1);
+        double ym1 = sin(thetam1);
+        double theta1 =  2.0 * M_PI * i / numSegs;
+        double x1 = cos(theta1);
+        double y1 = sin(theta1);
+        double theta2 =  2.0 * M_PI * (i+1) / numSegs;
+        double x2 = cos(theta2);
+        double y2 = sin(theta2);
+
+        vectNd_reset(&pos1);
+        vectNd_reset(&pos2);
+        vectNd_reset(&posm1);
+        vectNd_set(&pos1, d1, x1*scale);
+        vectNd_set(&pos1, d2, y1*scale);
+        vectNd_set(&pos2, d1, x2*scale);
+        vectNd_set(&pos2, d2, y2*scale);
+        vectNd_set(&posm1, d1, xm1*scale);
+        vectNd_set(&posm1, d2, ym1*scale);
+
+        /* determine which sections should be drawn */
+        int col1 = y1+c+0.5;
+        int col2 = y2+c+0.5;
+        int row1 = x1+r+0.5;
+        int row2 = x2+r+0.5;
+        int rowm1 = xm1+r+0.5;
+        int colm1 = ym1+c+0.5;
+        //printf("1) %g,%g -> %i,%i\n", x1, y1, row1, col1);
+        //printf("2) %g,%g -> %i,%i\n", x2, y2, row2, col2);
+        int cell1 = face_get_cell(&maze.faces[face], row1, col1);
+        int cell2 = face_get_cell(&maze.faces[face], row2, col2);
+        int cellm1 = face_get_cell(&maze.faces[face], rowm1, colm1);
+        //printf("cell1=%i, cell2=%i, cellm1=%i\n", cell1, cell2, cellm1);
+
+
+        /* add a joint between cylinders */
+        if( cell2 != 0 ) {
+            object *sph = object_alloc(maze.numDimensions, "sphere", "joint");
+            object_add_obj(marker, sph);
+            object_add_pos(sph, &pos2);
+            object_add_size(sph, radius*scale);
+            set_face_color(sph, face);
+        } 
+        if( cell1!=0 && cellm1 == 0 ) {
+            object *sph = object_alloc(maze.numDimensions, "sphere", "joint");
+            object_add_obj(marker, sph);
+            object_add_pos(sph, &pos2);
+            object_add_size(sph, radius*scale);
+            set_face_color(sph, face);
+        }
+
+        if( cell1 == 0 || cell2 == 0 )
+            continue;
+
+        /* add an object from pos1 to pos2 */
+        object *cyl = object_alloc(maze.numDimensions, "hcylinder", "marker piece");
+        object_add_obj(marker, cyl);
+        object_add_pos(cyl, &pos1);
+        object_add_pos(cyl, &pos2);
+        object_add_size(cyl, radius*scale);
+        object_add_flag(cyl, 0);
+        set_face_color(cyl, face);
+
+    }
+    #else
+    /* add central marker */
+    vectNd centerPos;
+    vectNd_calloc(&centerPos,maze.numDimensions);
+    object *sph = object_alloc(maze.numDimensions, "sphere", "marker center");
+    object_add_obj(marker, sph);
+    //vectNd_set(&centerPos, d1, c*scale);
+    //vectNd_set(&centerPos, d2, r*scale);
+    object_add_pos(sph, &centerPos);
+    object_add_size(sph, 3.0*radius*scale);
+    set_face_color(sph, face);
+    #endif
+
+    return marker;
+}
+
 static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
 
     printf("%s\n", __FUNCTION__);
@@ -73,6 +195,8 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
         vectNd_alloc(&offset,dim);
         vectNd counter;
         vectNd_alloc(&counter,dim-2);
+        vectNd markerOffset;
+        vectNd_calloc(&markerOffset, dim);
         int done = 0;
         //printf("d1=%i; d2=%i\n", d1, d2);
         for(int i=0; i<dim; ++i)
@@ -119,28 +243,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
                         object_add_size(box, scale);
                     }
 
-                    switch(face) {
-                        case 0: 
-                            box->red = 1.0;
-                            box->green = 1.0;
-                            box->blue = 1.0;
-                            break;
-                        case 1: 
-                            box->red = 0.0;
-                            box->green = 1.0;
-                            box->blue = 0.0;
-                            break;
-                        case 2: 
-                            box->red = 0.0;
-                            box->green = 0.0;
-                            box->blue = 1.0;
-                            break;
-                        default:
-                            box->red = 1.0;
-                            box->green = 0.0;
-                            box->blue = 0.0;
-                            break;
-                    }
+                    set_face_color(box, face);
 
                     /* add cell to face */
                     object_add_obj(faceCluster, box);
@@ -153,6 +256,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
             /* convert counter into offset vector, skipping d1 and d2 */
             int k = 0, j = 0;
             vectNd_reset(&offset);
+            vectNd_reset(&markerOffset);
             while(k < dim-2 && j < dim) {
                 while( j == d1 || j == d2 ) {
                     ++j;
@@ -162,13 +266,27 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
                 int dimK = maze->dimensions[k]-1;
                 /* subtract 0.5 from counter to center at 0 */
                 /* subtract 0.5 to shift both faces by half of their thickness */
-                //double dist = dimK*(counter.v[k]*1.02)-0.01;
-                double dist = dimK*counter.v[k]+(counter.v[k]?0.001:(-0.001));
+                double dist = dimK*counter.v[k]+(counter.v[k]?0.01:(-0.01));
                 //printf("copying counter[%i] (%g) into offset[%i], dimK=%i, dist=%g\n", k, counter.v[k], j, dimK, dist);
-                vectNd_set(&offset, j++, dist);
-                k++;
+                vectNd_set(&markerOffset, j, 0.5*(counter.v[k]?1:-1)*scale);
+                vectNd_set(&offset, j, dist);
+                ++j;
+                ++k;
             }
             //vectNd_print(&offset,"\toffset");
+
+            /* add start/end markers */
+            object* startMarker = make_maze_marker(face, scale, maze->startPos[d1], maze->startPos[d2]);
+            object_add_obj(faceCluster, startMarker);
+            vectNd_set(&markerOffset, d1, maze->startPos[d1]*scale);
+            vectNd_set(&markerOffset, d2, maze->startPos[d2]*scale);
+            object_move(startMarker, &markerOffset);
+
+            object* endMarker = make_maze_marker(face, scale, maze->endPos[d1], maze->endPos[d2]);
+            object_add_obj(faceCluster, endMarker);
+            vectNd_set(&markerOffset, d1, maze->endPos[d1]*scale);
+            vectNd_set(&markerOffset, d2, maze->endPos[d2]*scale);
+            object_move(endMarker, &markerOffset);
 
             /* move face into position */
             vectNd scaledOffset;
