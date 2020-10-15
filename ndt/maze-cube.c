@@ -81,12 +81,12 @@ static void set_face_color(object *obj, int face) {
     }
 }
 
-static object *make_maze_marker(int face, double scale, int r, int c) {
+static object *make_maze_marker1(int face, double scale, int r, int c) {
 
     int numSegs = 32;
     double radius = 0.05;
 
-    object *marker = object_alloc(maze.numDimensions, "cluster", "maze marker");
+    object *marker = object_alloc(maze.numDimensions, "cluster", "maze marker 1");
     object_add_flag(marker,4);
 
     int d1 = maze.faces[face].d1;
@@ -162,6 +162,122 @@ static object *make_maze_marker(int face, double scale, int r, int c) {
         object_add_flag(cyl, 0);
         set_face_color(cyl, face);
 
+    }
+    #else
+    /* add central marker */
+    vectNd centerPos;
+    vectNd_calloc(&centerPos,maze.numDimensions);
+    object *sph = object_alloc(maze.numDimensions, "sphere", "marker center");
+    object_add_obj(marker, sph);
+    //vectNd_set(&centerPos, d1, c*scale);
+    //vectNd_set(&centerPos, d2, r*scale);
+    object_add_pos(sph, &centerPos);
+    object_add_size(sph, 3.0*radius*scale);
+    set_face_color(sph, face);
+    #endif
+
+    return marker;
+}
+
+static void add_maze_maker_segment(object *marker, int face,
+    double x1, double y1, double x2, double y2,
+    double scale, double radius) {
+
+    vectNd pos1, pos2;
+    vectNd_calloc(&pos1, maze.numDimensions);
+    vectNd_calloc(&pos2, maze.numDimensions);
+
+    int d1 = maze.faces[face].d1;
+    int d2 = maze.faces[face].d2;
+    vectNd_reset(&pos1);
+    vectNd_reset(&pos2);
+    vectNd_set(&pos1, d1, x1*scale);
+    vectNd_set(&pos1, d2, y1*scale);
+    vectNd_set(&pos2, d1, x2*scale);
+    vectNd_set(&pos2, d2, y2*scale);
+
+    /* add an object from pos1 to pos2 */
+    object *cyl = object_alloc(maze.numDimensions, "hcylinder", "marker piece");
+    object_add_obj(marker, cyl);
+    object_add_pos(cyl, &pos1);
+    object_add_pos(cyl, &pos2);
+    object_add_size(cyl, radius*scale);
+    object_add_flag(cyl, 0);
+    set_face_color(cyl, face);
+}
+
+static void add_maze_marker_corner(object *marker, int face,
+    double x1, double y1,
+    double x2, double y2,
+    double x3, double y3,
+    double scale, double radius) {
+
+    add_maze_maker_segment(marker, face, x1, y1, x2, y2, scale, radius);
+    add_maze_maker_segment(marker, face, x2, y2, x3, y3, scale, radius);
+
+    int d1 = maze.faces[face].d1;
+    int d2 = maze.faces[face].d2;
+    vectNd pos;
+    vectNd_calloc(&pos, maze.numDimensions);
+    vectNd_reset(&pos);
+    vectNd_set(&pos, d1, x2*scale);
+    vectNd_set(&pos, d2, y2*scale);
+
+    object *sph = object_alloc(maze.numDimensions, "sphere", "joint");
+    object_add_obj(marker, sph);
+    object_add_pos(sph, &pos);
+    object_add_size(sph, radius*scale);
+    set_face_color(sph, face);
+}
+
+static object *make_maze_marker2(int face, double scale, int r, int c) {
+
+    int numSegs = 32;
+    double radius = 0.05;
+
+    object *marker = object_alloc(maze.numDimensions, "cluster", "maze marker 2");
+    object_add_flag(marker,4);
+
+    #if 1
+    double d=0.5;
+    /* add corners */
+    if( face_get_cell(&maze.faces[face], r-1, c-1) != 0 ) {
+        add_maze_marker_corner(marker, face, -1, -d,
+                                             -1, -1,
+                                             -d, -1, scale, radius);
+    }
+    if( face_get_cell(&maze.faces[face], r-1, c+1) != 0 ) {
+        add_maze_marker_corner(marker, face, -d, 1,
+                                             -1, 1,
+                                             -1, d, scale, radius);
+    }
+    if( face_get_cell(&maze.faces[face], r+1, c-1) != 0 ) {
+        add_maze_marker_corner(marker, face, 1, -d,
+                                             1, -1,
+                                             d, -1, scale, radius);
+    }
+    if( face_get_cell(&maze.faces[face], r+1, c+1) != 0 ) {
+        add_maze_marker_corner(marker, face, 1, d,
+                                             1, 1,
+                                             d, 1, scale, radius);
+    }
+
+    /* add sides of square */
+    if( face_get_cell(&maze.faces[face], r, c-1) != 0 ) {
+        add_maze_maker_segment(marker, face, -d,-1,
+                                             d, -1, scale, radius);
+    }
+    if( face_get_cell(&maze.faces[face], r-1, c) != 0 ) {
+        add_maze_maker_segment(marker, face, -1, -d,
+                                             -1, d, scale, radius);
+    }
+    if( face_get_cell(&maze.faces[face], r, c+1) != 0 ) {
+        add_maze_maker_segment(marker, face, -d, 1,
+                                             d, 1, scale, radius);
+    }
+    if( face_get_cell(&maze.faces[face], r+1, c) != 0 ) {
+        add_maze_maker_segment(marker, face, 1, -d,
+                                             1, d, scale, radius);
     }
     #else
     /* add central marker */
@@ -280,13 +396,13 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
 
             #if 1
             /* add start/end markers */
-            object* startMarker = make_maze_marker(face, scale, maze->startPos[d1], maze->startPos[d2]);
+            object* startMarker = make_maze_marker1(face, scale, maze->startPos[d1], maze->startPos[d2]);
             object_add_obj(faceCluster, startMarker);
             vectNd_set(&markerOffset, d1, maze->startPos[d1]*scale);
             vectNd_set(&markerOffset, d2, maze->startPos[d2]*scale);
             object_move(startMarker, &markerOffset);
 
-            object* endMarker = make_maze_marker(face, scale, maze->endPos[d1], maze->endPos[d2]);
+            object* endMarker = make_maze_marker2(face, scale, maze->endPos[d1], maze->endPos[d2]);
             object_add_obj(faceCluster, endMarker);
             vectNd_set(&markerOffset, d1, maze->endPos[d1]*scale);
             vectNd_set(&markerOffset, d2, maze->endPos[d2]*scale);
