@@ -10,7 +10,7 @@
 
 static maze_t maze;
 /* there are 91 moves in the original puzzle each direction */
-#if 1
+#if 0
 static int framesPerMove = 4;  /* 30s@24fps */
 #else
 static int framesPerMove = 10;  /* 30s@60fps */
@@ -87,9 +87,8 @@ static object *make_maze_marker(int face, double scale, int r, int c) {
     double radius = 0.05;
 
     object *marker = object_alloc(maze.numDimensions, "cluster", "maze marker");
-    object_add_flag(marker,numSegs/4);
+    object_add_flag(marker,4);
 
-    printf("r,c = %i,%i\n", r, c);
     int d1 = maze.faces[face].d1;
     int d2 = maze.faces[face].d2;
     #if 1
@@ -136,6 +135,7 @@ static object *make_maze_marker(int face, double scale, int r, int c) {
         /* add a joint between cylinders */
         if( cell2 != 0 ) {
             object *sph = object_alloc(maze.numDimensions, "sphere", "joint");
+            snprintf(sph->name, sizeof(sph->name), "joint %i", i);
             object_add_obj(marker, sph);
             object_add_pos(sph, &pos2);
             object_add_size(sph, radius*scale);
@@ -143,6 +143,7 @@ static object *make_maze_marker(int face, double scale, int r, int c) {
         } 
         if( cell1!=0 && cellm1 == 0 ) {
             object *sph = object_alloc(maze.numDimensions, "sphere", "joint");
+            snprintf(sph->name, sizeof(sph->name), "joint %i-1", i);
             object_add_obj(marker, sph);
             object_add_pos(sph, &pos2);
             object_add_size(sph, radius*scale);
@@ -212,6 +213,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
             object *faceCluster = object_alloc(dim, "cluster", faceName);
             object_add_flag(faceCluster,4);
 
+            #if 1
             /* fill in face with hcube for each cell */
             for(int row=0; row<rows; ++row) {
                 for(int col=0; col<cols; ++col) {
@@ -252,6 +254,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
                     vectNd_free(&cellPos);
                 }
             }
+            #endif // 1
 
             /* convert counter into offset vector, skipping d1 and d2 */
             int k = 0, j = 0;
@@ -275,6 +278,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
             }
             //vectNd_print(&offset,"\toffset");
 
+            #if 1
             /* add start/end markers */
             object* startMarker = make_maze_marker(face, scale, maze->startPos[d1], maze->startPos[d2]);
             object_add_obj(faceCluster, startMarker);
@@ -287,6 +291,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
             vectNd_set(&markerOffset, d1, maze->endPos[d1]*scale);
             vectNd_set(&markerOffset, d2, maze->endPos[d2]*scale);
             object_move(endMarker, &markerOffset);
+            #endif // 1
 
             /* move face into position */
             vectNd scaledOffset;
@@ -312,7 +317,6 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
         vectNd_free(&counter);
         vectNd_free(&offset);
     }
-        
 }
 
 static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame, int frames) {
@@ -543,7 +547,9 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     #else
     add_maze_faces(clstr, &maze, edge_size);
     #endif
+    #if 1
     add_slider(clstr, &maze, edge_size, frame, frames);
+    #endif // 1
 
     #if 1
     /* move puzzle to be centered at origin */
