@@ -204,6 +204,24 @@ static void add_maze_maker_segment(object *marker, int face,
     object_add_size(cyl, radius*scale);
     object_add_flag(cyl, 0);
     set_face_color(cyl, face);
+
+    /* add caps at end */
+    vectNd norm;
+    vectNd_calloc(&norm, maze.numDimensions);
+    vectNd_sub(&pos1, &pos2, &norm);
+    object *end = object_alloc(maze.numDimensions, "hdisk", "marker piece end 1");
+    object_add_obj(marker, end);
+    object_add_pos(end, &pos1);
+    object_add_dir(end, &norm);
+    object_add_size(end, radius*scale);
+    set_face_color(end, face);
+    end = object_alloc(maze.numDimensions, "hdisk", "marker piece end 2");
+    object_add_obj(marker, end);
+    object_add_pos(end, &pos2);
+    object_add_dir(end, &norm);
+    object_add_size(end, radius*scale);
+    set_face_color(end, face);
+
 }
 
 static void add_maze_marker_corner(object *marker, int face,
@@ -309,9 +327,9 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
         int cols = maze->faces[face].cols;
         /* for high and low values in all dimensions not in face's plane */
         vectNd offset;
-        vectNd_alloc(&offset,dim);
+        vectNd_calloc(&offset,dim);
         vectNd counter;
-        vectNd_alloc(&counter,dim-2);
+        vectNd_calloc(&counter,dim-2);
         vectNd markerOffset;
         vectNd_calloc(&markerOffset, dim);
         int done = 0;
@@ -344,7 +362,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
 
                     /* configure hcube */
                     vectNd cellPos;
-                    vectNd_alloc(&cellPos,dim);
+                    vectNd_calloc(&cellPos,dim);
                     vectNd_reset(&cellPos);
                     vectNd_set(&cellPos, d1, row*scale);
                     vectNd_set(&cellPos, d2, col*scale);
@@ -353,7 +371,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
 
                     /* set up basis for hcube */
                     vectNd dir;
-                    vectNd_alloc(&dir, dim);
+                    vectNd_calloc(&dir, dim);
                     for(int i=0; i<dim; ++i) {
                         vectNd_reset(&dir);
                         vectNd_set(&dir, i, 1);
@@ -411,7 +429,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
 
             /* move face into position */
             vectNd scaledOffset;
-            vectNd_alloc(&scaledOffset,dim);
+            vectNd_calloc(&scaledOffset,dim);
             vectNd_scale(&offset, scale, &scaledOffset);
             object_move(faceCluster, &scaledOffset);
             //vectNd_print(&scaledOffset,"\tscaledOffset");
@@ -447,9 +465,9 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
 
     /* for each dimension, add an hcube lengthened in that dimension */
     vectNd hcubeDir;
-    vectNd_alloc(&hcubeDir, dimensions);
+    vectNd_calloc(&hcubeDir, dimensions);
     vectNd offset;
-    vectNd_alloc(&offset, dimensions);
+    vectNd_calloc(&offset, dimensions);
     for(int d=0; d<dimensions; ++d) {
         object *obj = object_alloc(dimensions, "hcube", "movable slider part");
         object_add_obj(slider, obj);
@@ -493,7 +511,7 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
         posW = (rframe % framesPerMove) / (double)framesPerMove;
     }
     vectNd pos;
-    vectNd_alloc(&pos, dimensions);
+    vectNd_calloc(&pos, dimensions);
     for(int i=0; i<dimensions; ++i) {
         vectNd_set(&pos, i,
             ((1.0-posW) * maze->solution.positions[pos1][i]
@@ -527,7 +545,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     vectNd_calloc(&viewPoint,dimensions);
     vectNd_calloc(&viewTarget,dimensions);
     vectNd_calloc(&up_vect,dimensions);
-    vectNd_alloc(&lookVec, dimensions);
+    vectNd_calloc(&lookVec, dimensions);
 
     //vectNd_setStr(&viewTarget,"-5,-10,20,0");
     //vectNd_setStr(&viewPoint,"160,30,-120,0");
@@ -640,7 +658,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     /* use object_alloc instead of scene_alloc_object when the object will be
      * added to a cluster */
     vectNd hcubeDir;
-    vectNd_alloc(&hcubeDir, dimensions);
+    vectNd_calloc(&hcubeDir, dimensions);
     object *obj = object_alloc(dimensions, "hcube", "placeholder cube");
     for(int i=0; i<dimensions; ++i)
         object_add_size(obj, edge_size);
@@ -650,7 +668,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
         object_add_dir(obj, &hcubeDir);
     }
     vectNd offset;
-    vectNd_alloc(&offset, dimensions);
+    vectNd_calloc(&offset, dimensions);
     #if 0
     for(int i=0; i<dimensions; ++i)
         vectNd_set(&offset, i, -edge_size);
@@ -681,9 +699,9 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     #if 1
     /* rotate puzzle into view orientation */
     vectNd rotateCenter, rotV1, rotV2;
-    vectNd_alloc(&rotateCenter, dimensions);
-    vectNd_alloc(&rotV1, dimensions);
-    vectNd_alloc(&rotV2, dimensions);
+    vectNd_calloc(&rotateCenter, dimensions);
+    vectNd_calloc(&rotV1, dimensions);
+    vectNd_calloc(&rotV2, dimensions);
     for(int i=0; i<dimensions; ++i) {
         vectNd_set(&rotV1,i,1.0);
         vectNd_set(&rotV2,i,1.0);
