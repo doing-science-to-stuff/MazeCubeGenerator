@@ -250,7 +250,6 @@ static void add_maze_marker_corner(object *marker, int face,
 
 static object *make_maze_marker2(int face, double scale, int r, int c) {
 
-    int numSegs = 32;
     double radius = 0.05;
 
     object *marker = object_alloc(maze.numDimensions, "cluster", "maze marker 2");
