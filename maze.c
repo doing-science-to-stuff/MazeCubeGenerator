@@ -476,7 +476,8 @@ int maze_generate(maze_t *maze) {
     /* set starting point for generation */
     int *start = calloc(maze->numDimensions,sizeof(int));
     for(int i=0; i<maze->numDimensions; ++i) {
-        start[i] = 1;
+        start[i] = rand()%(maze->dimensions[i]-2)+1;
+        start[i] |= 1;  // force initial coordinacte to be all odd
     }
 
     /* recursively clear cells */
