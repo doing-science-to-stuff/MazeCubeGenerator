@@ -413,13 +413,13 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
 
             #if 1
             /* add start/end markers */
-            object* startMarker = make_maze_marker1(face, scale, maze->startPos[d1], maze->startPos[d2]);
+            object* startMarker = make_maze_marker2(face, scale, maze->startPos[d1], maze->startPos[d2]);
             object_add_obj(faceCluster, startMarker);
             vectNd_set(&markerOffset, d1, maze->startPos[d1]*scale);
             vectNd_set(&markerOffset, d2, maze->startPos[d2]*scale);
             object_move(startMarker, &markerOffset);
 
-            object* endMarker = make_maze_marker2(face, scale, maze->endPos[d1], maze->endPos[d2]);
+            object* endMarker = make_maze_marker1(face, scale, maze->endPos[d1], maze->endPos[d2]);
             object_add_obj(faceCluster, endMarker);
             vectNd_set(&markerOffset, d1, maze->endPos[d1]*scale);
             vectNd_set(&markerOffset, d2, maze->endPos[d2]*scale);
