@@ -23,7 +23,7 @@ static int framesPerSpin = 240; /* 2s@60fps */
  * for an animated scene. */
 int scene_frames(int dimensions, char *config) {
     maze_load(&maze,config);
-    int numFrames = maze.solution.posListNum*framesPerMove + 2*framesPerSpin;
+    int numFrames = (maze.solution.posListNum-1)*framesPerMove + 2*framesPerSpin;
     return numFrames;
 }
 
