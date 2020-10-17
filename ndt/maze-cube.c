@@ -9,20 +9,21 @@
 #include "../../PuzzleMaze/maze.c"
 
 static maze_t maze;
-/* there are 91 moves in the original puzzle each direction */
+/* there are 90 moves in the original puzzle each direction */
 #if 0
 static int framesPerMove = 4;  /* 30s@24fps */
 #else
 static int framesPerMove = 10;  /* 30s@60fps */
 #endif
-double edge_size = 30;
+static double edge_size = 30;
+static int framesPerSpin = 240; /* 2s@60fps */
 
 
 /* scene_frames is optional, but gives the total number of frames to render
  * for an animated scene. */
 int scene_frames(int dimensions, char *config) {
     maze_load(&maze,config);
-    int numFrames = maze.solution.posListNum*framesPerMove;
+    int numFrames = maze.solution.posListNum*framesPerMove + 2*framesPerSpin;
     return numFrames;
 }
 
@@ -494,23 +495,25 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
     }
 
     /* get location of center */
-    int pos1, pos2;
-    double posW;
-    int hframes = frames/2;
-    if( frame <= hframes ) {
-        /* first half goes forward */
-        pos1 = frame / framesPerMove;
-        pos2 = pos1+1;
-        posW = (frame % framesPerMove) / (double)framesPerMove;
-    } else {
-        /* second half goes backwards */
-        int rframe = frames-frame;
-        pos1 = rframe / framesPerMove;
-        pos2 = pos1+1;
-        posW = (rframe % framesPerMove) / (double)framesPerMove;
-    }
     vectNd pos;
     vectNd_calloc(&pos, dimensions);
+    int pos1, pos2;
+    double posW;
+    /* perform moves */
+    pos1 = frame / framesPerMove;
+    pos2 = pos1+1;
+    posW = (frame % framesPerMove) / (double)framesPerMove;
+    if( pos1 < 0 ) {
+        pos1 = 0;
+        pos2 = 0;
+        posW = 0.0;
+    }
+    if( pos2 >= maze->solution.posListNum ) {
+        /* pause for final spin */
+        pos1 = maze->solution.posListNum-1;
+        pos2 = maze->solution.posListNum-1;
+        posW = 0.0;
+    }
     for(int i=0; i<dimensions; ++i) {
         vectNd_set(&pos, i,
             ((1.0-posW) * maze->solution.positions[pos1][i]
@@ -681,7 +684,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     add_maze_faces(clstr, &maze, edge_size);
     #endif
     #if 1
-    add_slider(clstr, &maze, edge_size, frame, frames);
+    add_slider(clstr, &maze, edge_size, frame-framesPerSpin, frames);
     #endif // 1
 
     #if 1
@@ -708,8 +711,12 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     vectNd_set(&rotV1,1,0.0);
     double angle = (M_PI/2.0) - atan(1.0/sqrt(dimensions-1));
     object_rotate2(clstr, &rotateCenter, &rotV1, &rotV2, angle);
-    //object_rotate(clstr, &rotateCenter, 0, 2, frame*2.0*M_PI/frames);
     object_rotate(clstr, &rotateCenter, 0, 2, 35*M_PI/180.0);
+    if( frame < framesPerSpin )
+        object_rotate(clstr, &rotateCenter, 0, 2, frame*2.0*M_PI/framesPerSpin);
+    int endFrame = frame - framesPerSpin - (maze.solution.posListNum-1)*framesPerMove;
+    if( endFrame >= 0 )
+        object_rotate(clstr, &rotateCenter, 0, 2, endFrame*2.0*M_PI/framesPerSpin);
     #endif // 1
     
     return 1;
