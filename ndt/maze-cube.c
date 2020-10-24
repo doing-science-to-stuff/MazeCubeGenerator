@@ -468,30 +468,33 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
     vectNd_calloc(&hcubeDir, dimensions);
     vectNd offset;
     vectNd_calloc(&offset, dimensions);
-    for(int d=0; d<dimensions; ++d) {
-        object *obj = object_alloc(dimensions, "hcube", "movable slider part");
-        object_add_obj(slider, obj);
+    for(int d1=0; d1<dimensions; ++d1) {
+        for(int d2=d1+1; d2<dimensions; ++d2) {
+            object *obj = object_alloc(dimensions, "hcube", "movable slider part");
+            snprintf(obj->name, sizeof(obj->name), "slider for %i,%i faces", d1, d2);
+            object_add_obj(slider, obj);
 
-        for(int i=0; i<dimensions; ++i) {
-            if( i==d )
-                object_add_size(obj, 2.0*edge_size);
-            else
-                object_add_size(obj, scale);
-        
-            vectNd_reset(&hcubeDir);
-            vectNd_set(&hcubeDir, i, 1.0);
-            object_add_dir(obj, &hcubeDir);
+            for(int i=0; i<dimensions; ++i) {
+                if( i==d1 || i==d2 ) 
+                    object_add_size(obj, scale);
+                else
+                    object_add_size(obj, 2.0*edge_size);
+            
+                vectNd_reset(&hcubeDir);
+                vectNd_set(&hcubeDir, i, 1.0);
+                object_add_dir(obj, &hcubeDir);
+            }
+
+            vectNd_reset(&offset);
+    #if 0
+            for(int i=0; i<dimensions; ++i)
+                vectNd_set(&offset, i, -0.5*edge_size);
+    #endif // 0
+            object_add_pos(obj,&offset);
+            obj->red = 0.8;
+            obj->blue = 0.8;
+            obj->green = 0.8;
         }
-
-        vectNd_reset(&offset);
-#if 0
-        for(int i=0; i<dimensions; ++i)
-            vectNd_set(&offset, i, -0.5*edge_size);
-#endif // 0
-        object_add_pos(obj,&offset);
-        obj->red = 0.8;
-        obj->blue = 0.8;
-        obj->green = 0.8;
     }
 
     /* get location of center */
@@ -559,7 +562,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     camera_set_aim(&scn->cam, &viewPoint, &viewTarget, &up_vect, 0.0);
     camera_set_flip(&scn->cam, 1, 0);
     vectNd_free(&up_vect);
-    //vectNd_free(&viewPoint);
+    vectNd_free(&viewPoint);
     vectNd_free(&viewTarget);
 
     /* basic setup */
@@ -605,7 +608,6 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     lgt->red = 0.15;
     lgt->green = 0.15;
     lgt->blue = 0.15;
-    vectNd_free(&viewPoint);
 
     scene_alloc_light(scn,&lgt);
     lgt->type = LIGHT_DIRECTIONAL;
@@ -614,7 +616,6 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     lgt->red = 0.15;
     lgt->green = 0.15;
     lgt->blue = 0.15;
-    vectNd_free(&viewPoint);
     #endif // 1
 
     vectNd temp;
@@ -695,7 +696,8 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     for(int i=0; i<dimensions; ++i) {
         vectNd_set(&centeringOffset, i, -0.5*scale*maze.dimensions[i]);
     }
-    object_move(clstr, &centeringOffset);
+    //object_move(clstr, &centeringOffset);
+    //vectNd_print(&centeringOffset, "centeringOffset");
     #endif // 1
 
     #if 1
@@ -704,19 +706,21 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     vectNd_calloc(&rotateCenter, dimensions);
     vectNd_calloc(&rotV1, dimensions);
     vectNd_calloc(&rotV2, dimensions);
-    for(int i=0; i<dimensions; ++i) {
+    for(int i=0; i<3; ++i) {
         vectNd_set(&rotV1,i,1.0);
         vectNd_set(&rotV2,i,1.0);
     }
     vectNd_set(&rotV1,1,0.0);
     double angle = (M_PI/2.0) - atan(1.0/sqrt(dimensions-1));
-    object_rotate2(clstr, &rotateCenter, &rotV1, &rotV2, angle);
-    object_rotate(clstr, &rotateCenter, 0, 2, 35*M_PI/180.0);
-    if( frame < framesPerSpin )
-        object_rotate(clstr, &rotateCenter, 0, 2, frame*2.0*M_PI/framesPerSpin);
+    //object_rotate2(clstr, &rotateCenter, &rotV1, &rotV2, angle);
+    angle = 35*M_PI/180.0;
     int endFrame = frame - framesPerSpin - (maze.solution.posListNum-1)*framesPerMove;
-    if( endFrame >= 0 )
-        object_rotate(clstr, &rotateCenter, 0, 2, endFrame*2.0*M_PI/framesPerSpin);
+    if( frame < framesPerSpin )
+        angle += frame*2.0*M_PI/framesPerSpin;
+    else if( endFrame >= 0 )
+        angle += endFrame*2.0*M_PI/framesPerSpin;
+    printf("rotating %g degrees in x,z plane.\n", angle*180/M_PI);
+    object_rotate(clstr, &rotateCenter, 0, 2, angle);
     #endif // 1
     
     return 1;
