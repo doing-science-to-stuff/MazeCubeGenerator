@@ -76,27 +76,27 @@ static void set_face_color(object *obj, int face) {
             break;
         case 3:
             obj->red = 1.0;
-            obj->green = 0.0;
-            obj->blue = 1.0;
-            break;
-        case 4:
-            obj->red = 1.0;
             obj->green = 1.0;
             obj->blue = 0.0;
             break;
-        case 5:
+        case 4:
             obj->red = 0.0;
             obj->green = 1.0;
             obj->blue = 1.0;
             break;
-        case 6:
+        case 5:
             obj->red = 0.5;
             obj->green = 1.0;
             obj->blue = 0.0;
             break;
-        case 7:
+        case 6:
             obj->red = 0.0;
             obj->green = 0.5;
+            obj->blue = 1.0;
+            break;
+        case 7:
+            obj->red = 1.0;
+            obj->green = 0.0;
             obj->blue = 1.0;
             break;
         default:
@@ -361,6 +361,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
     printf("%s\n", __FUNCTION__);
     int dim = puzzle->dimensions;
     double scale = edge_size/maze->faces[0].rows;
+    double epsilon = 0.01;
 
     /* for each face in maze */
     for(int face=0; face < maze->numFaces; ++face) {
@@ -447,8 +448,8 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
                 /* subtract 0.5 from counter to center at 0 */
                 /* subtract 0.5 to shift both faces by half of their thickness */
                 int countK = counter.v[k];
-                double dist = dimK*countK+(countK?0.05:(-0.05));
-                double markerDist = (countK?(0.55):-0.55)*scale;
+                double dist = dimK*countK+(countK?1:(-1))*epsilon*(maze->numFaces-face);
+                double markerDist = (countK?1:-1)*(0.5+marker_radius+epsilon)*scale;
                 vectNd_set(&offset, j, dist);
                 vectNd_set(&markerOffset, j, markerDist);
                 ++j;
