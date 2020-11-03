@@ -75,14 +75,14 @@ static void set_face_color(object *obj, int face) {
             obj->blue = 1.0;
             break;
         case 3:
-            obj->red = 1.0;
-            obj->green = 1.0;
-            obj->blue = 0.0;
-            break;
-        case 4:
             obj->red = 0.0;
             obj->green = 1.0;
             obj->blue = 1.0;
+            break;
+        case 4:
+            obj->red = 1.0;
+            obj->green = 1.0;
+            obj->blue = 0.0;
             break;
         case 5:
             obj->red = 0.5;
