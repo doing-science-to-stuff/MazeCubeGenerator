@@ -16,9 +16,8 @@ static int framesPerMove = 4;  /* 30s@24fps */
 static int framesPerMove = 10;  /* 30s@60fps */
 #endif
 static double edge_size = 30;
-//static int framesPerSpin = 240; /* 2s@60fps */
-static int framesPerSpin = 24;
-
+static int framesPerSpin = 240; /* 4s@60fps */
+static double marker_radius = 0.05;
 
 /* scene_frames is optional, but gives the total number of frames to render
  * for an animated scene. */
@@ -60,19 +59,44 @@ static int add_mirror(scene *scn, int dimensions, int which, double mirror_dist)
 
 static void set_face_color(object *obj, int face) {
     switch(face) {
-        case 0: 
+        case 0:
             obj->red = 1.0;
             obj->green = 1.0;
             obj->blue = 1.0;
             break;
-        case 1: 
+        case 1:
             obj->red = 0.0;
             obj->green = 1.0;
             obj->blue = 0.0;
             break;
-        case 2: 
+        case 2:
             obj->red = 0.0;
             obj->green = 0.0;
+            obj->blue = 1.0;
+            break;
+        case 3:
+            obj->red = 1.0;
+            obj->green = 0.0;
+            obj->blue = 1.0;
+            break;
+        case 4:
+            obj->red = 1.0;
+            obj->green = 1.0;
+            obj->blue = 0.0;
+            break;
+        case 5:
+            obj->red = 0.0;
+            obj->green = 1.0;
+            obj->blue = 1.0;
+            break;
+        case 6:
+            obj->red = 0.5;
+            obj->green = 1.0;
+            obj->blue = 0.0;
+            break;
+        case 7:
+            obj->red = 0.0;
+            obj->green = 0.5;
             obj->blue = 1.0;
             break;
         default:
@@ -108,12 +132,16 @@ static void add_maze_marker_segment(object *marker, int face,
     vectNd extra;
     vectNd_calloc(&extra, maze.numDimensions);
     for(int i=0; i<maze.numDimensions-3; ++i) {
+        #if 1
         vectNd_copy(&extra,&pos1);
         for(int j=0; j<maze.numDimensions; ++j) {
             if( j == d1 || j == d2 ) continue;
-            vectNd_set(&extra, j, scale);
+            vectNd_set(&extra, j, scale*radius);
         }
         object_add_pos(cyl, &extra);
+        #else
+        object_add_pos(cyl, &pos2);
+        #endif // 0
     }
     vectNd_free(&extra);
     object_add_size(cyl, radius*scale);
@@ -142,7 +170,7 @@ static void add_maze_marker_segment(object *marker, int face,
 static object *make_maze_marker1(int face, double scale, int r, int c) {
 
     int numSegs = 32;
-    double radius = 0.05;
+    double radius = marker_radius;
 
     object *marker = object_alloc(maze.numDimensions, "cluster", "maze marker 1");
     object_add_flag(marker,4);
@@ -266,7 +294,7 @@ static void add_maze_marker_corner(object *marker, int face,
 
 static object *make_maze_marker2(int face, double scale, int r, int c) {
 
-    double radius = 0.05;
+    double radius = marker_radius;
 
     object *marker = object_alloc(maze.numDimensions, "cluster", "maze marker 2");
     object_add_flag(marker,4);
@@ -348,7 +376,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
         vectNd markerOffset;
         vectNd_calloc(&markerOffset, dim);
         int done = 0;
-        //printf("d1=%i; d2=%i\n", d1, d2);
+        //printf("face %i: d1=%i; d2=%i\n", face, d1, d2);
         for(int i=0; i<dim; ++i)
             vectNd_set(&offset,i,-1.0);
         vectNd_set(&offset,d1,0.0);
@@ -362,7 +390,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
             object *faceCluster = object_alloc(dim, "cluster", faceName);
             object_add_flag(faceCluster,4);
 
-            #if 0
+            #if 1
             /* fill in face with hcube for each cell */
             for(int row=0; row<rows; ++row) {
                 for(int col=0; col<cols; ++col) {
@@ -405,7 +433,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
             }
             #endif // 1
 
-            /* convert counter into offset vector, skipping d1 and d2 */
+            /* convert counter into offset vectors, skipping d1 and d2 */
             int k = 0, j = 0;
             vectNd_reset(&offset);
             vectNd_reset(&markerOffset);
@@ -418,14 +446,14 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
                 int dimK = maze->dimensions[k]-1;
                 /* subtract 0.5 from counter to center at 0 */
                 /* subtract 0.5 to shift both faces by half of their thickness */
-                double dist = dimK*counter.v[k]+(counter.v[k]?0.01:(-0.01));
-                //printf("copying counter[%i] (%g) into offset[%i], dimK=%i, dist=%g\n", k, counter.v[k], j, dimK, dist);
-                vectNd_set(&markerOffset, j, 0.5*(counter.v[k]?1:-1)*scale);
+                int countK = counter.v[k];
+                double dist = dimK*countK+(countK?0.05:(-0.05));
+                double markerDist = (countK?(0.55):-0.55)*scale;
                 vectNd_set(&offset, j, dist);
+                vectNd_set(&markerOffset, j, markerDist);
                 ++j;
                 ++k;
             }
-            //vectNd_print(&offset,"\toffset");
 
             #if 1
             /* add start/end markers */
@@ -626,17 +654,19 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     ground->blue = 0.04 * grassScaling;
     #endif /* 0 */
 
-    #if 0
+    #if 1
     /* add mirrors */
     double mirror_dist = 66;
     /* positive z */
     add_mirror(scn, dimensions, 2, mirror_dist);
     /* negative x */
     add_mirror(scn, dimensions, 0, -mirror_dist);
+    #if 0
     if( dimensions > 3 ) {
         /* positive w */
         add_mirror(scn, dimensions, 3, mirror_dist);
     }
+    #endif /* 1? */
     #endif /* 0 */
 
     /* cluster will contain puzzle and be used to rotate it */
@@ -701,8 +731,9 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     }
     vectNd_set(&rotV1,1,0.0);
     double angle = (M_PI/2.0) - atan(1.0/sqrt(dimensions-1));
-    //object_rotate2(clstr, &rotateCenter, &rotV1, &rotV2, angle);
+    object_rotate2(clstr, &rotateCenter, &rotV1, &rotV2, angle);
     angle = 35*M_PI/180.0;
+    //angle = 90*M_PI/180.0;
     int endFrame = frame - framesPerSpin - (maze.solution.posListNum-1)*framesPerMove;
     if( frame < framesPerSpin )
         angle += frame*2.0*M_PI/framesPerSpin;
@@ -720,17 +751,22 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     vectNd viewTarget;
     vectNd up_vect;
     vectNd lookVec;
+    vectNd camCentering;
     vectNd_calloc(&viewPoint,dimensions);
     vectNd_calloc(&viewTarget,dimensions);
     vectNd_calloc(&up_vect,dimensions);
     vectNd_calloc(&lookVec, dimensions);
+    vectNd_calloc(&camCentering, dimensions);
 
-    //vectNd_setStr(&viewTarget,"-5,-10,20,0");
-    //vectNd_setStr(&viewPoint,"160,30,-120,0");
     vectNd_setStr(&viewTarget,"-5,-5,20,0");
     vectNd_setStr(&viewPoint,"160,45,-120,0");
-    vectNd_add(&viewTarget, &centeringOffset, &viewTarget);
-    vectNd_add(&viewPoint, &centeringOffset, &viewPoint);
+    //vectNd_setStr(&viewTarget,"-5,-5,20,0.0");
+    //vectNd_setStr(&viewPoint,"160,45,-120,0.0");
+    vectNd_copy(&camCentering, &centeringOffset);
+    for(int i=0; i<3; ++i)
+        vectNd_set(&camCentering, i, 0.0);
+    vectNd_add(&viewTarget, &camCentering, &viewTarget);
+    vectNd_add(&viewPoint, &camCentering, &viewPoint);
     vectNd_set(&up_vect,1,1);  /* 0,1,0,0... */
     vectNd_sub(&viewPoint, &viewTarget, &lookVec);
     //vectNd_rotate2(&viewPoint, &viewTarget, &lookVec, &up_vect, 10.0*M_PI/180.0, &viewPoint);
