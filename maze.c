@@ -477,7 +477,7 @@ int maze_generate(maze_t *maze) {
     int *start = calloc(maze->numDimensions,sizeof(int));
     for(int i=0; i<maze->numDimensions; ++i) {
         start[i] = rand()%(maze->dimensions[i]-2)+1;
-        start[i] |= 1;  // force initial coordinacte to be all odd
+        start[i] |= 1;  // force initial coordinate to be all odd
     }
 
     /* recursively clear cells */
@@ -506,9 +506,14 @@ int maze_generate(maze_t *maze) {
 
     /* while not completely full (i.e., any uncleared 2x2 region exists) */
     int *restartPos = calloc(maze->numDimensions,sizeof(int));
-    retries = 10;
+    retries = 100;
     while(maze_unfinished(maze) && --retries) {
         maze_get_restart_location(maze, restartPos);
+
+        printf("trying restart from position: ");
+        for(int i=0; i<maze->numDimensions; ++i)
+            printf("%i ", restartPos[i]);
+        printf("\n");
 
         /* try using as an unreachable starting point */
         ret = maze_gen_step(maze, restartPos);
