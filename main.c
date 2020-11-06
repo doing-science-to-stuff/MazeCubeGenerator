@@ -11,7 +11,7 @@
 #include "maze.h"
 
 static void show_help(int argc, char **argv) {
-    printf("%s [-d dims] {-g n,n,n | -i file} [-s] [-l length] [-m file.stl] [-o file.txt]\n",
+    printf("%s [-d dims] {-g n,n,n | -i file} [-s] [-r seed] [-l length] [-m file.stl] [-o file.txt]\n",
             argv[0]);
     exit(0);
 }
@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
     int genMaze = 0;
     int doSolve = 0;
     int minSolutionLen = -1;
+    int seed = 0;
 
     /* set defaults */
     dims = 3;
@@ -37,7 +38,7 @@ int main(int argc, char **argv) {
     genMaze = 1;
 
     char ch='\0';
-    while( (ch=getopt(argc, argv, "d:g:hi:l:m:o:p:s"))!=-1 ) {
+    while( (ch=getopt(argc, argv, "d:g:hi:l:m:o:p:r:s"))!=-1 ) {
         switch(ch) {
             case 'd':
                 dims = atoi(optarg);
@@ -78,6 +79,9 @@ int main(int argc, char **argv) {
             case 'p':
                 /* output solution STL model to file given as argument */
                 stlSolFile = strdup(optarg);
+                break;
+            case 'r':
+                srand(atoi(optarg));
                 break;
             case 's':
                 /* generate a solution */
