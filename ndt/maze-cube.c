@@ -23,7 +23,7 @@ static double marker_radius = 0.05;
  * for an animated scene. */
 int scene_frames(int dimensions, char *config) {
     maze_load(&maze,config);
-    int numFrames = (maze.solution.posListNum-1)*framesPerMove + 2*framesPerSpin;
+    int numFrames = (maze.solution.posListNum-1)*framesPerMove + 2*(dimensions-2)*framesPerSpin;
     return numFrames;
 }
 
@@ -731,17 +731,24 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
         vectNd_set(&rotV2,i,1.0);
     }
     vectNd_set(&rotV1,1,0.0);
-    double angle = (M_PI/2.0) - atan(1.0/sqrt(dimensions-1));
-    object_rotate2(clstr, &rotateCenter, &rotV1, &rotV2, angle);
-    angle = 35*M_PI/180.0;
+    double angle0 = (M_PI/2.0) - atan(1.0/sqrt(dimensions-1));
+    object_rotate2(clstr, &rotateCenter, &rotV1, &rotV2, angle0);
+
+    /* rotation animations */
+    int totalSpins = dimensions - 2;
+    int rotation = frame / framesPerSpin;
+    int currSpinFrame = frame % framesPerSpin;
+    angle0 = 35*M_PI/180.0;
     //angle = 90*M_PI/180.0;
-    int endFrame = frame - framesPerSpin - (maze.solution.posListNum-1)*framesPerMove;
-    if( frame < framesPerSpin )
-        angle += frame*2.0*M_PI/framesPerSpin;
+    int endFrame = frame - framesPerSpin*totalSpins - (maze.solution.posListNum-1)*framesPerMove;
+    double angle1 = 0.0;
+    if( frame < framesPerSpin*totalSpins )
+        angle1 = currSpinFrame*2.0*M_PI/framesPerSpin;
     else if( endFrame >= 0 )
-        angle += endFrame*2.0*M_PI/framesPerSpin;
-    printf("rotating %g degrees in x,z plane (frame=%i).\n", angle*180/M_PI, frame);
-    object_rotate(clstr, &rotateCenter, 0, 2, angle);
+        angle1 = endFrame*2.0*M_PI/framesPerSpin;
+    printf("rotating %g degrees in x,z plane (frame=%i).\n", (angle0+angle1)*180/M_PI, frame);
+    object_rotate(clstr, &rotateCenter, 0, 2, angle0);
+    object_rotate(clstr, &rotateCenter, 0, 2+rotation, angle1);
     #endif // 1
     
     /* zero out camera */
