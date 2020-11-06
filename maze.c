@@ -506,7 +506,7 @@ int maze_generate(maze_t *maze) {
 
     /* while not completely full (i.e., any uncleared 2x2 region exists) */
     int *restartPos = calloc(maze->numDimensions,sizeof(int));
-    retries = 100;
+    retries = 250;
     while(maze_unfinished(maze) && --retries) {
         maze_get_restart_location(maze, restartPos);
 
