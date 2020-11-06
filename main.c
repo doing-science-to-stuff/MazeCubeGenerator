@@ -11,7 +11,7 @@
 #include "maze.h"
 
 static void show_help(int argc, char **argv) {
-    printf("%s [-d dims] {-g n,n,n | -i file} [-s] [-m file.stl] [-o file.txt]\n",
+    printf("%s [-d dims] {-g n,n,n | -i file} [-s] [-l length] [-m file.stl] [-o file.txt]\n",
             argv[0]);
     exit(0);
 }
@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
     char *stlSolFile = NULL;
     int genMaze = 0;
     int doSolve = 0;
+    int minSolutionLen = -1;
 
     /* set defaults */
     dims = 3;
@@ -36,7 +37,7 @@ int main(int argc, char **argv) {
     genMaze = 1;
 
     char ch='\0';
-    while( (ch=getopt(argc, argv, "d:g:hi:m:o:p:s"))!=-1 ) {
+    while( (ch=getopt(argc, argv, "d:g:hi:l:m:o:p:s"))!=-1 ) {
         switch(ch) {
             case 'd':
                 dims = atoi(optarg);
@@ -61,6 +62,10 @@ int main(int argc, char **argv) {
                 /* load maze from file given as argument */
                 inputFile = strdup(optarg);
                 genMaze = 0;
+                break;
+            case 'l':
+                /* minimum solution length */
+                minSolutionLen = atoi(optarg);
                 break;
             case 'm':
                 /* output STL model to file given as argument */
@@ -91,18 +96,24 @@ int main(int argc, char **argv) {
         show_help(argc,argv);
     }
 
-    if( genMaze ) {
-        maze_init(&maze, dims, sizes);
-        printf("Generating maze.\n");
-        maze_generate(&maze);
-    }
-    else if( inputFile ) {
-        printf("Loading maze from '%s'.\n", inputFile);
-        maze_load(&maze,inputFile);
-    }
+    /* generate/load maze and solve if requested/needed */
+    do {
+        if( genMaze ) {
+            /* create a new maze */
+            maze_init(&maze, dims, sizes);
+            printf("Generating maze.\n");
+            maze_generate(&maze);
+        }
+        else if( inputFile ) {
+            /* load a maze from an input file */
+            printf("Loading maze from '%s'.\n", inputFile);
+            maze_load(&maze,inputFile);
+        }
 
-    if( doSolve )
-        maze_solve(&maze);
+        /* solve the maze, if requested/needed */
+        if( doSolve || minSolutionLen>0 )
+            maze_solve(&maze);
+    } while( minSolutionLen>0 && maze.solution.posListNum < minSolutionLen );
 
     if( outputFile ) {
         printf("Writing %iD maze to `%s`.\n", maze.numDimensions, outputFile);
