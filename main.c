@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
     int doSolve = 0;
     int minSolutionLen = -1;
     int seed = 0;
+    int maxSegments = -1;
 
     /* set defaults */
     dims = 3;
@@ -38,7 +39,7 @@ int main(int argc, char **argv) {
     genMaze = 1;
 
     char ch='\0';
-    while( (ch=getopt(argc, argv, "d:g:hi:l:m:o:p:r:s"))!=-1 ) {
+    while( (ch=getopt(argc, argv, "d:g:hi:k:l:m:o:p:r:s"))!=-1 ) {
         switch(ch) {
             case 'd':
                 dims = atoi(optarg);
@@ -68,6 +69,9 @@ int main(int argc, char **argv) {
                 /* minimum solution length */
                 minSolutionLen = atoi(optarg);
                 break;
+            case 'k':
+                maxSegments = atoi(optarg);
+                break;
             case 'm':
                 /* output STL model to file given as argument */
                 stlFile = strdup(optarg);
@@ -81,7 +85,8 @@ int main(int argc, char **argv) {
                 stlSolFile = strdup(optarg);
                 break;
             case 'r':
-                srand(atoi(optarg));
+                seed = atoi(optarg);
+                srand(seed);
                 break;
             case 's':
                 /* generate a solution */
@@ -101,12 +106,15 @@ int main(int argc, char **argv) {
     }
 
     /* generate/load maze and solve if requested/needed */
+    int segments = -1;
     do {
         if( genMaze ) {
             /* create a new maze */
             maze_init(&maze, dims, sizes);
             printf("Generating maze.\n");
-            maze_generate(&maze);
+            segments = maze_generate(&maze);
+            if( maxSegments > 0 )
+                printf("%i maze segments.\n", segments);
         }
         else if( inputFile ) {
             /* load a maze from an input file */
@@ -115,9 +123,13 @@ int main(int argc, char **argv) {
         }
 
         /* solve the maze, if requested/needed */
-        if( doSolve || minSolutionLen>0 )
+        if( doSolve || minSolutionLen>0 ) {
             maze_solve(&maze);
-    } while( minSolutionLen>0 && maze.solution.posListNum < minSolutionLen );
+            if( minSolutionLen>0 )
+                printf("solution length is %i.\n", maze.solution.posListNum);
+        }
+    } while( (minSolutionLen>0 && maze.solution.posListNum < minSolutionLen)
+        || (maxSegments>0 && segments>maxSegments) );
 
     if( outputFile ) {
         printf("Writing %iD maze to `%s`.\n", maze.numDimensions, outputFile);

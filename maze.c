@@ -488,7 +488,7 @@ int maze_generate(maze_t *maze) {
     }
 
     /* recursively clear cells */
-    int ret = maze_gen_step(maze,start);
+    maze_gen_step(maze,start);
     free(start); start=NULL;
 
     int done = 0;
@@ -514,6 +514,7 @@ int maze_generate(maze_t *maze) {
     /* while not completely full (i.e., any uncleared 2x2 region exists) */
     int *restartPos = calloc(maze->numDimensions,sizeof(int));
     retries = 250;
+    int restarts = 0;
     while(maze_unfinished(maze) && --retries) {
         maze_get_restart_location(maze, restartPos);
 
@@ -523,11 +524,12 @@ int maze_generate(maze_t *maze) {
         printf("\n");
 
         /* try using as an unreachable starting point */
-        ret = maze_gen_step(maze, restartPos);
+        maze_gen_step(maze, restartPos);
+        ++restarts;
     }
     free(start); start=NULL;
 
-    return ret;
+    return restarts+1;
 }
 
 
