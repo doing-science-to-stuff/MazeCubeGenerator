@@ -364,7 +364,14 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
     int done = 0;
     while( !done ) {
 
-        if( maze_position_clear(maze, pos) ) {
+        /* check for (and reject) positions with any even coordinates */
+        int allOdd = 1;
+        for(int i=0; allOdd && i<maze->numDimensions; ++i) {
+            if( (pos[i]%2) == 0)
+                allOdd = 0;
+        }
+
+        if( allOdd && maze_position_clear(maze, pos) ) {
             /* check all moves from current pos */
             for(int m = 0; m<2*maze->numDimensions; ++m) {
 
