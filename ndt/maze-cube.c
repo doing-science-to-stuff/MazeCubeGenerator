@@ -544,13 +544,13 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
     /* get location of center */
     vectNd pos;
     vectNd_calloc(&pos, dimensions);
-    int pos1, pos2;
-    double posW;
+    int pos1=0, pos2=1;
+    double posW=0.0;
     /* perform moves */
     pos1 = frame / framesPerMove;
     pos2 = pos1+1;
     posW = (frame % framesPerMove) / (double)framesPerMove;
-    if( pos1 < 0 ) {
+    if( pos1<0 || frame<0 ) {
         pos1 = 0;
         pos2 = 0;
         posW = 0.0;
@@ -567,12 +567,16 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
             + posW * maze->solution.positions[pos2][i]));
     }
     //vectNd_print(&pos, "slider pos is");
-    printf("pos1: %i, pos2: %i, posW: %g\n", pos1, pos2, posW);
-    vectNd_scale(&pos, scale, &pos);
-    vectNd_print(&pos, "slider at");
+    printf("pos1: %i, pos2: %i, posW: %g (2)\n", pos1, pos2, posW);
+    vectNd scaledPos;
+    vectNd_calloc(&scaledPos, dimensions);
+    vectNd_scale(&pos, scale, &scaledPos);
+    vectNd_free(&pos);
+    vectNd_print(&scaledPos, "slider at");
 
-    /* move cluster to correct location */
-    object_move(slider,&pos);
+    /* move slider cluster to correct location */
+    object_move(slider, &scaledPos);
+    vectNd_free(&scaledPos);
 }
 
 int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
@@ -705,7 +709,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     add_maze_faces(clstr, &maze, edge_size);
     #endif
     #if 1
-    add_slider(clstr, &maze, edge_size, frame-framesPerSpin, frames);
+    add_slider(clstr, &maze, edge_size, frame-(dimensions-2)*framesPerSpin, frames);
     #endif // 1
 
     #if 1
@@ -746,8 +750,9 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
         angle1 = currSpinFrame*2.0*M_PI/framesPerSpin;
     else if( endFrame >= 0 )
         angle1 = endFrame*2.0*M_PI/framesPerSpin;
-    printf("rotating %g degrees in x,z plane (frame=%i).\n", (angle0+angle1)*180/M_PI, frame);
+    printf("rotating %g degrees in x,z plane (frame=%i).\n", angle0*180/M_PI, frame);
     object_rotate(clstr, &rotateCenter, 0, 2, angle0);
+    printf("plus rotating %g degrees in %i,%i plane (frame=%i).\n", angle1*180/M_PI, 0, 2+rotation, frame);
     object_rotate(clstr, &rotateCenter, 0, 2+rotation, angle1);
     #endif // 1
     
