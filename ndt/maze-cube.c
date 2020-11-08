@@ -739,17 +739,22 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     object_rotate2(clstr, &rotateCenter, &rotV1, &rotV2, angle0);
 
     /* rotation animations */
-    int totalSpins = dimensions - 2;
-    int rotation = frame / framesPerSpin;
-    int currSpinFrame = frame % framesPerSpin;
     angle0 = 35*M_PI/180.0;
-    //angle = 90*M_PI/180.0;
-    int endFrame = frame - framesPerSpin*totalSpins - (maze.solution.posListNum-1)*framesPerMove;
     double angle1 = 0.0;
-    if( frame < framesPerSpin*totalSpins )
+    int totalSpins = dimensions - 2;
+    int totalSpinFrames = totalSpins*framesPerSpin;
+    int totalMoveFrames = (maze.solution.posListNum-1)*framesPerMove;
+    int rotation = 0;
+    int endFrame = frame - totalSpinFrames - totalMoveFrames;
+    if( frame < framesPerSpin*totalSpins ) {
+        int currSpinFrame = frame % framesPerSpin;
+        rotation = frame / framesPerSpin;
         angle1 = currSpinFrame*2.0*M_PI/framesPerSpin;
-    else if( endFrame >= 0 )
-        angle1 = endFrame*2.0*M_PI/framesPerSpin;
+    } else if( endFrame >= 0 ) {
+        int currSpinFrame = endFrame % framesPerSpin;
+        rotation = endFrame / framesPerSpin;
+        angle1 = currSpinFrame*2.0*M_PI/framesPerSpin;
+    }
     printf("rotating %g degrees in x,z plane (frame=%i).\n", angle0*180/M_PI, frame);
     object_rotate(clstr, &rotateCenter, 0, 2, angle0);
     printf("plus rotating %g degrees in %i,%i plane (frame=%i).\n", angle1*180/M_PI, 0, 2+rotation, frame);
