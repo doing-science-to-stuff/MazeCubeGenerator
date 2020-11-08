@@ -5,8 +5,9 @@ This directory contains a scene file for rendering mazes using the
 
 ### Rendering a maze using NDT
  1. Place the file `maze-cube.c` into the `scenes` directory of ndt.
- 2. Rebuild ndt (`cmake .; make`).
- 3. Run ndt (`./ndt -s scenes/maze-cube.so -u PathToMazeFile`)
+ 2. Update path to `maze.c` near the top of `maze-cube.c`.
+ 3. Rebuild ndt (`cmake .; make`).
+ 4. Run ndt (`./ndt -s scenes/maze-cube.so -u PathToMazeFile`)
 
 Where `PathToMazeFile` is a file written using the `-o` flag of the puzzle maze
 generator (pmg).
