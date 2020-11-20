@@ -9,6 +9,7 @@
 #include "../../PuzzleMaze/maze.c"
 
 static maze_t maze;
+static int alternateView = 0;
 /* there are 90 moves in the original puzzle each direction */
 #if 0
 static int framesPerMove = 4;  /* 30s@24fps */
@@ -22,6 +23,13 @@ static double marker_radius = 0.05;
 /* scene_frames is optional, but gives the total number of frames to render
  * for an animated scene. */
 int scene_frames(int dimensions, char *config) {
+    char *str = strtok(config,",");
+    if( str!=NULL ) {
+        config = str;
+        str = strtok(NULL,",");
+        if( str != NULL )
+            alternateView = atoi(str);
+    }
     maze_load(&maze,config);
     int numFrames = (maze.solution.posListNum-1)*framesPerMove + 2*(dimensions-2)*framesPerSpin;
     return numFrames;
@@ -586,6 +594,10 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
 
     printf("Generating frame %i of %i scene '%s' (%.2f%% through animation).\n",
             frame, frames, scn->name, 100.0*t);
+    if( alternateView != 0 ) {
+        printf("\talternateView = %i (i.e., dimension %i)\n", alternateView, alternateView+2);
+        snprintf(scn->name, sizeof(scn->name), "maze-cube-%i", alternateView);
+    }
 
     /* basic setup */
     #if 1
@@ -616,7 +628,11 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     #else
     lgt->type = LIGHT_DIRECTIONAL;
     vectNd_calloc(&lgt->dir,dimensions);
-    vectNd_setStr(&lgt->dir,"0,-1,0,-1");
+    vectNd_setStr(&lgt->dir,"0,-1,0,0");
+    if( alternateView == 0 )
+        vectNd_set(&lgt->dir, 3, -1.0);
+    else
+        vectNd_set(&lgt->dir, 2+alternateView, -1.0);
     lgt->red = 0.4;
     lgt->green = 0.4;
     lgt->blue = 0.4;
@@ -662,8 +678,11 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     #if 1
     /* add mirrors */
     double mirror_dist = 66;
-    /* positive z */
-    add_mirror(scn, dimensions, 2, mirror_dist);
+    /* positive z (or higher) */
+    if( alternateView == 0 )
+        add_mirror(scn, dimensions, 2, mirror_dist);
+    else
+        add_mirror(scn, dimensions, alternateView+2, -mirror_dist);
     /* negative x */
     add_mirror(scn, dimensions, 0, -mirror_dist);
     #if 0
@@ -783,8 +802,16 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     vectNd_copy(&camCentering, &centeringOffset);
     for(int i=0; i<3; ++i)
         vectNd_set(&camCentering, i, 0.0);
+    if( alternateView ) {
+        vectNd_setStr(&viewTarget,"-5,-5,0,20");
+        vectNd_setStr(&viewPoint,"160,45,0,-120");
+        vectNd_set(&camCentering, 2+alternateView, 0.0);
+        vectNd_set(&camCentering, 2, centeringOffset.v[2]);
+    }
     vectNd_add(&viewTarget, &camCentering, &viewTarget);
     vectNd_add(&viewPoint, &camCentering, &viewPoint);
+    vectNd_print(&viewTarget, "viewTarget");
+    vectNd_print(&viewPoint, "viewPoint");
     vectNd_set(&up_vect,1,1);  /* 0,1,0,0... */
     vectNd_sub(&viewPoint, &viewTarget, &lookVec);
     //vectNd_rotate2(&viewPoint, &viewTarget, &lookVec, &up_vect, 10.0*M_PI/180.0, &viewPoint);
