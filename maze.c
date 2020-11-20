@@ -21,6 +21,13 @@ int face_init(face_t *face, int *sizes, int d1, int d2) {
 }
 
 
+static int face_reset(face_t *face) {
+    memset(face->cells, 1, face->rows*face->cols);
+
+    return 0;
+}
+
+
 int face_free(face_t *face) {
     free(face->cells); face->cells = NULL;
     memset(face, '\0', sizeof(*face));
@@ -489,11 +496,20 @@ int maze_solve(maze_t *maze) {
 }
 
 
+static void maze_reset_faces(maze_t *maze) {
+    for(int i=0; i<maze->numFaces; ++i) {
+        face_reset(&maze->faces[i]);
+    }
+}
+
+
 int maze_generate(maze_t *maze) {
     printf("Generating %iD maze.\n", maze->numDimensions);
 
     int restarts = 0;
     do {
+        maze_reset_faces(maze);
+
         /* set starting point for generation */
         int *start = calloc(maze->numDimensions,sizeof(int));
         for(int i=0; i<maze->numDimensions; ++i) {
@@ -530,6 +546,7 @@ int maze_generate(maze_t *maze) {
             && (!done || maze->solution.posListNum < maze->minPathLength) );
 
         /* while not completely full (i.e., any uncleared 2x2 region exists) */
+        restarts = 0;
         int *restartPos = calloc(maze->numDimensions,sizeof(int));
         retries = 250;
         if( maze->maxSegments > 0 )
