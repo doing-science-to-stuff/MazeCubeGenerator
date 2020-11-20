@@ -112,9 +112,9 @@ int main(int argc, char **argv) {
         if( maxSegments > 0 )
             maze_set_segments(&maze, maxSegments);
         if( minSolutionLen > 0 )
-            maze_set_min_length(&maze, minSolutionLen);
+            maze_set_path_length(&maze, minSolutionLen);
         printf("Generating maze.\n");
-        segments = maze_generate(&maze);
+        int segments = maze_generate(&maze);
         if( maxSegments > 0 )
             printf("%i maze segment%s.\n", segments, (segments==1)?"":"s");
     }

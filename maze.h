@@ -39,6 +39,8 @@ typedef struct maze {
 
 int maze_init(maze_t *maze, int numDimensions, int *sizes);
 int maze_free(maze_t *maze);
+void maze_set_segments(maze_t *maze, int segs);
+void maze_set_path_length(maze_t *maze, int len);
 int maze_pick_goals(maze_t *maze);
 int maze_solve(maze_t *maze);
 int maze_generate(maze_t *maze);

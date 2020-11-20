@@ -492,6 +492,7 @@ int maze_solve(maze_t *maze) {
 int maze_generate(maze_t *maze) {
     printf("Generating %iD maze.\n", maze->numDimensions);
 
+    int restarts = 0;
     do {
         /* set starting point for generation */
         int *start = calloc(maze->numDimensions,sizeof(int));
@@ -523,6 +524,8 @@ int maze_generate(maze_t *maze) {
 
             /* find and record solution */
             done = maze_solve(maze);
+            if( done )
+                printf("\tsolution length: %i\n", maze->solution.posListNum);
         } while( --retries
             && (!done || maze->solution.posListNum < maze->minPathLength) );
 
@@ -531,7 +534,6 @@ int maze_generate(maze_t *maze) {
         retries = 250;
         if( maze->maxSegments > 0 )
             retries  = maze->maxSegments-1;
-        int restarts = 0;
         while(maze_unfinished(maze) && --retries) {
             maze_get_restart_location(maze, restartPos);
 
@@ -544,7 +546,9 @@ int maze_generate(maze_t *maze) {
             maze_gen_step(maze, restartPos);
             ++restarts;
         }
-    } while( maze->maxSegments>0 && restarts>=maze->maxSegments );
+    } while( maze->maxSegments>0
+        && (restarts+1)>maze->maxSegments );
+    printf("\t%i segments\n", restarts+1);
 
     return restarts+1;
 }
