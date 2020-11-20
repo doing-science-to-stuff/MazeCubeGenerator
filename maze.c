@@ -141,6 +141,8 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes) {
     maze->numDimensions = numDimensions;
     maze->numFaces = (numDimensions*(numDimensions-1))/2;
     maze->dimensions = calloc(numDimensions,sizeof(int));
+    maze->maxSegments = -1;
+    maze->minPathLength = -1;
     for(int i=0; i<numDimensions; ++i) {
         if( (sizes[i]%2) == 0 ) {
             fprintf(stderr, "Warning: dimension sizes must be odd, adjusting dimension %i from %i to %i.\n", i, sizes[i], sizes[i]+1);
@@ -185,6 +187,16 @@ int maze_free(maze_t *maze) {
     memset(maze,'\0', sizeof(*maze));
 
     return 0;
+}
+
+
+void maze_set_segments(maze_t *maze, int segs) {
+    maze->maxSegments = segs;
+}
+
+
+void maze_set_path_length(maze_t *maze, int len) {
+    maze->minPathLength = len;
 }
 
 
@@ -480,54 +492,59 @@ int maze_solve(maze_t *maze) {
 int maze_generate(maze_t *maze) {
     printf("Generating %iD maze.\n", maze->numDimensions);
 
-    /* set starting point for generation */
-    int *start = calloc(maze->numDimensions,sizeof(int));
-    for(int i=0; i<maze->numDimensions; ++i) {
-        start[i] = rand()%(maze->dimensions[i]-2)+1;
-        start[i] |= 1;  // force initial coordinate to be all odd
-    }
-
-    /* recursively clear cells */
-    maze_gen_step(maze,start);
-    free(start); start=NULL;
-
-    int done = 0;
-    int retries = 10;
-    while(!done && --retries) {
-        /* pick start and end locations */
-        maze_pick_goals(maze);
-
-        printf("Start: ");
+    do {
+        /* set starting point for generation */
+        int *start = calloc(maze->numDimensions,sizeof(int));
         for(int i=0; i<maze->numDimensions; ++i) {
-            printf("%i ", maze->startPos[i]);
+            start[i] = rand()%(maze->dimensions[i]-2)+1;
+            start[i] |= 1;  // force initial coordinate to be all odd
         }
-        printf("\nEnd:   ");
-        for(int i=0; i<maze->numDimensions; ++i) {
-            printf("%i ", maze->endPos[i]);
+
+        /* recursively clear cells */
+        maze_gen_step(maze,start);
+        free(start); start=NULL;
+
+        /* pick start and end positions */
+        int done = 0;
+        int retries = 100;
+        do {
+            /* pick start and end locations */
+            maze_pick_goals(maze);
+
+            printf("\tStart: ");
+            for(int i=0; i<maze->numDimensions; ++i) {
+                printf("%i ", maze->startPos[i]);
+            }
+            printf("\n\tEnd:   ");
+            for(int i=0; i<maze->numDimensions; ++i) {
+                printf("%i ", maze->endPos[i]);
+            }
+            printf("\n");
+
+            /* find and record solution */
+            done = maze_solve(maze);
+        } while( --retries
+            && (!done || maze->solution.posListNum < maze->minPathLength) );
+
+        /* while not completely full (i.e., any uncleared 2x2 region exists) */
+        int *restartPos = calloc(maze->numDimensions,sizeof(int));
+        retries = 250;
+        if( maze->maxSegments > 0 )
+            retries  = maze->maxSegments-1;
+        int restarts = 0;
+        while(maze_unfinished(maze) && --retries) {
+            maze_get_restart_location(maze, restartPos);
+
+            printf("trying restart from position: ");
+            for(int i=0; i<maze->numDimensions; ++i)
+                printf("%i ", restartPos[i]);
+            printf("\n");
+
+            /* try using as an unreachable starting point */
+            maze_gen_step(maze, restartPos);
+            ++restarts;
         }
-        printf("\n");
-
-        /* find and record solution */
-        done = maze_solve(maze);
-    }
-
-    /* while not completely full (i.e., any uncleared 2x2 region exists) */
-    int *restartPos = calloc(maze->numDimensions,sizeof(int));
-    retries = 250;
-    int restarts = 0;
-    while(maze_unfinished(maze) && --retries) {
-        maze_get_restart_location(maze, restartPos);
-
-        printf("trying restart from position: ");
-        for(int i=0; i<maze->numDimensions; ++i)
-            printf("%i ", restartPos[i]);
-        printf("\n");
-
-        /* try using as an unreachable starting point */
-        maze_gen_step(maze, restartPos);
-        ++restarts;
-    }
-    free(start); start=NULL;
+    } while( maze->maxSegments>0 && restarts>=maze->maxSegments );
 
     return restarts+1;
 }

@@ -28,6 +28,8 @@ typedef struct maze {
     int numFaces;
     int numDimensions;
     int *dimensions;
+    int maxSegments;
+    int minPathLength;
     position_t startPos;
     position_t endPos;
     position_list_t reachable;
