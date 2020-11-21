@@ -1,6 +1,6 @@
 /*
- * pmg_config.h.in
- * PuzzleMaze: A 3D puzzle model genrator
+ * mcg_config.h.in
+ * MazeCubeGen: maze cube generator
  *
  * Copyright (c) 2020 Bryan Franklin. All rights reserved.
  */

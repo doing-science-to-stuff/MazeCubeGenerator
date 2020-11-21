@@ -1,6 +1,6 @@
 /*
  * main.c
- * PuzzleMaze: A 3D puzzle model generator
+ * MazeCubeGen: maze cube generator
  *
  * Copyright (c) 2020 Bryan Franklin. All rights reserved.
  */
@@ -11,7 +11,7 @@
 #include "maze.h"
 
 static void show_help(int argc, char **argv) {
-    printf("%s [-d dims] {-g n,n,n | -i file} [-s] [-r seed] [-l length] [-m file.stl] [-o file.txt]\n",
+    printf("%s [-d dims] {-g l,w,h | -i file} [-s] [-r seed] [-l length] {-m file.stl | -o file.txt}\n\n",
             argv[0]);
     exit(0);
 }
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     sizes[0] = 11;
     sizes[1] = 11;
     sizes[2] = 11;
-    genMaze = 1;
+    genMaze = 0;
 
     char ch='\0';
     while( (ch=getopt(argc, argv, "d:g:hi:k:l:m:o:p:r:s"))!=-1 ) {
@@ -96,12 +96,12 @@ int main(int argc, char **argv) {
     }
 
     /* check that sufficient settings exist */
-    if( outputFile==NULL && stlFile==NULL) {
-        fprintf(stderr,"\n\nNo output given, use -o and/or -m to specify an output filename.\n\n");
+    if( inputFile==NULL && !genMaze) {
+        fprintf(stderr,"\n\nNo maze source given, use -i to specify an input filename or -g to generate a random maze.\n\n");
         show_help(argc,argv);
     }
-    if( inputFile==NULL && !genMaze) {
-        fprintf(stderr,"\n\nNo maze source given, use -i to specify an input filename\nor -g to generate a random maze.\n\n");
+    if( outputFile==NULL && stlFile==NULL) {
+        fprintf(stderr,"\n\nNo output specified, use -o and/or -m to specify an output filename.\n\n");
         show_help(argc,argv);
     }
 

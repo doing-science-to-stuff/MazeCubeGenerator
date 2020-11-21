@@ -1,6 +1,6 @@
 /*
  * maze.c
- * PuzzleMaze: A 3D puzzle model generator
+ * MazeCubeGen: maze cube generator
  *
  * Copyright (c) 2020 Bryan Franklin. All rights reserved.
  */
