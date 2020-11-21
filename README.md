@@ -11,7 +11,10 @@ Maze Cube Generator creates random multi-dimension mazes similar to the
  * STL output (3D only)
 
 ## Building
-To build the maze cube generator on Linux or macOS:
+To build the maze cube generator on Linux or macOS you will first need to
+install an appropriate compiler (e.g., [llvm](https://llvm.org/), [gcc](https://gcc.gnu.org/), or [Xcode](https://developer.apple.com/xcode/)) as well as [`cmake`](https://cmake.org/).
+
+Once the build tools are installed, compile Maze Cube Generator with:
  1. `cmake .`
  2. `make`
 
