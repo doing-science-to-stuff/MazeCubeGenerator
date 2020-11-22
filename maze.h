@@ -15,6 +15,7 @@ typedef struct maze_face {
 
 int face_init(face_t *face, int *sizes, int d1, int d2);
 int face_free(face_t *face);
+int face_get_cell(face_t *face, int row, int col);
 
 typedef int* position_t;
 typedef struct position_list {
