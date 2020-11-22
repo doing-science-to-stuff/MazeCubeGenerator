@@ -1,7 +1,7 @@
 /*
  * maze-cube.c
  *
- * Copyright (c) 2019-2020 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020 Bryan Franklin. All rights reserved.
  */
 #include <stdio.h>
 #include "../scene.h"
