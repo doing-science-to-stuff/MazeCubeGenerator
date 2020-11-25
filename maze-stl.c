@@ -519,17 +519,6 @@ static void maze_export_stl_cube(FILE *fp, int x, int y, int z, char face_mask, 
     }
 
     if( (face_mask & (1<<4)) == 0) {
-        /* top (+z face) */
-        maze_export_stl_triangle(fp, x-dx, y-dy, z+dz,
-                x+dx, y-dy, z+dz,
-                x+dx, y+dy, z+dz,
-                0, 0, 1, 0);
-        maze_export_stl_triangle(fp, x-dx, y+dy, z+dz,
-                x-dx, y-dy, z+dz,
-                x+dx, y+dy, z+dz,
-                0, 0, 1, 0);
-    }
-    if( (face_mask & (1<<5)) == 0) {
         /* bottom (-z) */
         maze_export_stl_triangle(fp, x-dx, y-dy, z-dz,
                 x+dx, y+dy, z-dz,
@@ -539,6 +528,17 @@ static void maze_export_stl_cube(FILE *fp, int x, int y, int z, char face_mask, 
                 x+dx, y+dy, z-dz,
                 x-dx, y-dy, z-dz,
                 0, 0, -1, 0);
+    }
+    if( (face_mask & (1<<5)) == 0) {
+        /* top (+z face) */
+        maze_export_stl_triangle(fp, x-dx, y-dy, z+dz,
+                x+dx, y-dy, z+dz,
+                x+dx, y+dy, z+dz,
+                0, 0, 1, 0);
+        maze_export_stl_triangle(fp, x-dx, y+dy, z+dz,
+                x-dx, y-dy, z+dz,
+                x+dx, y+dy, z+dz,
+                0, 0, 1, 0);
     }
 }
 
@@ -588,20 +588,10 @@ int maze_export_stl(maze_t *maze, char *filename) {
 
                     /* compute face mask for cube */
                     char mask1 = 0;
-                    char mask2 = 0;
-#if 0
                     int d1 = maze->faces[face].d1;
                     int d2 = maze->faces[face].d2;
                     int rows = maze->faces[face].rows;
                     int cols = maze->faces[face].cols;
-                    if( col > 0
-                        && face_get_cell(&maze->faces[face], row, col-1) !=0 ) {
-                        mask1 |= 1<<(2*d2+1);
-                    }
-                    if( col < cols-1
-                        && face_get_cell(&maze->faces[face], row, col+1) !=0 ) {
-                        mask1 |= 1<<(2*d2);
-                    }
                     if( row > 0
                         && face_get_cell(&maze->faces[face], row-1, col) !=0 ) {
                         mask1 |= 1<<(2*d1);
@@ -610,9 +600,16 @@ int maze_export_stl(maze_t *maze, char *filename) {
                         && face_get_cell(&maze->faces[face], row+1, col) !=0 ) {
                         mask1 |= 1<<(2*d1+1);
                     }
-                    mask2 = mask1;
-#endif /* 1 */
-#if 0
+                    if( col > 0
+                        && face_get_cell(&maze->faces[face], row, col-1) !=0 ) {
+                        mask1 |= 1<<(2*d2);
+                    }
+                    if( col < cols-1
+                        && face_get_cell(&maze->faces[face], row, col+1) !=0 ) {
+                        mask1 |= 1<<(2*d2+1);
+                    }
+                    char mask2 = mask1;
+
                     if( row==0 || col==0
                         || row == rows-1 || col == cols-1 ) {
                         /* is a border cell */
@@ -632,13 +629,10 @@ int maze_export_stl(maze_t *maze, char *filename) {
                             fprintf(stderr, "Unhandled dimension combo! (d1=%i,d2=%i)\n",d1,d2);
                         }
                     }
-#endif /* 1 */
 
-                    #if 1
                     /* export cubes */
                     maze_export_stl_cube(fp, x1, y1, z1, mask1, scale, scale, scale);
                     maze_export_stl_cube(fp, x2, y2, z2, mask2, scale, scale, scale);
-                    #endif /* 1 */
                 }
             }
         }
