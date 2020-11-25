@@ -103,15 +103,10 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
     if( face == 2 && dir > 0 )
         reverse = 1;
 
-    position_t pos1 = calloc(maze->numDimensions,sizeof(int));
-    position_t pos2 = calloc(maze->numDimensions,sizeof(int));
     const int numSegsI = 64;
     const int numSegsJ = 8;
     for(int i=0; i<numSegsI; ++i) {
         /* compute points along circle */
-        double thetaIm1 =  2.0 * M_PI * (i-1) / numSegsI;
-        double xm1 = cos(thetaIm1);
-        double ym1 = sin(thetaIm1);
         double thetaI1 =  2.0 * M_PI * i / numSegsI;
         double x1 = cos(thetaI1)*(1-radius);
         double y1 = sin(thetaI1)*(1-radius);
@@ -124,8 +119,6 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
         int col2 = y2+c+0.5;
         int row1 = x1+r+0.5;
         int row2 = x2+r+0.5;
-        int rowm1 = xm1+r+0.5;
-        int colm1 = ym1+c+0.5;
 
         /* check of cell under each point is set */
         int cell1 = face_get_cell(&maze->faces[face], row1, col1);
@@ -601,6 +594,14 @@ int maze_export_stl(maze_t *maze, char *filename) {
                     int d2 = maze->faces[face].d2;
                     int rows = maze->faces[face].rows;
                     int cols = maze->faces[face].cols;
+                    if( col > 0
+                        && face_get_cell(&maze->faces[face], row, col-1) !=0 ) {
+                        mask1 |= 1<<(2*d2+1);
+                    }
+                    if( col < cols-1
+                        && face_get_cell(&maze->faces[face], row, col+1) !=0 ) {
+                        mask1 |= 1<<(2*d2);
+                    }
                     if( row > 0
                         && face_get_cell(&maze->faces[face], row-1, col) !=0 ) {
                         mask1 |= 1<<(2*d1);
@@ -608,14 +609,6 @@ int maze_export_stl(maze_t *maze, char *filename) {
                     if( row < rows-1
                         && face_get_cell(&maze->faces[face], row+1, col) !=0 ) {
                         mask1 |= 1<<(2*d1+1);
-                    }
-                    if( col > 0
-                        && face_get_cell(&maze->faces[face], row, col-1) !=0 ) {
-                        mask1 |= 1<<(2*d2);
-                    }
-                    if( col < cols-1
-                        && face_get_cell(&maze->faces[face], row, col+1) !=0 ) {
-                        mask1 |= 1<<(2*d2);
                     }
                     mask2 = mask1;
 #endif /* 1 */
