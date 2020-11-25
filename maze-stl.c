@@ -244,7 +244,7 @@ static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr,
         double z11 = radius*sin(thetaI1);
 
         double x12 = r+dr+dr*radius*cos(thetaI2);
-        double y12 = c+0.5+dc;
+        double y12 = c+0.5*dc;
         double z12 = radius*sin(thetaI2);
 
         double x21 = r+dr+dr*radius*cos(thetaI1);
