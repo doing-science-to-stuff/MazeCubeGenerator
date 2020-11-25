@@ -89,8 +89,8 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
-    int r = pos[d2];
-    int c = pos[d1];
+    int c = pos[d2];
+    int r = pos[d1];
 
     /* some faces need normals inverted */
     int reverse = 0;
