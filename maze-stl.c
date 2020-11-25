@@ -85,10 +85,12 @@ static void maze_export_get_normal(double x1, double y1, double z1,
     *nz = ux*vy - uy*vx;
 }
 
+/* circular marker */
 static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t pos, double radius, double scale, int dir) {
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
+    /* get row and column for marker */
     int c = pos[d2];
     int r = pos[d1];
 
@@ -101,7 +103,6 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
     if( face == 2 && dir > 0 )
         reverse = 1;
 
-    /* circle marker */
     position_t pos1 = calloc(maze->numDimensions,sizeof(int));
     position_t pos2 = calloc(maze->numDimensions,sizeof(int));
     const int numSegsI = 64;
@@ -129,7 +130,6 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
         /* check of cell under each point is set */
         int cell1 = face_get_cell(&maze->faces[face], row1, col1);
         int cell2 = face_get_cell(&maze->faces[face], row2, col2);
-        int cellm1 = face_get_cell(&maze->faces[face], rowm1, colm1);
 
         double x10 = 0.0, y10 = 0.0, z10 = 0.0;
         double x20 = 0.0, y20 = 0.0, z20 = 0.0;
@@ -154,6 +154,9 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
             double x22 = cos(thetaI2) * (1+radius*cos(thetaJ2))+r;
             double y22 = sin(thetaI2) * (1+radius*cos(thetaJ2))+c;
             double z22 = radius*sin(thetaJ2);
+
+            /* TODO: When crossing a cell boundary, end cap points should be
+             * interpolated to exactly match the boundary. */
 
             /* transform into model space */
             maze_export_stl_transform(maze, face, scale, dir, &x11, &y11, &z11);
@@ -211,8 +214,136 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
     }
 }
 
-static void maze_export_stl_marker2(FILE *fp, maze_t *maze, int face, double radius, double scale, int dir) {
-    /* square marker */
+/* square marker */
+static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir) {
+
+    /* some faces need normals inverted */
+    int reverse = 0;
+    if( face == 0 && dir > 0 )
+        reverse = 1;
+    if( face == 1 && dir < 0 )
+        reverse = 1;
+    if( face == 2 && dir > 0 )
+        reverse = 1;
+
+    if( dc*dr < 0 )
+        reverse ^= 1;
+
+    double x10 = 0.0, y10 = 0.0, z10 = 0.0;
+    double x30 = 0.0, y30 = 0.0, z30 = 0.0;
+    double nx, ny, nz;
+
+    int numSegs = 32;
+    for(int i=0; i<numSegs; ++i) {
+        double thetaI1 = M_PI * i / numSegs;
+        double thetaI2 = M_PI * (i+1) / numSegs;
+
+        /* compute raw segment coordinates */
+        double x11 = r+dr+dr*radius*cos(thetaI1);
+        double y11 = c+0.5*dc;
+        double z11 = radius*sin(thetaI1);
+
+        double x12 = r+dr+dr*radius*cos(thetaI2);
+        double y12 = c+0.5+dc;
+        double z12 = radius*sin(thetaI2);
+
+        double x21 = r+dr+dr*radius*cos(thetaI1);
+        double y21 = c+dc+dc*radius*cos(thetaI1);
+        double z21 = radius*sin(thetaI1);
+
+        double x22 = r+dr+dr*radius*cos(thetaI2);
+        double y22 = c+dc+dc*radius*cos(thetaI2);
+        double z22 = radius*sin(thetaI2);
+
+        double x31 = r+0.5*dr;
+        double y31 = c+dc+dc*radius*cos(thetaI1);
+        double z31 = radius*sin(thetaI1);
+
+        double x32 = r+0.5*dr;
+        double y32 = c+dc+dc*radius*cos(thetaI2);
+        double z32 = radius*sin(thetaI2);
+
+        /* transform points */
+        maze_export_stl_transform(maze, face, scale, dir, &x11, &y11, &z11);
+        maze_export_stl_transform(maze, face, scale, dir, &x12, &y12, &z12);
+        maze_export_stl_transform(maze, face, scale, dir, &x21, &y21, &z21);
+        maze_export_stl_transform(maze, face, scale, dir, &x22, &y22, &z22);
+        maze_export_stl_transform(maze, face, scale, dir, &x31, &y31, &z31);
+        maze_export_stl_transform(maze, face, scale, dir, &x32, &y32, &z32);
+
+        /* record first point on surface for end caps */
+        if( i == 0 ) {
+            x10 = x11;
+            y10 = y11;
+            z10 = z11;
+            x30 = x31;
+            y30 = y31;
+            z30 = z31;
+        }
+
+        /* outer shell of marker */
+        maze_export_get_normal(x11, y11, z11,
+                x12, y12, z12,
+                x22, y22, z22,
+                &nx, &ny, &nz);
+        maze_export_stl_triangle(fp, x11, y11, z11,
+                x12, y12, z12,
+                x22, y22, z22,
+                nx, ny, nz, reverse);
+        maze_export_stl_triangle(fp, x11, y11, z11,
+                x22, y22, z22,
+                x21, y21, z21,
+                nx, ny, nz, reverse);
+
+        maze_export_get_normal(x31, y31, z31,
+                x22, y22, z22,
+                x32, y32, z32,
+                &nx, &ny, &nz);
+        maze_export_stl_triangle(fp, x31, y31, z31,
+                x22, y22, z22,
+                x32, y32, z32,
+                nx, ny, nz, reverse);
+        maze_export_stl_triangle(fp, x31, y31, z31,
+                x21, y21, z21,
+                x22, y22, z22,
+                nx, ny, nz, reverse);
+
+        /* add end caps */
+        maze_export_get_normal(x11, y11, z11,
+                x12, y12, z12,
+                x10, y10, z10,
+                &nx, &ny, &nz);
+        maze_export_stl_triangle(fp, x11, y11, z11,
+                x12, y12, z12,
+                x10, y10, z10,
+                nx, ny, nz, reverse);
+
+        maze_export_get_normal(x31, y31, z31,
+                x32, y32, z32,
+                x30, y30, z30,
+                &nx, &ny, &nz);
+        maze_export_stl_triangle(fp, x31, y31, z31,
+                x32, y32, z32,
+                x30, y30, z30,
+                nx, ny, nz, reverse);
+    }
+}
+
+static void maze_export_stl_marker2(FILE *fp, maze_t *maze, int face, position_t pos, double radius, double scale, int dir) {
+    int d1 = maze->faces[face].d1;
+    int d2 = maze->faces[face].d2;
+
+    /* get row and column for marker */
+    int c = pos[d2];
+    int r = pos[d1];
+
+    /* add corners */
+    maze_export_stl_corner(fp, maze, r, c, -1, -1, face, radius, scale, dir);
+    maze_export_stl_corner(fp, maze, r, c, -1, 1, face, radius, scale, dir);
+    maze_export_stl_corner(fp, maze, r, c, 1, -1, face, radius, scale, dir);
+    maze_export_stl_corner(fp, maze, r, c, 1, 1, face, radius, scale, dir);
+
+    /* add straight segments */
 }
 
 static void maze_export_stl_cube(FILE *fp, int x, int y, int z, char face_mask, double scaleX, double scaleY, double scaleZ) {
@@ -393,8 +524,8 @@ int maze_export_stl(maze_t *maze, char *filename) {
 
         /* add end markers */
         double markerRadius = 0.1;
-        maze_export_stl_marker1(fp, maze, face, maze->startPos, markerRadius, scale, -1);
-        maze_export_stl_marker1(fp, maze, face, maze->startPos, markerRadius, scale, 1);
+        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, -1);
+        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, 1);
         maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, -1);
         maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, 1);
     }
