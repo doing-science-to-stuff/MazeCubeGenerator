@@ -96,11 +96,11 @@ int main(int argc, char **argv) {
     }
 
     /* check that sufficient settings exist */
-    if( inputFile==NULL && !genMaze) {
+    if( inputFile==NULL && !genMaze ) {
         fprintf(stderr,"\n\nNo maze source given, use -i to specify an input filename or -g to generate a random maze.\n\n");
         show_help(argc,argv);
     }
-    if( outputFile==NULL && stlFile==NULL) {
+    if( outputFile==NULL && stlFile==NULL && stlSolFile==NULL ) {
         fprintf(stderr,"\n\nNo output specified, use -o and/or -m to specify an output filename.\n\n");
         show_help(argc,argv);
     }
@@ -121,7 +121,8 @@ int main(int argc, char **argv) {
     else if( inputFile ) {
         /* load a maze from an input file */
         printf("Loading maze from '%s'.\n", inputFile);
-        maze_load(&maze,inputFile);
+        if( maze_load(&maze,inputFile) < 0 )
+            return 1;
     }
 
     /* solve the maze, if requested/needed */
@@ -131,6 +132,7 @@ int main(int argc, char **argv) {
             printf("solution length is %i.\n", maze.solution.posListNum);
     }
 
+    /* write requested output */
     if( outputFile ) {
         printf("Writing %iD maze to `%s`.\n", maze.numDimensions, outputFile);
         maze_write(&maze, outputFile);

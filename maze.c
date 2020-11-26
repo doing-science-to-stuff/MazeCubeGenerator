@@ -152,7 +152,7 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes) {
     maze->minPathLength = -1;
     for(int i=0; i<numDimensions; ++i) {
         if( (sizes[i]%2) == 0 ) {
-            fprintf(stderr, "Warning: dimension sizes must be odd, adjusting dimension %i from %i to %i.\n", i, sizes[i], sizes[i]+1);
+            fprintf(stderr, "Warning: edge sizes must be odd, adjusting dimension %i from %i to %i.\n", i, sizes[i], sizes[i]+1);
             sizes[i] += 1;
         }
         maze->dimensions[i] = sizes[i];
@@ -175,7 +175,8 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes) {
     int face=0;
     for(int d1 = 0; d1 < numDimensions; ++d1) {
         for(int d2 = d1+1; d2 < numDimensions; ++d2) {
-            printf("  face %i -> dimensions %i,%i\n", face, d1, d2);
+            if( numDimensions > 3 )
+                printf("  face %i -> dimensions %i,%i\n", face, d1, d2);
             face_init(&maze->faces[face++], sizes, d1, d2);
         }
     }
@@ -318,6 +319,7 @@ static int maze_gen_step(maze_t *maze, int *pos) {
         /* recurse to current position, to check for remaining valid moves */
         maze_gen_step(maze,pos);
     }
+    free(validMoves); validMoves=NULL;
 
     return 0;
 }

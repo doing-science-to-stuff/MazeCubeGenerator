@@ -77,7 +77,7 @@ static void maze_export_get_normal(double x1, double y1, double z1,
     double vy = y3-y1;
     double vz = z3-z1;
 
-    /* compute normal for triangle defines by coordinates
+    /* compute normal for triangle defined by coordinates
      * see: https://mathworld.wolfram.com/CrossProduct.html
      * Equation 2 */
     *nx = uy*vz - uz*vy;
@@ -114,13 +114,13 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
         double x2 = cos(thetaI2)*(1-radius);
         double y2 = sin(thetaI2)*(1-radius);
 
-        /* position cicle points onto face */
+        /* position circle points onto face */
         int col1 = y1+c+0.5;
         int col2 = y2+c+0.5;
         int row1 = x1+r+0.5;
         int row2 = x2+r+0.5;
 
-        /* check of cell under each point is set */
+        /* check if cell under each point is set */
         int cell1 = face_get_cell(&maze->faces[face], row1, col1);
         int cell2 = face_get_cell(&maze->faces[face], row2, col2);
 
@@ -157,7 +157,7 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
             maze_export_stl_transform(maze, face, scale, dir, &x21, &y21, &z21);
             maze_export_stl_transform(maze, face, scale, dir, &x22, &y22, &z22);
 
-            /* record first point on surface for end caps */
+            /* record first point along surface for end caps */
             if( j == 0 && (!cell1 || !cell2) ) {
                 x10 = x11;
                 y10 = y11;
@@ -169,7 +169,7 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
 
             /* output transformed triangles */
             if( cell1 && cell2 ) {
-                /* outer shell of marker */
+                /* curved surface of marker */
                 maze_export_get_normal(x11, y11, z11,
                                        x12, y12, z12,
                                        x22, y22, z22,
@@ -274,7 +274,7 @@ static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr,
             z30 = z31;
         }
 
-        /* outer shell of marker */
+        /* curved surface of marker */
         maze_export_get_normal(x11, y11, z11,
                 x12, y12, z12,
                 x22, y22, z22,
@@ -302,6 +302,7 @@ static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr,
                 nx, ny, nz, reverse);
 
         /* add end caps */
+        /* TODO: check the face to see which caps are actually necessary. */
         maze_export_get_normal(x11, y11, z11,
                 x12, y12, z12,
                 x10, y10, z10,
@@ -551,9 +552,13 @@ int maze_export_stl(maze_t *maze, char *filename) {
 
     /* open file */
     FILE *fp = fopen(filename,"w");
+    if( fp == NULL ) {
+        perror("fopen");
+        return -1;
+    }
 
-    /* open solid */
-    fprintf(fp,"solid puzzle\n");
+    /* start solid */
+    fprintf(fp,"solid MazeCube\n");
 
     double scale = 1.0;
     /* for each face */
@@ -684,7 +689,7 @@ int maze_export_stl(maze_t *maze, char *filename) {
     maze_export_stl_cube(fp, startX, startY, startZ, 0, scale, scale2, sizeZ*scale2);
 
     /* close solid */
-    fprintf(fp,"endsolid puzzle\n");
+    fprintf(fp,"endsolid MazeCube\n");
 
     /* close file */
     fclose(fp); fp=NULL;
@@ -700,9 +705,13 @@ int maze_export_stl_solution(maze_t *maze, char *filename) {
 
     /* open file */
     FILE *fp = fopen(filename,"w");
+    if( fp == NULL ) {
+        perror("fopen");
+        return -1;
+    }
 
     /* open solid */
-    fprintf(fp,"solid puzzle\n");
+    fprintf(fp,"solid MazeCubeSolution\n");
 
     double scale = 1.0;
     for(int i=0; i<maze->solution.posListNum; ++i) {
@@ -714,7 +723,7 @@ int maze_export_stl_solution(maze_t *maze, char *filename) {
     }
 
     /* close solid */
-    fprintf(fp,"endsolid puzzle\n");
+    fprintf(fp,"endsolid MazeCubeSolution\n");
 
     /* close file */
     fclose(fp); fp=NULL;
