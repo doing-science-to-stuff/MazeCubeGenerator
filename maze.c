@@ -151,6 +151,10 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes) {
     maze->maxSegments = -1;
     maze->minPathLength = -1;
     for(int i=0; i<numDimensions; ++i) {
+        if( sizes[i] < 3 ) {
+            fprintf(stderr, "Warning: edge sizes must be at least 3, adjusting dimension %i from %i to %i.\n", i, sizes[i], 3);
+            sizes[i] = 3;
+        }
         if( (sizes[i]%2) == 0 ) {
             fprintf(stderr, "Warning: edge sizes must be odd, adjusting dimension %i from %i to %i.\n", i, sizes[i], sizes[i]+1);
             sizes[i] += 1;
