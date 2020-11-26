@@ -561,8 +561,8 @@ int maze_export_stl(maze_t *maze, char *filename) {
         int d1 = maze->faces[face].d1;
         int d2 = maze->faces[face].d2;
         /* for each cell */
-        for(int row=0; row<maze->faces[face].rows; ++row) {
-            for(int col=0; col<maze->faces[face].cols; ++col) {
+        for(int row=1; row<maze->faces[face].rows-1; ++row) {
+            for(int col=1; col<maze->faces[face].cols-1; ++col) {
                 if( face_get_cell(&maze->faces[face], row, col)!=0 ) {
                     /* output small cube for high and low faces */
                     int x1=0,y1=0,z1=0;
@@ -592,20 +592,16 @@ int maze_export_stl(maze_t *maze, char *filename) {
                     int d2 = maze->faces[face].d2;
                     int rows = maze->faces[face].rows;
                     int cols = maze->faces[face].cols;
-                    if( row > 0
-                        && face_get_cell(&maze->faces[face], row-1, col) !=0 ) {
+                    if( face_get_cell(&maze->faces[face], row-1, col) !=0 ) {
                         mask1 |= 1<<(2*d1);
                     }
-                    if( row < rows-1
-                        && face_get_cell(&maze->faces[face], row+1, col) !=0 ) {
+                    if( face_get_cell(&maze->faces[face], row+1, col) !=0 ) {
                         mask1 |= 1<<(2*d1+1);
                     }
-                    if( col > 0
-                        && face_get_cell(&maze->faces[face], row, col-1) !=0 ) {
+                    if( face_get_cell(&maze->faces[face], row, col-1) !=0 ) {
                         mask1 |= 1<<(2*d2);
                     }
-                    if( col < cols-1
-                        && face_get_cell(&maze->faces[face], row, col+1) !=0 ) {
+                    if( face_get_cell(&maze->faces[face], row, col+1) !=0 ) {
                         mask1 |= 1<<(2*d2+1);
                     }
                     char mask2 = mask1;
@@ -645,7 +641,37 @@ int maze_export_stl(maze_t *maze, char *filename) {
         maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, 1);
     }
 
-    /* add movable piece */
+    /* add frame corners */
+    int xEnd = maze->dimensions[0]-1;
+    int yEnd = maze->dimensions[1]-1;
+    int zEnd = maze->dimensions[2]-1;
+    maze_export_stl_cube(fp,    0,    0,    0, (1<<1)|(1<<3)|(1<<5), scale, scale, scale);
+    maze_export_stl_cube(fp, xEnd,    0,    0, (1<<0)|(1<<3)|(1<<5), scale, scale, scale);
+    maze_export_stl_cube(fp,    0, yEnd,    0, (1<<1)|(1<<2)|(1<<5), scale, scale, scale);
+    maze_export_stl_cube(fp, xEnd, yEnd,    0, (1<<0)|(1<<2)|(1<<5), scale, scale, scale);
+    maze_export_stl_cube(fp,    0,    0, zEnd, (1<<1)|(1<<3)|(1<<4), scale, scale, scale);
+    maze_export_stl_cube(fp, xEnd,    0, zEnd, (1<<0)|(1<<3)|(1<<4), scale, scale, scale);
+    maze_export_stl_cube(fp,    0, yEnd, zEnd, (1<<1)|(1<<2)|(1<<4), scale, scale, scale);
+    maze_export_stl_cube(fp, xEnd, yEnd, zEnd, (1<<0)|(1<<2)|(1<<4), scale, scale, scale);
+
+    /* add frame edges */
+    /* x */
+    maze_export_stl_cube(fp, xEnd/2,    0,    0, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
+    maze_export_stl_cube(fp, xEnd/2, yEnd,    0, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
+    maze_export_stl_cube(fp, xEnd/2,    0, zEnd, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
+    maze_export_stl_cube(fp, xEnd/2, yEnd, zEnd, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
+    /* y */
+    maze_export_stl_cube(fp,    0, yEnd/2,    0, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
+    maze_export_stl_cube(fp, xEnd, yEnd/2,    0, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
+    maze_export_stl_cube(fp,    0, yEnd/2, zEnd, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
+    maze_export_stl_cube(fp, xEnd, yEnd/2, zEnd, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
+    /* z */
+    maze_export_stl_cube(fp,    0,    0, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
+    maze_export_stl_cube(fp, xEnd,    0, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
+    maze_export_stl_cube(fp,    0, yEnd, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
+    maze_export_stl_cube(fp, xEnd, yEnd, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
+
+    /* add slider */
     double startX = maze->startPos[0];
     double startY = maze->startPos[1];
     double startZ = maze->startPos[2];
