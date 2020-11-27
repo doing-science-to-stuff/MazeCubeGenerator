@@ -1,0 +1,28 @@
+#
+# .travis.yml
+# MazeCubeGen: maze cube generator
+#
+# Copyright (c) 2019-2020 Bryan Franklin. All rights reserved.
+#
+language: c
+
+os:
+  - linux
+  - osx
+
+compiler:
+  - gcc
+  - clang
+
+addons:
+  apt:
+    packages:
+      - cmake
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install cmake || brew upgrade cmake; fi
+  #- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+
+script:
+- cmake .
+- make
