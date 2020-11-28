@@ -27,7 +27,7 @@ behavior.  Below is a list of command-line options and their purpose.
 `-g size` Generate a new maze with given size (size format: `l,w,h`, e.g., `11,11,11`).<br/>
 `-h` Print usage information.<br/>
 `-i filename.txt` Load an existing maze from text file as produced by `-o`.<br/>
-`-m filename.stl` Write maze as STL to `filename.txt`.<br/>
+`-m filename.stl` Write maze as STL to `filename.stl`.<br/>
 `-o filename.txt` Write maze as text to `filename.txt`.<br/>
 `-p solution.stl` Write solution as STL to `solution.stl` (implies `-s`).<br/>
 `-r num` Seed random number generator using `num`.<br/>
