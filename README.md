@@ -1,7 +1,7 @@
 # Maze Cube Generator
 
 Maze Cube Generator creates random multi-dimension mazes similar to the
-[Oskar's Cube](???).
+[Oskar's Cube](https://oskarvandeventer.nl/bitsandpieces.html).
 
 **Features:**
  * Custom maze sizes
