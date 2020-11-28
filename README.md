@@ -1,6 +1,6 @@
 # Maze Cube Generator
 
-Maze Cube Generator creates random multi-dimension mazes similar to the
+Maze Cube Generator creates random multi-dimensional mazes similar to the
 [Oskar's Cube](https://oskarvandeventer.nl/bitsandpieces.html).
 
 **Features:**
@@ -24,9 +24,9 @@ behavior.  Below is a list of command-line options and their purpose.
 
 **Basic:**
 
-`-g size` Generate a new maze with given size (size format: `l,w,h`, e.g., `11,11,11`).<br/>
+`-g size` Generate a new maze with given size (`size` format: `l,w,h`, e.g., `11,11,11`).<br/>
 `-h` Print usage information.<br/>
-`-i filename.txt` Load an existing maze from text file as produced by `-o`.<br/>
+`-i filename.txt` Load an existing maze from `filename.txt` as produced by `-o`.<br/>
 `-m filename.stl` Write maze as STL to `filename.stl`.<br/>
 `-o filename.txt` Write maze as text to `filename.txt`.<br/>
 `-p solution.stl` Write solution as STL to `solution.stl` (implies `-s`).<br/>
@@ -42,7 +42,7 @@ behavior.  Below is a list of command-line options and their purpose.
 ## Examples
 Basic random maze generation:<br/>
  `$ ./mcg -r 12345 -g 11,11,11 -o output.txt`<br/>
-Seeds the random number generator with `12345`, generate a random 11,11,11 maze and store the results in `output.txt`
+Seeds the random number generator with `12345`, generate a random 11,11,11 maze and store the results in `output.txt`.
 
 Larger maze with long solution:<br/>
 `$ ./mcg -r 1 -g 21,21,21 -l 70 -k 1 -m maze21.stl -o maze21.txt`<br/>
