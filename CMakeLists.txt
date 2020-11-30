@@ -41,4 +41,4 @@ add_custom_target(valgrind
                   )
 
 # add common system libraries
-target_link_libraries(ndt m)
+target_link_libraries(mcg m)
