@@ -39,3 +39,6 @@ add_custom_target(valgrind
                   COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg
                   DEPENDS debug-build
                   )
+
+# add common system libraries
+target_link_libraries(ndt m)
