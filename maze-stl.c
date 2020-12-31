@@ -208,7 +208,7 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
 }
 
 /* square marker */
-static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir, int cCap, int rCap) {
+static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir, int rCap, int cCap) {
 
     /* some faces need normals inverted */
     int reverse = 0;
@@ -461,10 +461,10 @@ static void maze_export_stl_marker2(FILE *fp, maze_t *maze, int face, position_t
     int bSide = face_get_cell(&maze->faces[face], r, c+1);
 
     /* add corners */
-    maze_export_stl_corner(fp, maze, r, c, -1, -1, face, radius, scale, dir, tSide, lSide);
-    maze_export_stl_corner(fp, maze, r, c, -1, 1, face, radius, scale, dir, bSide, lSide);
-    maze_export_stl_corner(fp, maze, r, c, 1, -1, face, radius, scale, dir, tSide, rSide);
-    maze_export_stl_corner(fp, maze, r, c, 1, 1, face, radius, scale, dir, bSide, rSide);
+    maze_export_stl_corner(fp, maze, r, c, -1, -1, face, radius, scale, dir, lSide, tSide);
+    maze_export_stl_corner(fp, maze, r, c, -1, 1, face, radius, scale, dir, lSide, bSide);
+    maze_export_stl_corner(fp, maze, r, c, 1, -1, face, radius, scale, dir, rSide, tSide);
+    maze_export_stl_corner(fp, maze, r, c, 1, 1, face, radius, scale, dir, rSide, bSide);
 
     /* add straight segments */
     if( lSide != 0 )
