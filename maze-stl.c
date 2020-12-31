@@ -208,7 +208,7 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
 }
 
 /* square marker */
-static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir) {
+static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir, int cCap, int rCap) {
 
     /* some faces need normals inverted */
     int reverse = 0;
@@ -302,24 +302,27 @@ static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr,
                 nx, ny, nz, reverse);
 
         /* add end caps */
-        /* TODO: check the face to see which caps are actually necessary. */
-        maze_export_get_normal(x11, y11, z11,
-                x12, y12, z12,
-                x10, y10, z10,
-                &nx, &ny, &nz);
-        maze_export_stl_triangle(fp, x11, y11, z11,
-                x12, y12, z12,
-                x10, y10, z10,
-                nx, ny, nz, reverse);
+        if( rCap==0 ) {
+            maze_export_get_normal(x11, y11, z11,
+                    x10, y10, z10,
+                    x12, y12, z12,
+                    &nx, &ny, &nz);
+            maze_export_stl_triangle(fp, x11, y11, z11,
+                    x10, y10, z10,
+                    x12, y12, z12,
+                    nx, ny, nz, reverse);
+        }
 
-        maze_export_get_normal(x31, y31, z31,
-                x32, y32, z32,
-                x30, y30, z30,
-                &nx, &ny, &nz);
-        maze_export_stl_triangle(fp, x31, y31, z31,
-                x32, y32, z32,
-                x30, y30, z30,
-                nx, ny, nz, reverse);
+        if( cCap==0 ) {
+            maze_export_get_normal(x31, y31, z31,
+                    x32, y32, z32,
+                    x30, y30, z30,
+                    &nx, &ny, &nz);
+            maze_export_stl_triangle(fp, x31, y31, z31,
+                    x32, y32, z32,
+                    x30, y30, z30,
+                    nx, ny, nz, reverse);
+        }
     }
 }
 
@@ -451,20 +454,26 @@ static void maze_export_stl_marker2(FILE *fp, maze_t *maze, int face, position_t
     int c = pos[d2];
     int r = pos[d1];
 
+    /* check which straight segments are needed */
+    int lSide = face_get_cell(&maze->faces[face], r-1, c);
+    int rSide = face_get_cell(&maze->faces[face], r+1, c);
+    int tSide = face_get_cell(&maze->faces[face], r, c-1);
+    int bSide = face_get_cell(&maze->faces[face], r, c+1);
+
     /* add corners */
-    maze_export_stl_corner(fp, maze, r, c, -1, -1, face, radius, scale, dir);
-    maze_export_stl_corner(fp, maze, r, c, -1, 1, face, radius, scale, dir);
-    maze_export_stl_corner(fp, maze, r, c, 1, -1, face, radius, scale, dir);
-    maze_export_stl_corner(fp, maze, r, c, 1, 1, face, radius, scale, dir);
+    maze_export_stl_corner(fp, maze, r, c, -1, -1, face, radius, scale, dir, tSide, lSide);
+    maze_export_stl_corner(fp, maze, r, c, -1, 1, face, radius, scale, dir, bSide, lSide);
+    maze_export_stl_corner(fp, maze, r, c, 1, -1, face, radius, scale, dir, tSide, rSide);
+    maze_export_stl_corner(fp, maze, r, c, 1, 1, face, radius, scale, dir, bSide, rSide);
 
     /* add straight segments */
-    if( face_get_cell(&maze->faces[face], r-1, c) != 0 )
+    if( lSide != 0 )
         maze_export_stl_edge1(fp, maze, r, c, -1, face, radius, scale, dir);
-    if( face_get_cell(&maze->faces[face], r+1, c) != 0 )
+    if( rSide != 0 )
         maze_export_stl_edge1(fp, maze, r, c, 1, face, radius, scale, dir);
-    if( face_get_cell(&maze->faces[face], r, c-1) != 0 )
+    if( tSide != 0 )
         maze_export_stl_edge2(fp, maze, r, c, -1, face, radius, scale, dir);
-    if( face_get_cell(&maze->faces[face], r, c+1) != 0 )
+    if( bSide != 0 )
         maze_export_stl_edge2(fp, maze, r, c, 1, face, radius, scale, dir);
 }
 
