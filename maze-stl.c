@@ -26,9 +26,7 @@ static void maze_export_stl_triangle(FILE *fp,
     fprintf(fp, "endfacet\n");
 }
 
-static void maze_export_stl_transform(maze_t *maze, int face, double scale, int dir, double *x, double *y, double *z) {
-    int d1 = maze->faces[face].d1;
-    int d2 = maze->faces[face].d2;
+static void maze_export_stl_transform(maze_t *maze, int d1, int d2, double scale, int dir, double *x, double *y, double *z) {
 
     double tx=-1.0, ty=-1.0, tz=-1.0;
     if( d1 == 0 && d2 == 1) {
@@ -152,10 +150,10 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
              * interpolated to exactly match the boundary. */
 
             /* transform into model space */
-            maze_export_stl_transform(maze, face, scale, dir, &x11, &y11, &z11);
-            maze_export_stl_transform(maze, face, scale, dir, &x12, &y12, &z12);
-            maze_export_stl_transform(maze, face, scale, dir, &x21, &y21, &z21);
-            maze_export_stl_transform(maze, face, scale, dir, &x22, &y22, &z22);
+            maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
+            maze_export_stl_transform(maze, d1, d2, scale, dir, &x12, &y12, &z12);
+            maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
+            maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
 
             /* record first point along surface for end caps */
             if( j == 0 && (!cell1 || !cell2) ) {
@@ -226,6 +224,9 @@ static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr,
     double x30 = 0.0, y30 = 0.0, z30 = 0.0;
     double nx, ny, nz;
 
+    int d1 = maze->faces[face].d1;
+    int d2 = maze->faces[face].d2;
+
     int numSegs = 32;
     for(int i=0; i<numSegs; ++i) {
         double thetaI1 = M_PI * i / numSegs;
@@ -257,12 +258,12 @@ static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr,
         double z32 = radius*sin(thetaI2);
 
         /* transform points */
-        maze_export_stl_transform(maze, face, scale, dir, &x11, &y11, &z11);
-        maze_export_stl_transform(maze, face, scale, dir, &x12, &y12, &z12);
-        maze_export_stl_transform(maze, face, scale, dir, &x21, &y21, &z21);
-        maze_export_stl_transform(maze, face, scale, dir, &x22, &y22, &z22);
-        maze_export_stl_transform(maze, face, scale, dir, &x31, &y31, &z31);
-        maze_export_stl_transform(maze, face, scale, dir, &x32, &y32, &z32);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x12, &y12, &z12);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x31, &y31, &z31);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x32, &y32, &z32);
 
         /* record first point on surface for end caps */
         if( i == 0 ) {
@@ -342,6 +343,9 @@ static void maze_export_stl_edge1(FILE *fp, maze_t *maze, int r, int c, int dr, 
 
     double nx, ny, nz;
 
+    int d1 = maze->faces[face].d1;
+    int d2 = maze->faces[face].d2;
+
     int numSegs = 32;
     for(int i=0; i<numSegs; ++i) {
         double thetaI1 = M_PI * i / numSegs;
@@ -365,10 +369,10 @@ static void maze_export_stl_edge1(FILE *fp, maze_t *maze, int r, int c, int dr, 
         double z22 = radius*sin(thetaI2);
 
         /* transform points */
-        maze_export_stl_transform(maze, face, scale, dir, &x11, &y11, &z11);
-        maze_export_stl_transform(maze, face, scale, dir, &x12, &y12, &z12);
-        maze_export_stl_transform(maze, face, scale, dir, &x21, &y21, &z21);
-        maze_export_stl_transform(maze, face, scale, dir, &x22, &y22, &z22);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x12, &y12, &z12);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
 
         /* outer shell of marker */
         maze_export_get_normal(x11, y11, z11,
@@ -402,6 +406,9 @@ static void maze_export_stl_edge2(FILE *fp, maze_t *maze, int r, int c, int dc, 
 
     double nx, ny, nz;
 
+    int d1 = maze->faces[face].d1;
+    int d2 = maze->faces[face].d2;
+
     int numSegs = 32;
     for(int i=0; i<numSegs; ++i) {
         double thetaI1 = M_PI * i / numSegs;
@@ -425,10 +432,10 @@ static void maze_export_stl_edge2(FILE *fp, maze_t *maze, int r, int c, int dc, 
         double z22 = radius*sin(thetaI2);
 
         /* transform points */
-        maze_export_stl_transform(maze, face, scale, dir, &x11, &y11, &z11);
-        maze_export_stl_transform(maze, face, scale, dir, &x12, &y12, &z12);
-        maze_export_stl_transform(maze, face, scale, dir, &x21, &y21, &z21);
-        maze_export_stl_transform(maze, face, scale, dir, &x22, &y22, &z22);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x12, &y12, &z12);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
+        maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
 
         /* outer shell of marker */
         maze_export_get_normal(x11, y11, z11,
