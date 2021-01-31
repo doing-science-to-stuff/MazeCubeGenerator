@@ -93,7 +93,7 @@ static void maze_export_stl_transform(maze_t *maze, int d1, int d2, double scale
 }
 
 /* circular marker */
-static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t pos, double radius, double scale, int dir) {
+static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t pos, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
@@ -133,7 +133,6 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
 
         double x10 = 0.0, y10 = 0.0, z10 = 0.0;
         double x20 = 0.0, y20 = 0.0, z20 = 0.0;
-        double nx, ny, nz;
         for(int j=0; j<numSegsJ; ++j) {
             double thetaJ1 =  M_PI * j / numSegsJ;
             double thetaJ2 =  M_PI * (j+1) / numSegsJ;
@@ -164,6 +163,12 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
             maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
             maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
 
+            /* add in offsets */
+            x11 += xOffset; y11 += yOffset; z11 += zOffset;
+            x12 += xOffset; y12 += yOffset; z12 += zOffset;
+            x21 += xOffset; y21 += yOffset; z21 += zOffset;
+            x22 += xOffset; y22 += yOffset; z22 += zOffset;
+
             /* record first point along surface for end caps */
             if( j == 0 && (!cell1 || !cell2) ) {
                 x10 = x11;
@@ -177,10 +182,6 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
             /* output transformed triangles */
             if( cell1 && cell2 ) {
                 /* curved surface of marker */
-                maze_export_get_normal(x11, y11, z11,
-                                       x12, y12, z12,
-                                       x22, y22, z22,
-                                       &nx, &ny, &nz);
                 maze_export_stl_triangle(fp, x11, y11, z11,
                         x12, y12, z12,
                         x22, y22, z22, reverse);
@@ -203,7 +204,7 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
 }
 
 /* square marker */
-static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir, int rCap, int cCap) {
+static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir, int rCap, int cCap, double xOffset, double yOffset, double zOffset) {
 
     /* some faces need normals inverted */
     int reverse = 0;
@@ -261,6 +262,14 @@ static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr,
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x31, &y31, &z31);
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x32, &y32, &z32);
 
+        /* add in offsets */
+        x11 += xOffset; y11 += yOffset; z11 += zOffset;
+        x12 += xOffset; y12 += yOffset; z12 += zOffset;
+        x21 += xOffset; y21 += yOffset; z21 += zOffset;
+        x22 += xOffset; y22 += yOffset; z22 += zOffset;
+        x31 += xOffset; y31 += yOffset; z31 += zOffset;
+        x32 += xOffset; y32 += yOffset; z32 += zOffset;
+
         /* record first point on surface for end caps */
         if( i == 0 ) {
             x10 = x11;
@@ -301,7 +310,7 @@ static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr,
     }
 }
 
-static void maze_export_stl_edge1(FILE *fp, maze_t *maze, int r, int c, int dr, int face, double radius, double scale, int dir) {
+static void maze_export_stl_edge1(FILE *fp, maze_t *maze, int r, int c, int dr, int face, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
 
     /* some faces need normals inverted */
     int reverse = 0;
@@ -356,7 +365,7 @@ static void maze_export_stl_edge1(FILE *fp, maze_t *maze, int r, int c, int dr, 
     }
 }
 
-static void maze_export_stl_edge2(FILE *fp, maze_t *maze, int r, int c, int dc, int face, double radius, double scale, int dir) {
+static void maze_export_stl_edge2(FILE *fp, maze_t *maze, int r, int c, int dc, int face, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
 
     /* some faces need normals inverted */
     int reverse = 0;
@@ -411,7 +420,7 @@ static void maze_export_stl_edge2(FILE *fp, maze_t *maze, int r, int c, int dc, 
     }
 }
 
-static void maze_export_stl_marker2(FILE *fp, maze_t *maze, int face, position_t pos, double radius, double scale, int dir) {
+static void maze_export_stl_marker2(FILE *fp, maze_t *maze, int face, position_t pos, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
@@ -426,20 +435,20 @@ static void maze_export_stl_marker2(FILE *fp, maze_t *maze, int face, position_t
     int bSide = face_get_cell(&maze->faces[face], r, c+1);
 
     /* add corners */
-    maze_export_stl_corner(fp, maze, r, c, -1, -1, face, radius, scale, dir, lSide, tSide);
-    maze_export_stl_corner(fp, maze, r, c, -1, 1, face, radius, scale, dir, lSide, bSide);
-    maze_export_stl_corner(fp, maze, r, c, 1, -1, face, radius, scale, dir, rSide, tSide);
-    maze_export_stl_corner(fp, maze, r, c, 1, 1, face, radius, scale, dir, rSide, bSide);
+    maze_export_stl_corner(fp, maze, r, c, -1, -1, face, radius, scale, dir, lSide, tSide, xOffset, yOffset, zOffset);
+    maze_export_stl_corner(fp, maze, r, c, -1, 1, face, radius, scale, dir, lSide, bSide, xOffset, yOffset, zOffset);
+    maze_export_stl_corner(fp, maze, r, c, 1, -1, face, radius, scale, dir, rSide, tSide, xOffset, yOffset, zOffset);
+    maze_export_stl_corner(fp, maze, r, c, 1, 1, face, radius, scale, dir, rSide, bSide, xOffset, yOffset, zOffset);
 
     /* add straight segments */
     if( lSide != 0 )
-        maze_export_stl_edge1(fp, maze, r, c, -1, face, radius, scale, dir);
+        maze_export_stl_edge1(fp, maze, r, c, -1, face, radius, scale, dir, xOffset, yOffset, zOffset);
     if( rSide != 0 )
-        maze_export_stl_edge1(fp, maze, r, c, 1, face, radius, scale, dir);
+        maze_export_stl_edge1(fp, maze, r, c, 1, face, radius, scale, dir, xOffset, yOffset, zOffset);
     if( tSide != 0 )
-        maze_export_stl_edge2(fp, maze, r, c, -1, face, radius, scale, dir);
+        maze_export_stl_edge2(fp, maze, r, c, -1, face, radius, scale, dir, xOffset, yOffset, zOffset);
     if( bSide != 0 )
-        maze_export_stl_edge2(fp, maze, r, c, 1, face, radius, scale, dir);
+        maze_export_stl_edge2(fp, maze, r, c, 1, face, radius, scale, dir, xOffset, yOffset, zOffset);
 }
 
 static void maze_export_stl_cube(FILE *fp, double x, double y, double z, char face_mask, double scaleX, double scaleY, double scaleZ) {
@@ -609,10 +618,10 @@ int maze_export_stl(maze_t *maze, char *filename) {
 
         /* add end markers */
         double markerRadius = 0.1;
-        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, -1);
-        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, 1);
-        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, -1);
-        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, 1);
+        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
+        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
+        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
+        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
     }
 
     /* add frame corners */
@@ -669,7 +678,7 @@ int maze_export_stl(maze_t *maze, char *filename) {
 
 static int maze_export_stl_flat_border(FILE *fp, double xOffset, double yOffset, double xSize, double ySize, double scale) {
 
-    #if 1
+    #if 0
     printf("%s\n", __FUNCTION__);
     printf("x,y: %g,%g; w,h: %g,%g\n", xOffset, yOffset, xSize, ySize);
     #endif /* 0 */
@@ -838,10 +847,10 @@ int maze_export_stl_flat(maze_t *maze, char *filename) {
         #if 0
         /* add end markers */
         double markerRadius = 0.1;
-        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, -1);
-        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, 1);
-        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, -1);
-        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, 1);
+        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
+        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
+        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
+        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
         #endif // 1
     }
 
