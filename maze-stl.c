@@ -164,6 +164,7 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
             maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
 
             /* add in offsets */
+            xOffset *= scale; yOffset *= scale; zOffset *= scale;
             x11 += xOffset; y11 += yOffset; z11 += zOffset;
             x12 += xOffset; y12 += yOffset; z12 += zOffset;
             x21 += xOffset; y21 += yOffset; z21 += zOffset;
@@ -263,6 +264,7 @@ static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr,
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x32, &y32, &z32);
 
         /* add in offsets */
+        xOffset *= scale; yOffset *= scale; zOffset *= scale;
         x11 += xOffset; y11 += yOffset; z11 += zOffset;
         x12 += xOffset; y12 += yOffset; z12 += zOffset;
         x21 += xOffset; y21 += yOffset; z21 += zOffset;
@@ -355,6 +357,13 @@ static void maze_export_stl_edge1(FILE *fp, maze_t *maze, int r, int c, int dr, 
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
 
+        /* add in offsets */
+        xOffset *= scale; yOffset *= scale; zOffset *= scale;
+        x11 += xOffset; y11 += yOffset; z11 += zOffset;
+        x12 += xOffset; y12 += yOffset; z12 += zOffset;
+        x21 += xOffset; y21 += yOffset; z21 += zOffset;
+        x22 += xOffset; y22 += yOffset; z22 += zOffset;
+
         /* outer shell of marker */
         maze_export_stl_triangle(fp, x11, y11, z11,
                 x22, y22, z22,
@@ -409,6 +418,13 @@ static void maze_export_stl_edge2(FILE *fp, maze_t *maze, int r, int c, int dc, 
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x12, &y12, &z12);
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
+
+        /* add in offsets */
+        xOffset *= scale; yOffset *= scale; zOffset *= scale;
+        x11 += xOffset; y11 += yOffset; z11 += zOffset;
+        x12 += xOffset; y12 += yOffset; z12 += zOffset;
+        x21 += xOffset; y21 += yOffset; z21 += zOffset;
+        x22 += xOffset; y22 += yOffset; z22 += zOffset;
 
         /* outer shell of marker */
         maze_export_stl_triangle(fp, x11, y11, z11,
