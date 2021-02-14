@@ -177,7 +177,7 @@ static int trig_list_add(trig_list_t *list,
         list->trig[pos].y[2] = y2;
         list->trig[pos].z[2] = z2;
     }
-    ++pos;
+    ++list->num;
 
     return 0;
 }
@@ -301,7 +301,7 @@ static void maze_export_stl_transform(maze_t *maze, int d1, int d2, double scale
 }
 
 /* circular marker */
-static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t pos, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
+static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
@@ -391,20 +391,20 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
             /* output transformed triangles */
             if( cell1 && cell2 ) {
                 /* curved surface of marker */
-                maze_export_stl_triangle(fp, x11, y11, z11,
+                trig_list_add(list, x11, y11, z11,
                         x12, y12, z12,
                         x22, y22, z22, reverse);
-                maze_export_stl_triangle(fp, x11, y11, z11,
+                trig_list_add(list, x11, y11, z11,
                         x22, y22, z22,
                         x21, y21, z21, reverse);
             } else if( cell1 && !cell2 && j>0 ) {
                 /* cap one end */
-                maze_export_stl_triangle(fp, x10, y10, z10,
+                trig_list_add(list, x10, y10, z10,
                                              x11, y11, z11,
                                              x12, y12, z12, reverse);
             } else if( !cell1 && cell2 && j>0 ) {
                 /* cap other end */
-                maze_export_stl_triangle(fp, x20, y20, z20,
+                trig_list_add(list, x20, y20, z20,
                                              x22, y22, z22,
                                              x21, y21, z21, reverse);
             }
@@ -413,7 +413,7 @@ static void maze_export_stl_marker1(FILE *fp, maze_t *maze, int face, position_t
 }
 
 /* square marker */
-static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir, int rCap, int cCap, double xOffset, double yOffset, double zOffset) {
+static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir, int rCap, int cCap, double xOffset, double yOffset, double zOffset) {
 
     /* some faces need normals inverted */
     int reverse = 0;
@@ -491,36 +491,36 @@ static void maze_export_stl_corner(FILE *fp, maze_t *maze, int r, int c, int dr,
         }
 
         /* curved surface of marker */
-        maze_export_stl_triangle(fp, x11, y11, z11,
+        trig_list_add(list, x11, y11, z11,
                 x12, y12, z12,
                 x22, y22, z22, reverse);
-        maze_export_stl_triangle(fp, x11, y11, z11,
+        trig_list_add(list, x11, y11, z11,
                 x22, y22, z22,
                 x21, y21, z21, reverse);
 
-        maze_export_stl_triangle(fp, x31, y31, z31,
+        trig_list_add(list, x31, y31, z31,
                 x22, y22, z22,
                 x32, y32, z32, reverse);
-        maze_export_stl_triangle(fp, x31, y31, z31,
+        trig_list_add(list, x31, y31, z31,
                 x21, y21, z21,
                 x22, y22, z22, reverse);
 
         /* add end caps */
         if( rCap==0 ) {
-            maze_export_stl_triangle(fp, x11, y11, z11,
+            trig_list_add(list, x11, y11, z11,
                     x10, y10, z10,
                     x12, y12, z12, reverse);
         }
 
         if( cCap==0 ) {
-            maze_export_stl_triangle(fp, x31, y31, z31,
+            trig_list_add(list, x31, y31, z31,
                     x32, y32, z32,
                     x30, y30, z30, reverse);
         }
     }
 }
 
-static void maze_export_stl_edge1(FILE *fp, maze_t *maze, int r, int c, int dr, int face, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
+static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr, int face, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
 
     /* some faces need normals inverted */
     int reverse = 0;
@@ -573,16 +573,16 @@ static void maze_export_stl_edge1(FILE *fp, maze_t *maze, int r, int c, int dr, 
         x22 += xOffset; y22 += yOffset; z22 += zOffset;
 
         /* outer shell of marker */
-        maze_export_stl_triangle(fp, x11, y11, z11,
+        trig_list_add(list, x11, y11, z11,
                 x22, y22, z22,
                 x12, y12, z12, reverse);
-        maze_export_stl_triangle(fp, x11, y11, z11,
+        trig_list_add(list, x11, y11, z11,
                 x21, y21, z21,
                 x22, y22, z22, reverse);
     }
 }
 
-static void maze_export_stl_edge2(FILE *fp, maze_t *maze, int r, int c, int dc, int face, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
+static void maze_add_edge2(trig_list_t *list, maze_t *maze, int r, int c, int dc, int face, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
 
     /* some faces need normals inverted */
     int reverse = 0;
@@ -635,16 +635,16 @@ static void maze_export_stl_edge2(FILE *fp, maze_t *maze, int r, int c, int dc, 
         x22 += xOffset; y22 += yOffset; z22 += zOffset;
 
         /* outer shell of marker */
-        maze_export_stl_triangle(fp, x11, y11, z11,
+        trig_list_add(list, x11, y11, z11,
                 x12, y12, z12,
                 x22, y22, z22, reverse);
-        maze_export_stl_triangle(fp, x11, y11, z11,
+        trig_list_add(list, x11, y11, z11,
                 x22, y22, z22,
                 x21, y21, z21, reverse);
     }
 }
 
-static void maze_export_stl_marker2(FILE *fp, maze_t *maze, int face, position_t pos, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
+static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
@@ -659,23 +659,23 @@ static void maze_export_stl_marker2(FILE *fp, maze_t *maze, int face, position_t
     int bSide = face_get_cell(&maze->faces[face], r, c+1);
 
     /* add corners */
-    maze_export_stl_corner(fp, maze, r, c, -1, -1, face, radius, scale, dir, lSide, tSide, xOffset, yOffset, zOffset);
-    maze_export_stl_corner(fp, maze, r, c, -1, 1, face, radius, scale, dir, lSide, bSide, xOffset, yOffset, zOffset);
-    maze_export_stl_corner(fp, maze, r, c, 1, -1, face, radius, scale, dir, rSide, tSide, xOffset, yOffset, zOffset);
-    maze_export_stl_corner(fp, maze, r, c, 1, 1, face, radius, scale, dir, rSide, bSide, xOffset, yOffset, zOffset);
+    maze_add_corner(list, maze, r, c, -1, -1, face, radius, scale, dir, lSide, tSide, xOffset, yOffset, zOffset);
+    maze_add_corner(list, maze, r, c, -1, 1, face, radius, scale, dir, lSide, bSide, xOffset, yOffset, zOffset);
+    maze_add_corner(list, maze, r, c, 1, -1, face, radius, scale, dir, rSide, tSide, xOffset, yOffset, zOffset);
+    maze_add_corner(list, maze, r, c, 1, 1, face, radius, scale, dir, rSide, bSide, xOffset, yOffset, zOffset);
 
     /* add straight segments */
     if( lSide != 0 )
-        maze_export_stl_edge1(fp, maze, r, c, -1, face, radius, scale, dir, xOffset, yOffset, zOffset);
+        maze_add_edge1(list, maze, r, c, -1, face, radius, scale, dir, xOffset, yOffset, zOffset);
     if( rSide != 0 )
-        maze_export_stl_edge1(fp, maze, r, c, 1, face, radius, scale, dir, xOffset, yOffset, zOffset);
+        maze_add_edge1(list, maze, r, c, 1, face, radius, scale, dir, xOffset, yOffset, zOffset);
     if( tSide != 0 )
-        maze_export_stl_edge2(fp, maze, r, c, -1, face, radius, scale, dir, xOffset, yOffset, zOffset);
+        maze_add_edge2(list, maze, r, c, -1, face, radius, scale, dir, xOffset, yOffset, zOffset);
     if( bSide != 0 )
-        maze_export_stl_edge2(fp, maze, r, c, 1, face, radius, scale, dir, xOffset, yOffset, zOffset);
+        maze_add_edge2(list, maze, r, c, 1, face, radius, scale, dir, xOffset, yOffset, zOffset);
 }
 
-static void maze_export_stl_cube(FILE *fp, double x, double y, double z, char face_mask, double scaleX, double scaleY, double scaleZ) {
+static void maze_add_cube(trig_list_t *list, double x, double y, double z, char face_mask, double scaleX, double scaleY, double scaleZ) {
     double dx = scaleX/2.0;
     double dy = scaleY/2.0;
     double dz = scaleZ/2.0;
@@ -689,78 +689,64 @@ static void maze_export_stl_cube(FILE *fp, double x, double y, double z, char fa
 
     if( (face_mask & (1<<0)) == 0) {
         /* left (-x) */
-        maze_export_stl_triangle(fp, x-dx, y-dy, z-dz,
+        trig_list_add(list, x-dx, y-dy, z-dz,
                 x-dx, y-dy, z+dz,
                 x-dx, y+dy, z+dz, 0);
-        maze_export_stl_triangle(fp, x-dx, y-dy, z-dz,
+        trig_list_add(list, x-dx, y-dy, z-dz,
                 x-dx, y+dy, z+dz,
                 x-dx, y+dy, z-dz, 0);
     }
     if( (face_mask & (1<<1)) == 0) {
         /* right (+x) */
-        maze_export_stl_triangle(fp, x+dx, y-dy, z-dz,
+        trig_list_add(list, x+dx, y-dy, z-dz,
                 x+dx, y+dy, z+dz,
                 x+dx, y-dy, z+dz, 0);
-        maze_export_stl_triangle(fp, x+dx, y-dy, z-dz,
+        trig_list_add(list, x+dx, y-dy, z-dz,
                 x+dx, y+dy, z-dz,
                 x+dx, y+dy, z+dz, 0);
     }
 
     if( (face_mask & (1<<2)) == 0) {
         /* front (-y) */
-        maze_export_stl_triangle(fp, x-dx, y-dy, z-dz,
+        trig_list_add(list, x-dx, y-dy, z-dz,
                 x+dx, y-dy, z+dz,
                 x-dx, y-dy, z+dz, 0);
-        maze_export_stl_triangle(fp, x-dx, y-dy, z-dz,
+        trig_list_add(list, x-dx, y-dy, z-dz,
                 x+dx, y-dy, z-dz,
                 x+dx, y-dy, z+dz, 0);
     }
     if( (face_mask & (1<<3)) == 0) {
         /* back (+y) */
-        maze_export_stl_triangle(fp, x-dx, y+dy, z-dz,
+        trig_list_add(list, x-dx, y+dy, z-dz,
                 x-dx, y+dy, z+dz,
                 x+dx, y+dy, z+dz, 0);
-        maze_export_stl_triangle(fp, x-dx, y+dy, z-dz,
+        trig_list_add(list, x-dx, y+dy, z-dz,
                 x+dx, y+dy, z+dz,
                 x+dx, y+dy, z-dz, 0);
     }
 
     if( (face_mask & (1<<4)) == 0) {
         /* bottom (-z) */
-        maze_export_stl_triangle(fp, x-dx, y-dy, z-dz,
+        trig_list_add(list, x-dx, y-dy, z-dz,
                 x+dx, y+dy, z-dz,
                 x+dx, y-dy, z-dz, 0);
-        maze_export_stl_triangle(fp, x-dx, y+dy, z-dz,
+        trig_list_add(list, x-dx, y+dy, z-dz,
                 x+dx, y+dy, z-dz,
                 x-dx, y-dy, z-dz, 0);
     }
     if( (face_mask & (1<<5)) == 0) {
         /* top (+z face) */
-        maze_export_stl_triangle(fp, x-dx, y-dy, z+dz,
+        trig_list_add(list, x-dx, y-dy, z+dz,
                 x+dx, y-dy, z+dz,
                 x+dx, y+dy, z+dz, 0);
-        maze_export_stl_triangle(fp, x-dx, y+dy, z+dz,
+        trig_list_add(list, x-dx, y+dy, z+dz,
                 x-dx, y-dy, z+dz,
                 x+dx, y+dy, z+dz, 0);
     }
 }
 
 
-int maze_export_stl(maze_t *maze, char *filename) {
-    if( maze->numDimensions != 3 ) {
-        fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
-        return -1;
-    }
-
-    /* open file */
-    FILE *fp = fopen(filename,"w");
-    if( fp == NULL ) {
-        perror("fopen");
-        return -1;
-    }
-
-    /* start solid */
-    fprintf(fp,"solid MazeCube\n");
+int maze_add_maze(maze_t *maze, trig_list_t *list) {
 
     double scale = 1.0;
     /* for each face */
@@ -834,49 +820,49 @@ int maze_export_stl(maze_t *maze, char *filename) {
                     }
 
                     /* export cubes */
-                    maze_export_stl_cube(fp, x1, y1, z1, mask1, scale, scale, scale);
-                    maze_export_stl_cube(fp, x2, y2, z2, mask2, scale, scale, scale);
+                    maze_add_cube(list, x1, y1, z1, mask1, scale, scale, scale);
+                    maze_add_cube(list, x2, y2, z2, mask2, scale, scale, scale);
                 }
             }
         }
 
         /* add end markers */
         double markerRadius = 0.1;
-        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
-        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
-        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
-        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
+        maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
+        maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
+        maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
+        maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
     }
 
     /* add frame corners */
     int xEnd = maze->dimensions[0]-1;
     int yEnd = maze->dimensions[1]-1;
     int zEnd = maze->dimensions[2]-1;
-    maze_export_stl_cube(fp,    0,    0,    0, (1<<1)|(1<<3)|(1<<5), scale, scale, scale);
-    maze_export_stl_cube(fp, xEnd,    0,    0, (1<<0)|(1<<3)|(1<<5), scale, scale, scale);
-    maze_export_stl_cube(fp,    0, yEnd,    0, (1<<1)|(1<<2)|(1<<5), scale, scale, scale);
-    maze_export_stl_cube(fp, xEnd, yEnd,    0, (1<<0)|(1<<2)|(1<<5), scale, scale, scale);
-    maze_export_stl_cube(fp,    0,    0, zEnd, (1<<1)|(1<<3)|(1<<4), scale, scale, scale);
-    maze_export_stl_cube(fp, xEnd,    0, zEnd, (1<<0)|(1<<3)|(1<<4), scale, scale, scale);
-    maze_export_stl_cube(fp,    0, yEnd, zEnd, (1<<1)|(1<<2)|(1<<4), scale, scale, scale);
-    maze_export_stl_cube(fp, xEnd, yEnd, zEnd, (1<<0)|(1<<2)|(1<<4), scale, scale, scale);
+    maze_add_cube(list,    0,    0,    0, (1<<1)|(1<<3)|(1<<5), scale, scale, scale);
+    maze_add_cube(list, xEnd,    0,    0, (1<<0)|(1<<3)|(1<<5), scale, scale, scale);
+    maze_add_cube(list,    0, yEnd,    0, (1<<1)|(1<<2)|(1<<5), scale, scale, scale);
+    maze_add_cube(list, xEnd, yEnd,    0, (1<<0)|(1<<2)|(1<<5), scale, scale, scale);
+    maze_add_cube(list,    0,    0, zEnd, (1<<1)|(1<<3)|(1<<4), scale, scale, scale);
+    maze_add_cube(list, xEnd,    0, zEnd, (1<<0)|(1<<3)|(1<<4), scale, scale, scale);
+    maze_add_cube(list,    0, yEnd, zEnd, (1<<1)|(1<<2)|(1<<4), scale, scale, scale);
+    maze_add_cube(list, xEnd, yEnd, zEnd, (1<<0)|(1<<2)|(1<<4), scale, scale, scale);
 
     /* add frame edges */
     /* x */
-    maze_export_stl_cube(fp, xEnd/2,    0,    0, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
-    maze_export_stl_cube(fp, xEnd/2, yEnd,    0, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
-    maze_export_stl_cube(fp, xEnd/2,    0, zEnd, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
-    maze_export_stl_cube(fp, xEnd/2, yEnd, zEnd, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
+    maze_add_cube(list, xEnd/2,    0,    0, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
+    maze_add_cube(list, xEnd/2, yEnd,    0, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
+    maze_add_cube(list, xEnd/2,    0, zEnd, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
+    maze_add_cube(list, xEnd/2, yEnd, zEnd, (1<<0)|(1<<1), (xEnd-1)*scale, scale, scale);
     /* y */
-    maze_export_stl_cube(fp,    0, yEnd/2,    0, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
-    maze_export_stl_cube(fp, xEnd, yEnd/2,    0, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
-    maze_export_stl_cube(fp,    0, yEnd/2, zEnd, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
-    maze_export_stl_cube(fp, xEnd, yEnd/2, zEnd, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
+    maze_add_cube(list,    0, yEnd/2,    0, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
+    maze_add_cube(list, xEnd, yEnd/2,    0, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
+    maze_add_cube(list,    0, yEnd/2, zEnd, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
+    maze_add_cube(list, xEnd, yEnd/2, zEnd, (1<<2)|(1<<3), scale, (yEnd-1)*scale, scale);
     /* z */
-    maze_export_stl_cube(fp,    0,    0, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
-    maze_export_stl_cube(fp, xEnd,    0, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
-    maze_export_stl_cube(fp,    0, yEnd, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
-    maze_export_stl_cube(fp, xEnd, yEnd, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
+    maze_add_cube(list,    0,    0, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
+    maze_add_cube(list, xEnd,    0, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
+    maze_add_cube(list,    0, yEnd, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
+    maze_add_cube(list, xEnd, yEnd, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
 
     /* add slider */
     double startX = maze->startPos[0];
@@ -886,21 +872,15 @@ int maze_export_stl(maze_t *maze, char *filename) {
     double sizeY = 2*maze->dimensions[1]-0.5;
     double sizeZ = 2*maze->dimensions[2]-0.5;
     double scale2 = scale*0.95;
-    maze_export_stl_cube(fp, startX, startY, startZ, 0, sizeX*scale, scale2, scale2);
-    maze_export_stl_cube(fp, startX, startY, startZ, 0, scale, sizeY*scale2, scale2);
-    maze_export_stl_cube(fp, startX, startY, startZ, 0, scale, scale2, sizeZ*scale2);
-
-    /* close solid */
-    fprintf(fp,"endsolid MazeCube\n");
-
-    /* close file */
-    fclose(fp); fp=NULL;
+    maze_add_cube(list, startX, startY, startZ, 0, sizeX*scale, scale2, scale2);
+    maze_add_cube(list, startX, startY, startZ, 0, scale, sizeY*scale2, scale2);
+    maze_add_cube(list, startX, startY, startZ, 0, scale, scale2, sizeZ*scale2);
 
     return 0;
 }
 
 
-static int maze_export_stl_flat_border(FILE *fp, double xOffset, double yOffset, double xSize, double ySize, double scale) {
+static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffset, double xSize, double ySize, double scale) {
 
     #if 0
     printf("%s\n", __FUNCTION__);
@@ -944,26 +924,26 @@ static int maze_export_stl_flat_border(FILE *fp, double xOffset, double yOffset,
         int j = (i+1)%4;
 
         /* top flat face */
-        maze_export_stl_triangle(fp, xo[i], yo[i], z1,
+        trig_list_add(list, xo[i], yo[i], z1,
                                      xo[j], yo[j], z1,
                                      xi[i], yi[i], z1, 0);
-        maze_export_stl_triangle(fp, xi[i], yi[i], z1,
+        trig_list_add(list, xi[i], yi[i], z1,
                                      xo[j], yo[j], z1,
                                      xi[j], yi[j], z1, 0);
 
         /* outer sloped face */
-        maze_export_stl_triangle(fp, xo[i], yo[i], z1,
+        trig_list_add(list, xo[i], yo[i], z1,
                                      xi[i], yi[i], z0,
                                      xi[j], yi[j], z0, 0);
-        maze_export_stl_triangle(fp, xo[i], yo[i], z1,
+        trig_list_add(list, xo[i], yo[i], z1,
                                      xi[j], yi[j], z0,
                                      xo[j], yo[j], z1, 0);
 
         /* inner vertical face */
-        maze_export_stl_triangle(fp, xi[i], yi[i], z1,
+        trig_list_add(list, xi[i], yi[i], z1,
                                      xi[j], yi[j], z1,
                                      xi[j], yi[j], z0, 0);
-        maze_export_stl_triangle(fp, xi[i], yi[i], z1,
+        trig_list_add(list, xi[i], yi[i], z1,
                                      xi[j], yi[j], z0,
                                      xi[i], yi[i], z0, 0);
     }
@@ -972,7 +952,7 @@ static int maze_export_stl_flat_border(FILE *fp, double xOffset, double yOffset,
 }
 
 
-static int maze_export_stl_flat_slider(FILE *fp, double xOffset, double yOffset, double xSize, double ySize, double scale) {
+static int maze_add_flat_slider(trig_list_t *list, double xOffset, double yOffset, double xSize, double ySize, double scale) {
 
     double size = 0.9*scale;
     double size2 = size/2.0;
@@ -984,39 +964,23 @@ static int maze_export_stl_flat_slider(FILE *fp, double xOffset, double yOffset,
     if( ySize < 0.0 )
         dir = -1;
     ySize = fabs(ySize);
-    maze_export_stl_cube(fp, xPos, yPos+dir*(scale*ySize/4.0+size2), size2,
+    maze_add_cube(list, xPos, yPos+dir*(scale*ySize/4.0+size2), size2,
                             0, size, scale*ySize/2.0, size);
-    maze_export_stl_cube(fp, xPos, yPos+dir*size2/2.0, size2,
+    maze_add_cube(list, xPos, yPos+dir*size2/2.0, size2,
                             0, size, size2, size);
 
     /* 'x' directions */
-    maze_export_stl_cube(fp, xPos+scale*(xSize-1)/4.0+size2, yPos, size2,
+    maze_add_cube(list, xPos+scale*(xSize-1)/4.0+size2, yPos, size2,
                             0, scale*(xSize-1)/2, size, size);
-    maze_export_stl_cube(fp, xPos-scale*(xSize-1)/4.0-size2, yPos, size2,
+    maze_add_cube(list, xPos-scale*(xSize-1)/4.0-size2, yPos, size2,
                             0, scale*(xSize-1)/2, size, size);
 
     return 0;
 }
 
 
-int maze_export_stl_flat(maze_t *maze, char *filename) {
+int maze_add_maze_flat(maze_t *maze, trig_list_t *list) {
     double scale = 1.0;
-
-    if( maze->numDimensions != 3 ) {
-        fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
-        return -1;
-    }
-
-    /* open file */
-    FILE *fp = fopen(filename,"w");
-    if( fp == NULL ) {
-        perror("fopen");
-        return -1;
-    }
-
-    /* start solid */
-    fprintf(fp,"solid MazeCubeFaces\n");
-
     /* write faces */
     /* for each face */
     for(int face=0; face<maze->numFaces; ++face) {
@@ -1058,23 +1022,23 @@ int maze_export_stl_flat(maze_t *maze, char *filename) {
                     }
 
                     /* export cubes */
-                    maze_export_stl_cube(fp, row+xBase1, col+yBase1, scale/2.0, mask1, scale, scale, scale);
-                    maze_export_stl_cube(fp, rows-row+xBase2, col+yBase2, scale/2.0, mask2, scale, scale, scale);
+                    maze_add_cube(list, row+xBase1, col+yBase1, scale/2.0, mask1, scale, scale, scale);
+                    maze_add_cube(list, rows-row+xBase2, col+yBase2, scale/2.0, mask2, scale, scale, scale);
                 }
             }
         }
 
         /* add perimeter */
-        maze_export_stl_flat_border(fp, xBase1-0.5, yBase1-0.5, cols, rows, scale);
-        maze_export_stl_flat_border(fp, xBase2+0.5, yBase2-0.5, cols, rows, scale);
+        maze_add_flat_border(list, xBase1-0.5, yBase1-0.5, cols, rows, scale);
+        maze_add_flat_border(list, xBase2+0.5, yBase2-0.5, cols, rows, scale);
 
         #if 0
         /* add end markers */
         double markerRadius = 0.1;
-        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
-        maze_export_stl_marker2(fp, maze, face, maze->startPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
-        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
-        maze_export_stl_marker1(fp, maze, face, maze->endPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
+        maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
+        maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
+        maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
+        maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
         #endif // 1
     }
 
@@ -1083,8 +1047,35 @@ int maze_export_stl_flat(maze_t *maze, char *filename) {
     xSize = maze->dimensions[0];
     ySize = maze->dimensions[1];
     zSize = maze->dimensions[2];
-    maze_export_stl_flat_slider(fp, 0.0, ySize+1.0, xSize+1, -(ySize+1), scale);
-    maze_export_stl_flat_slider(fp, 0.0, ySize+zSize+4.0, zSize+1, ySize+1, scale);
+    maze_add_flat_slider(list, 0.0, ySize+1.0, xSize+1, -(ySize+1), scale);
+    maze_add_flat_slider(list, 0.0, ySize+zSize+4.0, zSize+1, ySize+1, scale);
+
+    return 0;
+}
+
+int maze_export_stl_flat(maze_t *maze, char *filename) {
+
+    if( maze->numDimensions != 3 ) {
+        fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
+        return -1;
+    }
+
+    trig_list_t trigs;
+    trig_list_init(&trigs);
+    maze_add_maze_flat(maze, &trigs);
+
+    /* open file */
+    FILE *fp = fopen(filename,"w");
+    if( fp == NULL ) {
+        perror("fopen");
+        return -1;
+    }
+
+    /* start solid */
+    fprintf(fp,"solid MazeCubeFaces\n");
+
+    /* write triangles to output file */
+    trig_list_export_stl(fp, &trigs);
 
     /* close solid */
     fprintf(fp,"endsolid MazeCubeFaces\n");
@@ -1096,11 +1087,28 @@ int maze_export_stl_flat(maze_t *maze, char *filename) {
 }
 
 
+int maze_add_solution(maze_t *maze, trig_list_t *list) {
+    double scale = 1.0;
+    for(int i=0; i<maze->solution.posListNum; ++i) {
+        double x, y, z;
+        x = maze->solution.positions[i][0];
+        y = maze->solution.positions[i][1];
+        z = maze->solution.positions[i][2];
+        maze_add_cube(list, x, y, z, 0, scale, scale, scale);
+    }
+
+    return 1;
+}
+
 int maze_export_stl_solution(maze_t *maze, char *filename) {
     if( maze->numDimensions != 3 ) {
         fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
         return -1;
     }
+
+    trig_list_t trigs;
+    trig_list_init(&trigs);
+    maze_add_solution(maze, &trigs);
 
     /* open file */
     FILE *fp = fopen(filename,"w");
@@ -1112,17 +1120,42 @@ int maze_export_stl_solution(maze_t *maze, char *filename) {
     /* open solid */
     fprintf(fp,"solid MazeCubeSolution\n");
 
-    double scale = 1.0;
-    for(int i=0; i<maze->solution.posListNum; ++i) {
-        double x, y, z;
-        x = maze->solution.positions[i][0];
-        y = maze->solution.positions[i][1];
-        z = maze->solution.positions[i][2];
-        maze_export_stl_cube(fp, x, y, z, 0, scale, scale, scale);
+    /* write triangles to output file */
+    trig_list_export_stl(fp, &trigs);
+
+    /* open solid */
+    fprintf(fp,"endsolid MazeCubeSolution\n");
+
+    fclose(fp); fp=NULL;
+
+    return 1;
+}
+
+int maze_export_stl(maze_t *maze, char *filename) {
+    if( maze->numDimensions != 3 ) {
+        fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
+        return -1;
     }
 
+    trig_list_t trigs;
+    trig_list_init(&trigs);
+    maze_add_maze(maze, &trigs);
+
+    /* open file */
+    FILE *fp = fopen(filename,"w");
+    if( fp == NULL ) {
+        perror("fopen");
+        return -1;
+    }
+
+    /* start solid */
+    fprintf(fp,"solid MazeCube\n");
+
+    /* write triangles to output file */
+    trig_list_export_stl(fp, &trigs);
+
     /* close solid */
-    fprintf(fp,"endsolid MazeCubeSolution\n");
+    fprintf(fp,"endsolid MazeCube\n");
 
     /* close file */
     fclose(fp); fp=NULL;
