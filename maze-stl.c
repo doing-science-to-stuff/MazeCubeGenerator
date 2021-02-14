@@ -1,7 +1,215 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "maze.h"
+
+typedef struct trig {
+    double x[3], y[3], z[3];
+} trig_t;
+
+/* move individual triangle */
+static void trig_move(trig_t *trig, double dx, double dy, double dz) {
+    for(int i=0; i<3; ++i) {
+        trig->x[i] += dx;
+        trig->y[i] += dy;
+        trig->z[i] += dz;
+    }
+}
+
+/* rescale triangle */
+static void trig_scale(trig_t *trig, double sx, double sy, double sz) {
+    for(int i=0; i<3; ++i) {
+        trig->x[i] *= sx;
+        trig->y[i] *= sy;
+        trig->z[i] *= sz;
+    }
+}
+
+/* rotate triangle */
+static void trig_rotate_axial(trig_t *trig, int axis, double rad) {
+    /* rotate triangle rad radians around spcified axis */
+    for(int i=0; i<3; ++i) {
+        double x0, y0, x1, y1;
+
+        /* select coordinates to rotate */
+        switch(axis) {
+            case 0:
+                x0 = trig->y[i];
+                y0 = trig->z[i];
+                break;
+            case 1:
+                x0 = trig->x[i];
+                y0 = trig->z[i];
+                break;
+            case 2:
+            default:
+                x0 = trig->x[i];
+                y0 = trig->y[i];
+                break;
+        }
+
+        /* rotate x0,y0 by r radians to get x1,y1 */
+        /* see: https://en.wikipedia.org/wiki/Rotation_matrix#In_two_dimensions*/
+        x1 = x0 * cos(rad) - y0 * sin(rad);
+        y1 = x0 * sin(rad) + y0 * cos(rad);
+
+        /* update appropriate coordinates */
+        switch(axis) {
+            case 0:
+                trig->y[i] = x1;
+                trig->z[i] = y1;
+                break;
+            case 1:
+                trig->x[i] = x1;
+                trig->z[i] = y1;
+                break;
+            case 2:
+            default:
+                trig->x[i] = x1;
+                trig->y[i] = y1;
+                break;
+        }
+    }
+}
+
+/* rotate triangle around point */
+static void trig_rotate_axial_around(trig_t *trig, int axis, double rad, double cx, double cy, double cz) {
+    trig_move(trig, -cx, -cy, -cz);
+    trig_rotate_axial(trig, axis, rad);
+    trig_move(trig, cx, cy, cz);
+}
+
+/* export single triangle as STL */
+static void trig_get_normal(trig_t *trig,
+                            double *nx, double *ny, double *nz) {
+    /* get two edge vectors */
+    double ux = trig->x[1]-trig->x[0];
+    double uy = trig->y[1]-trig->y[0];
+    double uz = trig->z[1]-trig->z[0];
+    double vx = trig->x[2]-trig->x[0];
+    double vy = trig->y[2]-trig->y[0];
+    double vz = trig->z[2]-trig->z[0];
+
+    /* compute normal for triangle defined by coordinates
+     * see: https://mathworld.wolfram.com/CrossProduct.html
+     * Equation 2 */
+    *nx = uy*vz - uz*vy;
+    *ny = uz*vx - ux*vz;
+    *nz = ux*vy - uy*vx;
+}
+
+static void trig_export_stl(FILE *fp, trig_t *trig) {
+
+    double nx, ny, nz;
+    trig_get_normal(trig, &nx, &ny, &nz);
+    fprintf(fp, "facet normal %g %g %g\n", nx, ny, nz);
+    fprintf(fp, "  outer loop\n");
+    fprintf(fp, "    vertex %g %g %g\n", trig->x[0], trig->y[0], trig->z[0]);
+    fprintf(fp, "    vertex %g %g %g\n", trig->x[1], trig->y[1], trig->z[1]);
+    fprintf(fp, "    vertex %g %g %g\n", trig->x[2], trig->y[2], trig->z[2]);
+    fprintf(fp, "  endloop\n");
+    fprintf(fp, "endfacet\n");
+}
+
+
+typedef struct trig_list {
+    int num;
+    int cap;
+    trig_t *trig;
+} trig_list_t;
+
+/* initialize empty triangle list */
+static int trig_list_init(trig_list_t *list) {
+    memset(list,'\0',sizeof(*list));
+    int initial_cap = 10;
+    list->trig = calloc(initial_cap, sizeof(trig_t));
+    list->cap = initial_cap;
+
+    return 1;
+}
+
+/* free triangle list */
+static void trig_list_free(trig_list_t *list) {
+    free(list->trig); list->trig=NULL;
+    memset(list,'\0',sizeof(*list));
+}
+
+/* add triangle to list */
+static int trig_list_add(trig_list_t *list,
+    double x1, double y1, double z1,
+    double x2, double y2, double z2,
+    double x3, double y3, double z3, int rev) {
+
+    /* reallocate list, if needed */
+    if( list->num == list->cap ) {
+        int new_cap = (list->cap*2) + 1;
+
+        trig_t *new_buf = calloc(new_cap, sizeof(*list->trig));
+        if( !new_buf ) { return 0; }
+
+        memcpy(new_buf, list->trig, list->num*sizeof(*list->trig));
+        free(list->trig); list->trig=NULL;
+
+        list->trig = new_buf;
+        list->cap = new_cap;
+    }
+
+    int pos = list->num;
+    list->trig[pos].x[0] = x1;
+    list->trig[pos].y[0] = y1;
+    list->trig[pos].z[0] = z1;
+
+    if( rev <= 0 ) {
+        list->trig[pos].x[1] = x2;
+        list->trig[pos].y[1] = y2;
+        list->trig[pos].z[1] = z2;
+
+        list->trig[pos].x[2] = x3;
+        list->trig[pos].y[2] = y3;
+        list->trig[pos].z[2] = z3;
+    } else {
+        list->trig[pos].x[1] = x3;
+        list->trig[pos].y[1] = y3;
+        list->trig[pos].z[1] = z3;
+
+        list->trig[pos].x[2] = x2;
+        list->trig[pos].y[2] = y2;
+        list->trig[pos].z[2] = z2;
+    }
+    ++pos;
+
+    return 0;
+}
+
+/* move all triangles in list */
+static void trig_list_move(trig_list_t *list, double dx, double dy, double dz) {
+    for(int i=0; i<list->num; ++i) {
+        trig_move(&list->trig[i], dx, dy, dz);
+    }
+}
+
+
+/* rotate triangles in list */
+static void trig_list_rotate_axial(trig_list_t *list, int axis, double rad) {
+    for(int i=0; i<list->num; ++i) {
+        trig_rotate_axial(&list->trig[i], axis, rad);
+    }
+}
+
+/* rotate triangles in list around specified point */
+static void trig_list_rotate_axial_around(trig_list_t *list, int axis, double rad, double cx, double cy, double cz) {
+    for(int i=0; i<list->num; ++i) {
+        trig_rotate_axial_around(&list->trig[i], axis, rad, cx, cy, cz);
+    }
+}
+
+/* export list of triangles as STL */
+static void trig_list_export_stl(FILE *fp, trig_list_t *list) {
+    for(int i=0; i<list->num; ++i) {
+        trig_export_stl(fp, &list->trig[i]);
+    }
+}
 
 static void maze_export_get_normal(double x1, double y1, double z1,
                                    double x2, double y2, double z2,
