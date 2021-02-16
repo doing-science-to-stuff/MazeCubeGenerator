@@ -852,23 +852,24 @@ int maze_add_maze(maze_t *maze, trig_list_t *list) {
 
         /* translate face */
         if( face == 0 ) {
-            trig_list_move(&faceTrigs1, 0.0, 0.0, 1.0);
             trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
-            trig_list_move(&faceTrigs2, 0.0, 0.0, maze->dimensions[2]);
+            trig_list_move(&faceTrigs2, 0.0, 0.0, 0.5);
+            trig_list_move(&faceTrigs2, 0.0, 0.0, 0.0);
+            trig_list_move(&faceTrigs1, 0.0, 0.0, maze->dimensions[2]-1.0);
         } else if( face == 1 ) {
-            trig_list_move(&faceTrigs1, 0.0, 0.0, 1.0);
             trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
-            trig_list_move(&faceTrigs2, 0.0, 0.0, maze->dimensions[2]);
             trig_list_rotate_axial(&faceTrigs1, 0, M_PI/2.0);
             trig_list_rotate_axial(&faceTrigs2, 0, M_PI/2.0);
+            trig_list_move(&faceTrigs1, 0.0, 0.0, 0.0);
+            trig_list_move(&faceTrigs2, 0.0, maze->dimensions[1]-1.0, 0.0);
         } else if( face == 2 ) {
-            trig_list_move(&faceTrigs1, 0.0, 0.0, 1.0);
             trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
-            trig_list_move(&faceTrigs2, 0.0, 0.0, maze->dimensions[2]);
             trig_list_rotate_axial(&faceTrigs1, 2, M_PI/2.0);
             trig_list_rotate_axial(&faceTrigs2, 2, M_PI/2.0);
-            trig_list_rotate_axial(&faceTrigs1, 1, M_PI/2.0);
-            trig_list_rotate_axial(&faceTrigs2, 1, M_PI/2.0);
+            trig_list_rotate_axial(&faceTrigs1, 1, -M_PI/2.0);
+            trig_list_rotate_axial(&faceTrigs2, 1, -M_PI/2.0);
+            trig_list_move(&faceTrigs2, 0.0, 0.0, 0.0);
+            trig_list_move(&faceTrigs1, maze->dimensions[0]-1.0, 0.0, 0.0);
         }
         
         /* add face to maze list */
