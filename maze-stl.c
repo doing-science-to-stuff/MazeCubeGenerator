@@ -24,6 +24,14 @@ static void trig_scale(trig_t *trig, double sx, double sy, double sz) {
         trig->y[i] *= sy;
         trig->z[i] *= sz;
     }
+
+    if( sx*sy*sz < 0.0 ) {
+        /* normal will be reversed */
+        double temp;
+        temp = trig->x[1]; trig->x[1] = trig->x[2]; trig->x[2] = temp;
+        temp = trig->y[1]; trig->y[1] = trig->y[2]; trig->y[2] = temp;
+        temp = trig->z[1]; trig->z[1] = trig->z[2]; trig->z[2] = temp;
+    }
 }
 
 /* rotate triangle */
@@ -182,6 +190,16 @@ static int trig_list_add(trig_list_t *list,
     return 0;
 }
 
+/* copy one list into another */
+static void trig_list_copy(trig_list_t *dst, trig_list_t *src) {
+    for(int i=0; i<src->num; ++i) {
+        trig_t *t = &src->trig[i];
+        trig_list_add(dst, t->x[0], t->y[0], t->z[0],
+            t->x[1], t->y[1], t->z[1],
+            t->x[2], t->y[2], t->z[2], 0);
+    }
+}
+
 /* move all triangles in list */
 static void trig_list_move(trig_list_t *list, double dx, double dy, double dz) {
     for(int i=0; i<list->num; ++i) {
@@ -189,6 +207,12 @@ static void trig_list_move(trig_list_t *list, double dx, double dy, double dz) {
     }
 }
 
+/* scale all triangles in list */
+static void trig_list_scale(trig_list_t *list, double sx, double sy, double sz) {
+    for(int i=0; i<list->num; ++i) {
+        trig_scale(&list->trig[i], sx, sy, sz);
+    }
+}
 
 /* rotate triangles in list */
 static void trig_list_rotate_axial(trig_list_t *list, int axis, double rad) {
@@ -265,6 +289,8 @@ static void maze_export_stl_triangle(FILE *fp,
 
 static void maze_export_stl_transform(maze_t *maze, int d1, int d2, double scale, int dir, double *x, double *y, double *z) {
 
+    return;
+
     double tx=-1.0, ty=-1.0, tz=-1.0;
     if( d1 == 0 && d2 == 1) {
         tx = *x * scale;
@@ -309,14 +335,16 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
     int c = pos[d2];
     int r = pos[d1];
 
-    /* some faces need normals inverted */
     int reverse = 0;
+    #if 0
+    /* some faces need normals inverted */
     if( face == 0 && dir > 0 )
         reverse = 1;
     if( face == 1 && dir < 0 )
         reverse = 1;
     if( face == 2 && dir > 0 )
         reverse = 1;
+    #endif // 0
 
     const int numSegsI = 64;
     const int numSegsJ = 8;
@@ -348,19 +376,19 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
             /* compute raw torus coordinates */
             double x11 = cos(thetaI1) * (1+radius*cos(thetaJ1))+r;
             double y11 = sin(thetaI1) * (1+radius*cos(thetaJ1))+c;
-            double z11 = radius*sin(thetaJ1);
+            double z11 = radius*sin(thetaJ1)+1.0;
 
             double x12 = cos(thetaI1) * (1+radius*cos(thetaJ2))+r;
             double y12 = sin(thetaI1) * (1+radius*cos(thetaJ2))+c;
-            double z12 = radius*sin(thetaJ2);
+            double z12 = radius*sin(thetaJ2)+1.0;
 
             double x21 = cos(thetaI2) * (1+radius*cos(thetaJ1))+r;
             double y21 = sin(thetaI2) * (1+radius*cos(thetaJ1))+c;
-            double z21 = radius*sin(thetaJ1);
+            double z21 = radius*sin(thetaJ1)+1.0;
 
             double x22 = cos(thetaI2) * (1+radius*cos(thetaJ2))+r;
             double y22 = sin(thetaI2) * (1+radius*cos(thetaJ2))+c;
-            double z22 = radius*sin(thetaJ2);
+            double z22 = radius*sin(thetaJ2)+1.0;
 
             /* TODO: When crossing a cell boundary, end cap points should be
              * interpolated to exactly match the boundary. */
@@ -441,27 +469,27 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
         /* compute raw segment coordinates */
         double x11 = r+dr+dr*radius*cos(thetaI1);
         double y11 = c+0.5*dc;
-        double z11 = radius*sin(thetaI1);
+        double z11 = radius*sin(thetaI1)+1.0;
 
         double x12 = r+dr+dr*radius*cos(thetaI2);
         double y12 = c+0.5*dc;
-        double z12 = radius*sin(thetaI2);
+        double z12 = radius*sin(thetaI2)+1.0;
 
         double x21 = r+dr+dr*radius*cos(thetaI1);
         double y21 = c+dc+dc*radius*cos(thetaI1);
-        double z21 = radius*sin(thetaI1);
+        double z21 = radius*sin(thetaI1)+1.0;
 
         double x22 = r+dr+dr*radius*cos(thetaI2);
         double y22 = c+dc+dc*radius*cos(thetaI2);
-        double z22 = radius*sin(thetaI2);
+        double z22 = radius*sin(thetaI2)+1.0;
 
         double x31 = r+0.5*dr;
         double y31 = c+dc+dc*radius*cos(thetaI1);
-        double z31 = radius*sin(thetaI1);
+        double z31 = radius*sin(thetaI1)+1.0;
 
         double x32 = r+0.5*dr;
         double y32 = c+dc+dc*radius*cos(thetaI2);
-        double z32 = radius*sin(thetaI2);
+        double z32 = radius*sin(thetaI2)+1.0;
 
         /* transform points */
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
@@ -545,19 +573,19 @@ static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr
         /* compute raw segment coordinates */
         double x11 = r+dr+dr*radius*cos(thetaI1);
         double y11 = c+0.5;
-        double z11 = radius*sin(thetaI1);
+        double z11 = radius*sin(thetaI1)+1.0;
 
         double x12 = r+dr+dr*radius*cos(thetaI2);
         double y12 = c+0.5;
-        double z12 = radius*sin(thetaI2);
+        double z12 = radius*sin(thetaI2)+1.0;
 
         double x21 = r+dr+dr*radius*cos(thetaI1);
         double y21 = c-0.5;
-        double z21 = radius*sin(thetaI1);
+        double z21 = radius*sin(thetaI1)+1.0;
 
         double x22 = r+dr+dr*radius*cos(thetaI2);
         double y22 = c-0.5;
-        double z22 = radius*sin(thetaI2);
+        double z22 = radius*sin(thetaI2)+1.0;
 
         /* transform points */
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
@@ -607,19 +635,19 @@ static void maze_add_edge2(trig_list_t *list, maze_t *maze, int r, int c, int dc
         /* compute raw segment coordinates */
         double x11 = r+0.5;
         double y11 = c+dc+dc*radius*cos(thetaI1);
-        double z11 = radius*sin(thetaI1);
+        double z11 = radius*sin(thetaI1)+1.0;
 
         double x12 = r+0.5;
         double y12 = c+dc+dc*radius*cos(thetaI2);
-        double z12 = radius*sin(thetaI2);
+        double z12 = radius*sin(thetaI2)+1.0;
 
         double x21 = r-0.5;
         double y21 = c+dc+dc*radius*cos(thetaI1);
-        double z21 = radius*sin(thetaI1);
+        double z21 = radius*sin(thetaI1)+1.0;
 
         double x22 = r-0.5;
         double y22 = c+dc+dc*radius*cos(thetaI2);
-        double z22 = radius*sin(thetaI2);
+        double z22 = radius*sin(thetaI2)+1.0;
 
         /* transform points */
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
@@ -746,94 +774,109 @@ static void maze_add_cube(trig_list_t *list, double x, double y, double z, char 
 }
 
 
+int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list) {
+
+    double scale = 1.0;
+
+    /* for each cell */
+    int rows = maze->faces[face].rows;
+    int cols = maze->faces[face].cols;
+    for(int row=0; row<rows; ++row) {
+        for(int col=0; col<cols; ++col) {
+            if( face_get_cell(&maze->faces[face], row, col)!=0 ) {
+                /* output small cube for high and low faces */
+                int x1=0,y1=0,z1=0;
+                x1 = row;
+                y1 = col;
+                z1 = 0;
+
+                /* compute face mask for cube */
+                char mask1 = 0;
+                if( row>0
+                    && face_get_cell(&maze->faces[face], row-1, col) !=0 ) {
+                    mask1 |= 1<<0;
+                }
+                if( row<rows-1
+                    && face_get_cell(&maze->faces[face], row+1, col) !=0 ) {
+                    mask1 |= 1<<1;
+                }
+                if( col>0 
+                    && face_get_cell(&maze->faces[face], row, col-1) !=0 ) {
+                    mask1 |= 1<<2;
+                }
+                if( col<cols-1
+                    && face_get_cell(&maze->faces[face], row, col+1) !=0 ) {
+                    mask1 |= 1<<3;
+                }
+
+                /* additional masking for border */
+                if( row==0 ) {
+                    mask1 |= 1<<4 | 1<<0;
+                }
+                if( row==rows-1 ) {
+                    mask1 |= 1<<4 | 1<<1;
+                }
+                if( col==0 ) {
+                    mask1 |= 1<<4 | 1<<2;
+                }
+                if( col==cols-1 ) {
+                    mask1 |= 1<<4 | 1<<3;
+                }
+
+                /* export cube */
+                maze_add_cube(list, x1, y1, z1, mask1, scale, scale, scale);
+            }
+        }
+    }
+
+    /* add end markers */
+    double markerRadius = 0.1;
+    maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, 1, 0.0, 0.0, -0.5);
+    maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, 1, 0.0, 0.0, -0.5);
+
+    return 1;
+}
+
+
 int maze_add_maze(maze_t *maze, trig_list_t *list) {
 
     double scale = 1.0;
     /* for each face */
     for(int face=0; face<maze->numFaces; ++face) {
-        int d1 = maze->faces[face].d1;
-        int d2 = maze->faces[face].d2;
-        /* for each cell */
-        for(int row=1; row<maze->faces[face].rows-1; ++row) {
-            for(int col=1; col<maze->faces[face].cols-1; ++col) {
-                if( face_get_cell(&maze->faces[face], row, col)!=0 ) {
-                    /* output small cube for high and low faces */
-                    int x1=0,y1=0,z1=0;
-                    int x2=0,y2=0,z2=0;
-                    if( d1 == 0 && d2 == 1 ) {
-                        x1 = x2 = row;
-                        y1 = y2 = col;
-                        z1 = 0;
-                        z2 = maze->dimensions[2]-1;
-                    } else if( d1 == 0 && d2 == 2 ) {
-                        x1 = x2 = row;
-                        y1 = 0;
-                        y2 = maze->dimensions[1]-1;
-                        z1 = z2 = col;
-                    } else if( d1 == 1 && d2 == 2 ) {
-                        x1 = 0;
-                        x2 = maze->dimensions[0]-1;
-                        y1 = y2 = row;
-                        z1 = z2 = col;
-                    } else {
-                        fprintf(stderr, "Unhandled dimension combination d1=%i,d2=%i\n", d1, d2);
-                    }
 
-                    /* compute face mask for cube */
-                    char mask1 = 0;
-                    int d1 = maze->faces[face].d1;
-                    int d2 = maze->faces[face].d2;
-                    int rows = maze->faces[face].rows;
-                    int cols = maze->faces[face].cols;
-                    if( face_get_cell(&maze->faces[face], row-1, col) !=0 ) {
-                        mask1 |= 1<<(2*d1);
-                    }
-                    if( face_get_cell(&maze->faces[face], row+1, col) !=0 ) {
-                        mask1 |= 1<<(2*d1+1);
-                    }
-                    if( face_get_cell(&maze->faces[face], row, col-1) !=0 ) {
-                        mask1 |= 1<<(2*d2);
-                    }
-                    if( face_get_cell(&maze->faces[face], row, col+1) !=0 ) {
-                        mask1 |= 1<<(2*d2+1);
-                    }
-                    char mask2 = mask1;
+        trig_list_t faceTrigs1, faceTrigs2;
+        trig_list_init(&faceTrigs1);
+        trig_list_init(&faceTrigs2);
+        maze_add_maze_face(maze, face, &faceTrigs1);
+        maze_add_maze_face(maze, face, &faceTrigs2);
 
-                    if( row==0 || col==0
-                        || row == rows-1 || col == cols-1 ) {
-                        /* is a border cell */
-                        if( d1 == 0 && d2 == 1 ) {
-                            /* mask z */
-                            mask1 |= (1<<4);
-                            mask2 |= (1<<5);
-                        } else if( d1 == 0 && d2 == 2 ) {
-                            /* mask y */
-                            mask1 |= (1<<2);
-                            mask2 |= (1<<3);
-                        } else if( d1 == 1 && d2 == 2 ) {
-                            /* mask x */
-                            mask1 |= (1<<0);
-                            mask2 |= (1<<1);
-                        } else {
-                            fprintf(stderr, "Unhandled dimension combo! (d1=%i,d2=%i)\n",d1,d2);
-                        }
-                    }
-
-                    /* export cubes */
-                    maze_add_cube(list, x1, y1, z1, mask1, scale, scale, scale);
-                    maze_add_cube(list, x2, y2, z2, mask2, scale, scale, scale);
-                }
-            }
+        /* translate face */
+        if( face == 0 ) {
+            trig_list_move(&faceTrigs1, 0.0, 0.0, 1.0);
+            trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
+            trig_list_move(&faceTrigs2, 0.0, 0.0, maze->dimensions[2]);
+        } else if( face == 1 ) {
+            trig_list_move(&faceTrigs1, 0.0, 0.0, 1.0);
+            trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
+            trig_list_move(&faceTrigs2, 0.0, 0.0, maze->dimensions[2]);
+            trig_list_rotate_axial(&faceTrigs1, 0, M_PI/2.0);
+            trig_list_rotate_axial(&faceTrigs2, 0, M_PI/2.0);
+        } else if( face == 2 ) {
+            trig_list_move(&faceTrigs1, 0.0, 0.0, 1.0);
+            trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
+            trig_list_move(&faceTrigs2, 0.0, 0.0, maze->dimensions[2]);
+            trig_list_rotate_axial(&faceTrigs1, 2, M_PI/2.0);
+            trig_list_rotate_axial(&faceTrigs2, 2, M_PI/2.0);
+            trig_list_rotate_axial(&faceTrigs1, 1, M_PI/2.0);
+            trig_list_rotate_axial(&faceTrigs2, 1, M_PI/2.0);
         }
-
-        /* add end markers */
-        double markerRadius = 0.1;
-        maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
-        maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
-        maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
-        maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
+        
+        /* add face to maze list */
+        trig_list_copy(list, &faceTrigs1);
+        trig_list_copy(list, &faceTrigs2);
     }
 
+    #if 0
     /* add frame corners */
     int xEnd = maze->dimensions[0]-1;
     int yEnd = maze->dimensions[1]-1;
@@ -863,6 +906,7 @@ int maze_add_maze(maze_t *maze, trig_list_t *list) {
     maze_add_cube(list, xEnd,    0, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
     maze_add_cube(list,    0, yEnd, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
     maze_add_cube(list, xEnd, yEnd, zEnd/2, (1<<4)|(1<<5), scale, scale, (zEnd-1)*scale);
+    #endif // 0?
 
     /* add slider */
     double startX = maze->startPos[0];
@@ -909,8 +953,8 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
     yo[3] = yOffset+ySize;
     yi[3] = yOffset+ySize-1;
 
-    double z0 = 0.0;
-    double z1 = scale;
+    double z0 = -0.5*scale;
+    double z1 = 0.5*scale;
 
     /* adjust scaling */
     for(int i=0; i<4; ++i) {
@@ -958,21 +1002,22 @@ static int maze_add_flat_slider(trig_list_t *list, double xOffset, double yOffse
     double size2 = size/2.0;
     double xPos = xOffset*scale;
     double yPos = yOffset*scale;
+    double zPos = (size-scale)/2.0;
 
     /* 'y' direction */
     int dir = 1;
     if( ySize < 0.0 )
         dir = -1;
     ySize = fabs(ySize);
-    maze_add_cube(list, xPos, yPos+dir*(scale*ySize/4.0+size2), size2,
+    maze_add_cube(list, xPos, yPos+dir*(scale*ySize/4.0+size2), zPos,
                             0, size, scale*ySize/2.0, size);
-    maze_add_cube(list, xPos, yPos+dir*size2/2.0, size2,
+    maze_add_cube(list, xPos, yPos+dir*size2/2.0, zPos,
                             0, size, size2, size);
 
     /* 'x' directions */
-    maze_add_cube(list, xPos+scale*(xSize-1)/4.0+size2, yPos, size2,
+    maze_add_cube(list, xPos+scale*(xSize-1)/4.0+size2, yPos, zPos,
                             0, scale*(xSize-1)/2, size, size);
-    maze_add_cube(list, xPos-scale*(xSize-1)/4.0-size2, yPos, size2,
+    maze_add_cube(list, xPos-scale*(xSize-1)/4.0-size2, yPos, zPos,
                             0, scale*(xSize-1)/2, size, size);
 
     return 0;
@@ -987,50 +1032,33 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list) {
         int rows = maze->faces[face].rows;
         int cols = maze->faces[face].cols;
 
+        trig_list_t faceTrigs1, faceTrigs2;
+        trig_list_init(&faceTrigs1);
+        trig_list_init(&faceTrigs2);
+        maze_add_maze_face(maze, face, &faceTrigs1);
+        maze_add_maze_face(maze, face, &faceTrigs2);
+
+        /* add perimeters */
+        maze_add_flat_border(&faceTrigs1, -0.5, -0.5, cols, rows, scale);
+        maze_add_flat_border(&faceTrigs2, -0.5, -0.5, cols, rows, scale);
+
         /* compute base offsets for face */
         double xBase1 = -cols-1.0;
         double yBase1 = 0.0;
         for(int f2 = 0; f2<face; ++f2) {
             yBase1 += maze->faces[f2].rows+3;
         }
-        double xBase2 = 1;
+        double xBase2 = cols+1;
         double yBase2 = yBase1;
 
-        /* for each cell */
-        for(int row=1; row<rows-1; ++row) {
-            for(int col=1; col<cols-1; ++col) {
-                face_t *currFace = &maze->faces[face];
-                if( face_get_cell(currFace, row, col)!=0 ) {
-
-                    /* compute face mask for cube */
-                    char mask1 = 0, mask2 = 0;
-                    if( face_get_cell(currFace, row-1, col) !=0 ) {
-                        mask1 |= 1<<(0*2);
-                        mask2 |= 1<<(0*2+1);
-                    }
-                    if( face_get_cell(currFace, row+1, col) !=0 ) {
-                        mask1 |= 1<<(0*2+1);
-                        mask2 |= 1<<(0*2);
-                    }
-                    if( face_get_cell(currFace, row, col-1) !=0 ) {
-                        mask1 |= 1<<(1*2);
-                        mask2 |= 1<<(1*2);
-                    }
-                    if( face_get_cell(currFace, row, col+1) !=0 ) {
-                        mask1 |= 1<<(1*2+1);
-                        mask2 |= 1<<(1*2+1);
-                    }
-
-                    /* export cubes */
-                    maze_add_cube(list, row+xBase1, col+yBase1, scale/2.0, mask1, scale, scale, scale);
-                    maze_add_cube(list, rows-row+xBase2, col+yBase2, scale/2.0, mask2, scale, scale, scale);
-                }
-            }
-        }
-
-        /* add perimeter */
-        maze_add_flat_border(list, xBase1-0.5, yBase1-0.5, cols, rows, scale);
-        maze_add_flat_border(list, xBase2+0.5, yBase2-0.5, cols, rows, scale);
+        /* translate face */
+        trig_list_scale(&faceTrigs2, -1.0, 1.0, 1.0);
+        trig_list_move(&faceTrigs1, xBase1, yBase1, 0.0);
+        trig_list_move(&faceTrigs2, xBase2, yBase2, 0.0);
+        
+        /* add face to maze list */
+        trig_list_copy(list, &faceTrigs1);
+        trig_list_copy(list, &faceTrigs2);
 
         #if 0
         /* add end markers */
