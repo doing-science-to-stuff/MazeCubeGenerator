@@ -921,6 +921,8 @@ int maze_add_maze(maze_t *maze, trig_list_t *list) {
     maze_add_cube(list, startX, startY, startZ, 0, scale, sizeY*scale2, scale2);
     maze_add_cube(list, startX, startY, startZ, 0, scale, scale2, sizeZ*scale2);
 
+    trig_list_move(list, 0.5, 0.5, 0.5);
+
     return 0;
 }
 
@@ -1078,6 +1080,8 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list) {
     zSize = maze->dimensions[2];
     maze_add_flat_slider(list, 0.0, ySize+1.0, xSize+1, -(ySize+1), scale);
     maze_add_flat_slider(list, 0.0, ySize+zSize+4.0, zSize+1, ySize+1, scale);
+
+    trig_list_move(list, 0.5, 0.5, 0.5);
 
     return 0;
 }
