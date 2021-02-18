@@ -255,39 +255,6 @@ static void maze_export_get_normal(double x1, double y1, double z1,
     *nz = ux*vy - uy*vx;
 }
 
-static void maze_export_stl_triangle(FILE *fp,
-                                    double x1, double y1, double z1,
-                                    double x2, double y2, double z2,
-                                    double x3, double y3, double z3,
-                                    int rev) {
-
-    double nx, ny, nz;
-    if( rev <= 0 ) {
-        maze_export_get_normal(x1, y1, z1,
-                               x2, y2, z2,
-                               x3, y3, z3,
-                               &nx, &ny, &nz);
-        fprintf(fp, "facet normal %g %g %g\n", nx, ny, nz);
-        fprintf(fp, "  outer loop\n");
-        fprintf(fp, "    vertex %g %g %g\n", x1, y1, z1);
-        fprintf(fp, "    vertex %g %g %g\n", x2, y2, z2);
-        fprintf(fp, "    vertex %g %g %g\n", x3, y3, z3);
-    } else {
-        maze_export_get_normal(x1, y1, z1,
-                               x3, y3, z3,
-                               x2, y2, z2,
-                               &nx, &ny, &nz);
-        fprintf(fp, "facet normal %g %g %g\n", nx, ny, nz);
-        fprintf(fp, "  outer loop\n");
-        fprintf(fp, "    vertex %g %g %g\n", x1, y1, z1);
-        fprintf(fp, "    vertex %g %g %g\n", x3, y3, z3);
-        fprintf(fp, "    vertex %g %g %g\n", x2, y2, z2);
-    }
-    fprintf(fp, "  endloop\n");
-    fprintf(fp, "endfacet\n");
-}
-
-
 /* circular marker */
 static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale, int dir) {
     int d1 = maze->faces[face].d1;
