@@ -327,7 +327,7 @@ static void maze_export_stl_transform(maze_t *maze, int d1, int d2, double scale
 }
 
 /* circular marker */
-static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
+static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale, int dir) {
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
@@ -367,19 +367,19 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
             /* compute raw torus coordinates */
             double x11 = cos(thetaI1) * (1+radius*cos(thetaJ1))+r;
             double y11 = sin(thetaI1) * (1+radius*cos(thetaJ1))+c;
-            double z11 = radius*sin(thetaJ1)+1.0;
+            double z11 = radius*sin(thetaJ1)+0.5;
 
             double x12 = cos(thetaI1) * (1+radius*cos(thetaJ2))+r;
             double y12 = sin(thetaI1) * (1+radius*cos(thetaJ2))+c;
-            double z12 = radius*sin(thetaJ2)+1.0;
+            double z12 = radius*sin(thetaJ2)+0.5;
 
             double x21 = cos(thetaI2) * (1+radius*cos(thetaJ1))+r;
             double y21 = sin(thetaI2) * (1+radius*cos(thetaJ1))+c;
-            double z21 = radius*sin(thetaJ1)+1.0;
+            double z21 = radius*sin(thetaJ1)+0.5;
 
             double x22 = cos(thetaI2) * (1+radius*cos(thetaJ2))+r;
             double y22 = sin(thetaI2) * (1+radius*cos(thetaJ2))+c;
-            double z22 = radius*sin(thetaJ2)+1.0;
+            double z22 = radius*sin(thetaJ2)+0.5;
 
             /* TODO: When crossing a cell boundary, end cap points should be
              * interpolated to exactly match the boundary. */
@@ -390,12 +390,14 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
             maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
             maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
 
+            #if 0
             /* add in offsets */
             xOffset *= scale; yOffset *= scale; zOffset *= scale;
             x11 += xOffset; y11 += yOffset; z11 += zOffset;
             x12 += xOffset; y12 += yOffset; z12 += zOffset;
             x21 += xOffset; y21 += yOffset; z21 += zOffset;
             x22 += xOffset; y22 += yOffset; z22 += zOffset;
+            #endif // 0
 
             /* record first point along surface for end caps */
             if( j == 0 && (!cell1 || !cell2) ) {
@@ -432,13 +434,10 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
 }
 
 /* square marker */
-static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir, int rCap, int cCap, double xOffset, double yOffset, double zOffset) {
+static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir, int rCap, int cCap) {
 
     /* some faces need normals inverted */
     int reverse = 0;
-
-    if( dc*dr < 0 )
-        reverse ^= 1;
 
     double x10 = 0.0, y10 = 0.0, z10 = 0.0;
     double x30 = 0.0, y30 = 0.0, z30 = 0.0;
@@ -452,29 +451,29 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
         double thetaI2 = M_PI * (i+1) / numSegs;
 
         /* compute raw segment coordinates */
-        double x11 = r+dr+dr*radius*cos(thetaI1);
-        double y11 = c+0.5*dc;
-        double z11 = radius*sin(thetaI1)+1.0;
+        double x11 = radius*cos(thetaI1);
+        double y11 = 0.5;
+        double z11 = radius*sin(thetaI1)+0.5;
 
-        double x12 = r+dr+dr*radius*cos(thetaI2);
-        double y12 = c+0.5*dc;
-        double z12 = radius*sin(thetaI2)+1.0;
+        double x12 = radius*cos(thetaI2);
+        double y12 = 0.5;
+        double z12 = radius*sin(thetaI2)+0.5;
 
-        double x21 = r+dr+dr*radius*cos(thetaI1);
-        double y21 = c+dc+dc*radius*cos(thetaI1);
-        double z21 = radius*sin(thetaI1)+1.0;
+        double x21 = radius*cos(thetaI1);
+        double y21 = radius*cos(thetaI1);
+        double z21 = radius*sin(thetaI1)+0.5;
 
-        double x22 = r+dr+dr*radius*cos(thetaI2);
-        double y22 = c+dc+dc*radius*cos(thetaI2);
-        double z22 = radius*sin(thetaI2)+1.0;
+        double x22 = radius*cos(thetaI2);
+        double y22 = radius*cos(thetaI2);
+        double z22 = radius*sin(thetaI2)+0.5;
 
-        double x31 = r+0.5*dr;
-        double y31 = c+dc+dc*radius*cos(thetaI1);
-        double z31 = radius*sin(thetaI1)+1.0;
+        double x31 = 0.5;
+        double y31 = radius*cos(thetaI1);
+        double z31 = radius*sin(thetaI1)+0.5;
 
-        double x32 = r+0.5*dr;
-        double y32 = c+dc+dc*radius*cos(thetaI2);
-        double z32 = radius*sin(thetaI2)+1.0;
+        double x32 = 0.5;
+        double y32 = radius*cos(thetaI2);
+        double z32 = radius*sin(thetaI2)+0.5;
 
         /* transform points */
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
@@ -484,6 +483,7 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x31, &y31, &z31);
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x32, &y32, &z32);
 
+        #if 0
         /* add in offsets */
         xOffset *= scale; yOffset *= scale; zOffset *= scale;
         x11 += xOffset; y11 += yOffset; z11 += zOffset;
@@ -492,6 +492,7 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
         x22 += xOffset; y22 += yOffset; z22 += zOffset;
         x31 += xOffset; y31 += yOffset; z31 += zOffset;
         x32 += xOffset; y32 += yOffset; z32 += zOffset;
+        #endif // 0
 
         /* record first point on surface for end caps */
         if( i == 0 ) {
@@ -505,35 +506,40 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
 
         /* curved surface of marker */
         trig_list_add(list, x11, y11, z11,
-                x22, y22, z22,
-                x12, y12, z12, reverse);
+                x12, y12, z12,
+                x22, y22, z22, reverse);
         trig_list_add(list, x11, y11, z11,
-                x21, y21, z21,
-                x22, y22, z22, reverse);
-
-        trig_list_add(list, x31, y31, z31,
-                x32, y32, z32,
-                x22, y22, z22, reverse);
-        trig_list_add(list, x31, y31, z31,
                 x22, y22, z22,
                 x21, y21, z21, reverse);
+
+        trig_list_add(list, x31, y31, z31,
+                x22, y22, z22,
+                x32, y32, z32, reverse);
+        trig_list_add(list, x31, y31, z31,
+                x21, y21, z21,
+                x22, y22, z22, reverse);
 
         /* add end caps */
         if( rCap==0 ) {
             trig_list_add(list, x11, y11, z11,
+                    x10, y10, z10,
                     x12, y12, z12,
-                    x10, y10, z10, reverse);
+                    reverse);
         }
 
         if( cCap==0 ) {
             trig_list_add(list, x31, y31, z31,
+                    x32, y32, z32,
                     x30, y30, z30,
-                    x32, y32, z32, reverse);
+                    reverse);
         }
     }
+
+    trig_list_scale(list, dr, dc, 1.0);
+    trig_list_move(list, r-dr, c-dc, 0.0);
 }
 
-static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr, int face, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
+static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr, int face, double radius, double scale, int dir) {
 
     /* some faces need normals inverted */
     int reverse = 0;
@@ -552,19 +558,19 @@ static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr
         /* compute raw segment coordinates */
         double x11 = r+dr+dr*radius*cos(thetaI1);
         double y11 = c+0.5;
-        double z11 = radius*sin(thetaI1)+1.0;
+        double z11 = radius*sin(thetaI1)+0.5;
 
         double x12 = r+dr+dr*radius*cos(thetaI2);
         double y12 = c+0.5;
-        double z12 = radius*sin(thetaI2)+1.0;
+        double z12 = radius*sin(thetaI2)+0.5;
 
         double x21 = r+dr+dr*radius*cos(thetaI1);
         double y21 = c-0.5;
-        double z21 = radius*sin(thetaI1)+1.0;
+        double z21 = radius*sin(thetaI1)+0.5;
 
         double x22 = r+dr+dr*radius*cos(thetaI2);
         double y22 = c-0.5;
-        double z22 = radius*sin(thetaI2)+1.0;
+        double z22 = radius*sin(thetaI2)+0.5;
 
         /* transform points */
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
@@ -572,12 +578,14 @@ static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
 
+        #if 0
         /* add in offsets */
         xOffset *= scale; yOffset *= scale; zOffset *= scale;
         x11 += xOffset; y11 += yOffset; z11 += zOffset;
         x12 += xOffset; y12 += yOffset; z12 += zOffset;
         x21 += xOffset; y21 += yOffset; z21 += zOffset;
         x22 += xOffset; y22 += yOffset; z22 += zOffset;
+        #endif // 0
 
         /* outer shell of marker */
         trig_list_add(list, x11, y11, z11,
@@ -591,7 +599,7 @@ static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr
     }
 }
 
-static void maze_add_edge2(trig_list_t *list, maze_t *maze, int r, int c, int dc, int face, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
+static void maze_add_edge2(trig_list_t *list, maze_t *maze, int r, int c, int dc, int face, double radius, double scale, int dir) {
 
     /* some faces need normals inverted */
     int reverse = 0;
@@ -607,19 +615,19 @@ static void maze_add_edge2(trig_list_t *list, maze_t *maze, int r, int c, int dc
         /* compute raw segment coordinates */
         double x11 = r+0.5;
         double y11 = c+dc+dc*radius*cos(thetaI1);
-        double z11 = radius*sin(thetaI1)+1.0;
+        double z11 = radius*sin(thetaI1)+0.5;
 
         double x12 = r+0.5;
         double y12 = c+dc+dc*radius*cos(thetaI2);
-        double z12 = radius*sin(thetaI2)+1.0;
+        double z12 = radius*sin(thetaI2)+0.5;
 
         double x21 = r-0.5;
         double y21 = c+dc+dc*radius*cos(thetaI1);
-        double z21 = radius*sin(thetaI1)+1.0;
+        double z21 = radius*sin(thetaI1)+0.5;
 
         double x22 = r-0.5;
         double y22 = c+dc+dc*radius*cos(thetaI2);
-        double z22 = radius*sin(thetaI2)+1.0;
+        double z22 = radius*sin(thetaI2)+0.5;
 
         /* transform points */
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
@@ -627,12 +635,14 @@ static void maze_add_edge2(trig_list_t *list, maze_t *maze, int r, int c, int dc
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
         maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
 
+        #if 0
         /* add in offsets */
         xOffset *= scale; yOffset *= scale; zOffset *= scale;
         x11 += xOffset; y11 += yOffset; z11 += zOffset;
         x12 += xOffset; y12 += yOffset; z12 += zOffset;
         x21 += xOffset; y21 += yOffset; z21 += zOffset;
         x22 += xOffset; y22 += yOffset; z22 += zOffset;
+        #endif // 0
 
         /* outer shell of marker */
         trig_list_add(list, x11, y11, z11,
@@ -644,7 +654,7 @@ static void maze_add_edge2(trig_list_t *list, maze_t *maze, int r, int c, int dc
     }
 }
 
-static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale, int dir, double xOffset, double yOffset, double zOffset) {
+static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale, int dir) {
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
@@ -659,20 +669,33 @@ static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position
     int bSide = face_get_cell(&maze->faces[face], r, c+1);
 
     /* add corners */
-    maze_add_corner(list, maze, r, c, -1, -1, face, radius, scale, dir, lSide, tSide, xOffset, yOffset, zOffset);
-    maze_add_corner(list, maze, r, c, -1, 1, face, radius, scale, dir, lSide, bSide, xOffset, yOffset, zOffset);
-    maze_add_corner(list, maze, r, c, 1, -1, face, radius, scale, dir, rSide, tSide, xOffset, yOffset, zOffset);
-    maze_add_corner(list, maze, r, c, 1, 1, face, radius, scale, dir, rSide, bSide, xOffset, yOffset, zOffset);
+    trig_list_t corner1, corner2, corner3, corner4;
+    trig_list_init(&corner1);
+    trig_list_init(&corner2);
+    trig_list_init(&corner3);
+    trig_list_init(&corner4);
+
+    maze_add_corner(&corner1, maze, r, c, -1, -1, face, radius, scale, dir, lSide, tSide);
+    trig_list_copy(list, &corner1);
+
+    maze_add_corner(&corner2, maze, r, c, -1, 1, face, radius, scale, dir, lSide, bSide);
+    trig_list_copy(list, &corner2);
+
+    maze_add_corner(&corner3, maze, r, c, 1, -1, face, radius, scale, dir, rSide, tSide);
+    trig_list_copy(list, &corner3);
+
+    maze_add_corner(&corner4, maze, r, c, 1, 1, face, radius, scale, dir, rSide, bSide);
+    trig_list_copy(list, &corner4);
 
     /* add straight segments */
     if( lSide != 0 )
-        maze_add_edge1(list, maze, r, c, -1, face, radius, scale, dir, xOffset, yOffset, zOffset);
+        maze_add_edge1(list, maze, r, c, -1, face, radius, scale, dir);
     if( rSide != 0 )
-        maze_add_edge1(list, maze, r, c, 1, face, radius, scale, dir, xOffset, yOffset, zOffset);
+        maze_add_edge1(list, maze, r, c, 1, face, radius, scale, dir);
     if( tSide != 0 )
-        maze_add_edge2(list, maze, r, c, -1, face, radius, scale, dir, xOffset, yOffset, zOffset);
+        maze_add_edge2(list, maze, r, c, -1, face, radius, scale, dir);
     if( bSide != 0 )
-        maze_add_edge2(list, maze, r, c, 1, face, radius, scale, dir, xOffset, yOffset, zOffset);
+        maze_add_edge2(list, maze, r, c, 1, face, radius, scale, dir);
 }
 
 static void maze_add_cube(trig_list_t *list, double x, double y, double z, char face_mask, double scaleX, double scaleY, double scaleZ) {
@@ -803,8 +826,8 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list) {
 
     /* add end markers */
     double markerRadius = 0.1;
-    maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, 1, 0.0, 0.0, -0.5);
-    maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, 1, 0.0, 0.0, -0.5);
+    maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, 1);
+    maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, 1);
 
     return 1;
 }
