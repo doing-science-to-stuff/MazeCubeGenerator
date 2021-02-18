@@ -287,44 +287,6 @@ static void maze_export_stl_triangle(FILE *fp,
     fprintf(fp, "endfacet\n");
 }
 
-static void maze_export_stl_transform(maze_t *maze, int d1, int d2, double scale, int dir, double *x, double *y, double *z) {
-
-    return;
-
-    double tx=-1.0, ty=-1.0, tz=-1.0;
-    if( d1 == 0 && d2 == 1) {
-        tx = *x * scale;
-        ty = *y * scale;
-        if( dir < 0 ) {
-            tz = -(*z) - 0.5*scale;
-        } else {
-            tz = *z + (maze->dimensions[2]-0.5) * scale;
-        }
-    } else if( d1 == 0 && d2 == 2 ) {
-        tx = *x * scale;
-        tz = *y * scale;
-        if( dir < 0 ) {
-            ty = -(*z) - 0.5*scale;
-        } else {
-            ty = *z + (maze->dimensions[1]-0.5) * scale;
-        }
-    } else if( d1 == 1 && d2 == 2 ) {
-        ty = *x * scale;
-        tz = *y * scale;
-        if( dir < 0 ) {
-            tx = -(*z) - 0.5*scale;
-        } else {
-            tx = *z + (maze->dimensions[0]-0.5) * scale;
-        }
-    } else {
-        fprintf(stderr, "Unhandled dimension combination d1=%i,d2=%i\n", d1, d2);
-    }
-
-    /* write back to original variables */
-    *x  = tx;
-    *y  = ty;
-    *z  = tz;
-}
 
 /* circular marker */
 static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale, int dir) {
@@ -384,21 +346,6 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
             /* TODO: When crossing a cell boundary, end cap points should be
              * interpolated to exactly match the boundary. */
 
-            /* transform into model space */
-            maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
-            maze_export_stl_transform(maze, d1, d2, scale, dir, &x12, &y12, &z12);
-            maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
-            maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
-
-            #if 0
-            /* add in offsets */
-            xOffset *= scale; yOffset *= scale; zOffset *= scale;
-            x11 += xOffset; y11 += yOffset; z11 += zOffset;
-            x12 += xOffset; y12 += yOffset; z12 += zOffset;
-            x21 += xOffset; y21 += yOffset; z21 += zOffset;
-            x22 += xOffset; y22 += yOffset; z22 += zOffset;
-            #endif // 0
-
             /* record first point along surface for end caps */
             if( j == 0 && (!cell1 || !cell2) ) {
                 x10 = x11;
@@ -409,7 +356,7 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
                 z20 = z21;
             }
 
-            /* output transformed triangles */
+            /* output triangles */
             if( cell1 && cell2 ) {
                 /* curved surface of marker */
                 trig_list_add(list, x11, y11, z11,
@@ -474,25 +421,6 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
         double x32 = 0.5;
         double y32 = radius*cos(thetaI2);
         double z32 = radius*sin(thetaI2)+0.5;
-
-        /* transform points */
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x12, &y12, &z12);
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x31, &y31, &z31);
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x32, &y32, &z32);
-
-        #if 0
-        /* add in offsets */
-        xOffset *= scale; yOffset *= scale; zOffset *= scale;
-        x11 += xOffset; y11 += yOffset; z11 += zOffset;
-        x12 += xOffset; y12 += yOffset; z12 += zOffset;
-        x21 += xOffset; y21 += yOffset; z21 += zOffset;
-        x22 += xOffset; y22 += yOffset; z22 += zOffset;
-        x31 += xOffset; y31 += yOffset; z31 += zOffset;
-        x32 += xOffset; y32 += yOffset; z32 += zOffset;
-        #endif // 0
 
         /* record first point on surface for end caps */
         if( i == 0 ) {
@@ -572,21 +500,6 @@ static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr
         double y22 = c-0.5;
         double z22 = radius*sin(thetaI2)+0.5;
 
-        /* transform points */
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x12, &y12, &z12);
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
-
-        #if 0
-        /* add in offsets */
-        xOffset *= scale; yOffset *= scale; zOffset *= scale;
-        x11 += xOffset; y11 += yOffset; z11 += zOffset;
-        x12 += xOffset; y12 += yOffset; z12 += zOffset;
-        x21 += xOffset; y21 += yOffset; z21 += zOffset;
-        x22 += xOffset; y22 += yOffset; z22 += zOffset;
-        #endif // 0
-
         /* outer shell of marker */
         trig_list_add(list, x11, y11, z11,
                 x12, y12, z12,
@@ -628,21 +541,6 @@ static void maze_add_edge2(trig_list_t *list, maze_t *maze, int r, int c, int dc
         double x22 = r-0.5;
         double y22 = c+dc+dc*radius*cos(thetaI2);
         double z22 = radius*sin(thetaI2)+0.5;
-
-        /* transform points */
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x11, &y11, &z11);
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x12, &y12, &z12);
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x21, &y21, &z21);
-        maze_export_stl_transform(maze, d1, d2, scale, dir, &x22, &y22, &z22);
-
-        #if 0
-        /* add in offsets */
-        xOffset *= scale; yOffset *= scale; zOffset *= scale;
-        x11 += xOffset; y11 += yOffset; z11 += zOffset;
-        x12 += xOffset; y12 += yOffset; z12 += zOffset;
-        x21 += xOffset; y21 += yOffset; z21 += zOffset;
-        x22 += xOffset; y22 += yOffset; z22 += zOffset;
-        #endif // 0
 
         /* outer shell of marker */
         trig_list_add(list, x11, y11, z11,
