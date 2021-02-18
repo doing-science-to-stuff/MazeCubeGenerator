@@ -389,9 +389,6 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
     double x10 = 0.0, y10 = 0.0, z10 = 0.0;
     double x30 = 0.0, y30 = 0.0, z30 = 0.0;
 
-    int d1 = maze->faces[face].d1;
-    int d2 = maze->faces[face].d2;
-
     int numSegs = 32;
     for(int i=0; i<numSegs; ++i) {
         double thetaI1 = M_PI * i / numSegs;
@@ -475,9 +472,6 @@ static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr
     if( dr < 0 )
         reverse ^= 1;
 
-    int d1 = maze->faces[face].d1;
-    int d2 = maze->faces[face].d2;
-
     int numSegs = 32;
     for(int i=0; i<numSegs; ++i) {
         double thetaI1 = M_PI * i / numSegs;
@@ -516,9 +510,6 @@ static void maze_add_edge2(trig_list_t *list, maze_t *maze, int r, int c, int dc
 
     /* some faces need normals inverted */
     int reverse = 0;
-
-    int d1 = maze->faces[face].d1;
-    int d2 = maze->faces[face].d2;
 
     int numSegs = 32;
     for(int i=0; i<numSegs; ++i) {
@@ -575,15 +566,19 @@ static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position
 
     maze_add_corner(&corner1, maze, r, c, -1, -1, face, radius, scale, dir, lSide, tSide);
     trig_list_copy(list, &corner1);
+    trig_list_free(&corner1);
 
     maze_add_corner(&corner2, maze, r, c, -1, 1, face, radius, scale, dir, lSide, bSide);
     trig_list_copy(list, &corner2);
+    trig_list_free(&corner2);
 
     maze_add_corner(&corner3, maze, r, c, 1, -1, face, radius, scale, dir, rSide, tSide);
     trig_list_copy(list, &corner3);
+    trig_list_free(&corner3);
 
     maze_add_corner(&corner4, maze, r, c, 1, 1, face, radius, scale, dir, rSide, bSide);
     trig_list_copy(list, &corner4);
+    trig_list_free(&corner4);
 
     /* add straight segments */
     if( lSide != 0 )
@@ -768,6 +763,9 @@ int maze_add_maze(maze_t *maze, trig_list_t *list) {
         /* add face to maze list */
         trig_list_copy(list, &faceTrigs1);
         trig_list_copy(list, &faceTrigs2);
+
+        trig_list_free(&faceTrigs1);
+        trig_list_free(&faceTrigs2);
     }
 
     #if 0
@@ -956,14 +954,8 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list) {
         trig_list_copy(list, &faceTrigs1);
         trig_list_copy(list, &faceTrigs2);
 
-        #if 0
-        /* add end markers */
-        double markerRadius = 0.1;
-        maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
-        maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
-        maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, -1, 0.0, 0.0, 0.0);
-        maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, 1, 0.0, 0.0, 0.0);
-        #endif // 1
+        trig_list_free(&faceTrigs1);
+        trig_list_free(&faceTrigs2);
     }
 
     /* write slider pieces */
@@ -1002,6 +994,9 @@ int maze_export_stl_flat(maze_t *maze, char *filename) {
 
     /* write triangles to output file */
     trig_list_export_stl(fp, &trigs);
+
+    /* free triangle list */
+    trig_list_free(&trigs);
 
     /* close solid */
     fprintf(fp,"endsolid MazeCubeFaces\n");
@@ -1049,6 +1044,9 @@ int maze_export_stl_solution(maze_t *maze, char *filename) {
     /* write triangles to output file */
     trig_list_export_stl(fp, &trigs);
 
+    /* free triangle list */
+    trig_list_free(&trigs);
+
     /* open solid */
     fprintf(fp,"endsolid MazeCubeSolution\n");
 
@@ -1079,6 +1077,9 @@ int maze_export_stl(maze_t *maze, char *filename) {
 
     /* write triangles to output file */
     trig_list_export_stl(fp, &trigs);
+
+    /* free triangle list */
+    trig_list_free(&trigs);
 
     /* close solid */
     fprintf(fp,"endsolid MazeCube\n");
