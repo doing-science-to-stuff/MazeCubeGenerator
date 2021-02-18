@@ -395,28 +395,28 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
         double thetaI2 = M_PI * (i+1) / numSegs;
 
         /* compute raw segment coordinates */
-        double x11 = radius*cos(thetaI1);
+        double x11 = radius*cos(thetaI1)+1.0;
         double y11 = 0.5;
         double z11 = radius*sin(thetaI1)+0.5;
 
-        double x12 = radius*cos(thetaI2);
+        double x12 = radius*cos(thetaI2)+1.0;
         double y12 = 0.5;
         double z12 = radius*sin(thetaI2)+0.5;
 
-        double x21 = radius*cos(thetaI1);
-        double y21 = radius*cos(thetaI1);
+        double x21 = radius*cos(thetaI1)+1.0;
+        double y21 = radius*cos(thetaI1)+1.0;
         double z21 = radius*sin(thetaI1)+0.5;
 
-        double x22 = radius*cos(thetaI2);
-        double y22 = radius*cos(thetaI2);
+        double x22 = radius*cos(thetaI2)+1.0;
+        double y22 = radius*cos(thetaI2)+1.0;
         double z22 = radius*sin(thetaI2)+0.5;
 
         double x31 = 0.5;
-        double y31 = radius*cos(thetaI1);
+        double y31 = radius*cos(thetaI1)+1.0;
         double z31 = radius*sin(thetaI1)+0.5;
 
         double x32 = 0.5;
-        double y32 = radius*cos(thetaI2);
+        double y32 = radius*cos(thetaI2)+1.0;
         double z32 = radius*sin(thetaI2)+0.5;
 
         /* record first point on surface for end caps */
@@ -431,37 +431,35 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
 
         /* curved surface of marker */
         trig_list_add(list, x11, y11, z11,
-                x12, y12, z12,
-                x22, y22, z22, reverse);
+                x22, y22, z22,
+                x12, y12, z12, reverse);
         trig_list_add(list, x11, y11, z11,
-                x22, y22, z22,
-                x21, y21, z21, reverse);
-
-        trig_list_add(list, x31, y31, z31,
-                x22, y22, z22,
-                x32, y32, z32, reverse);
-        trig_list_add(list, x31, y31, z31,
                 x21, y21, z21,
                 x22, y22, z22, reverse);
+
+        trig_list_add(list, x31, y31, z31,
+                x32, y32, z32,
+                x22, y22, z22, reverse);
+        trig_list_add(list, x31, y31, z31,
+                x22, y22, z22,
+                x21, y21, z21, reverse);
 
         /* add end caps */
         if( rCap==0 ) {
             trig_list_add(list, x11, y11, z11,
-                    x10, y10, z10,
                     x12, y12, z12,
-                    reverse);
+                    x10, y10, z10, reverse);
         }
 
         if( cCap==0 ) {
             trig_list_add(list, x31, y31, z31,
-                    x32, y32, z32,
                     x30, y30, z30,
-                    reverse);
+                    x32, y32, z32, reverse);
         }
     }
 
     trig_list_scale(list, dr, dc, 1.0);
-    trig_list_move(list, r-dr, c-dc, 0.0);
+    trig_list_move(list, r, c, 0.0);
 }
 
 static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr, int face, double radius, double scale, int dir) {
