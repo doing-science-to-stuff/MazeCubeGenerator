@@ -11,7 +11,7 @@
 #include "maze.h"
 
 static void show_help(int argc, char **argv) {
-    printf("%s [-d dims] {-g l,w,h | -i file} [-s] [-r seed] [-l length] {-m file.stl | -o file.txt}\n\n",
+    printf("%s [-d dims] {-g l,w,h | -i file} [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-f flat.stl] [-k maxSegments] [-p solution.stl]\n\n",
             argv[0]);
     exit(0);
 }
