@@ -436,7 +436,7 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
     trig_list_free(&corner);
 }
 
-static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr, int face, double radius, double scale, int dir) {
+static void maze_add_edge(trig_list_t *list, maze_t *maze, int r, int c, int face, double radius, double scale, int rotated, double rOffset, double cOffset) {
 
     /* local triangle list */
     trig_list_t edge;
@@ -456,19 +456,19 @@ static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr
         double thetaI2 = M_PI * (i+1) / numSegs;
 
         /* compute raw segment coordinates */
-        double x11 = radius*cos(thetaI1)+1.0;
+        double x11 = radius*cos(thetaI1);
         double y11 = 0.5;
         double z11 = radius*sin(thetaI1)+0.5;
 
-        double x12 = radius*cos(thetaI2)+1.0;
+        double x12 = radius*cos(thetaI2);
         double y12 = 0.5;
         double z12 = radius*sin(thetaI2)+0.5;
 
-        double x21 = radius*cos(thetaI1)+1.0;
+        double x21 = radius*cos(thetaI1);
         double y21 = -0.5;
         double z21 = radius*sin(thetaI1)+0.5;
 
-        double x22 = radius*cos(thetaI2)+1.0;
+        double x22 = radius*cos(thetaI2);
         double y22 = -0.5;
         double z22 = radius*sin(thetaI2)+0.5;
 
@@ -483,55 +483,9 @@ static void maze_add_edge1(trig_list_t *list, maze_t *maze, int r, int c, int dr
                 reverse);
     }
 
-    trig_list_scale(&edge, dr, 1.0, 1.0);
-    trig_list_move(&edge, r, c, 0.0);
-
-    trig_list_copy(list, &edge);
-    trig_list_free(&edge);
-}
-
-static void maze_add_edge2(trig_list_t *list, maze_t *maze, int r, int c, int dc, int face, double radius, double scale, int dir) {
-
-    /* local triangle list */
-    trig_list_t edge;
-    trig_list_init(&edge);
-
-    /* some faces need normals inverted */
-    int reverse = 0;
-
-    int numSegs = 32;
-    for(int i=0; i<numSegs; ++i) {
-        double thetaI1 = M_PI * i / numSegs;
-        double thetaI2 = M_PI * (i+1) / numSegs;
-
-        /* compute raw segment coordinates */
-        double x11 = 0.5;
-        double y11 = radius*cos(thetaI1)+1.0;
-        double z11 = radius*sin(thetaI1)+0.5;
-
-        double x12 = 0.5;
-        double y12 = radius*cos(thetaI2)+1.0;
-        double z12 = radius*sin(thetaI2)+0.5;
-
-        double x21 = -0.5;
-        double y21 = radius*cos(thetaI1)+1.0;
-        double z21 = radius*sin(thetaI1)+0.5;
-
-        double x22 = -0.5;
-        double y22 = radius*cos(thetaI2)+1.0;
-        double z22 = radius*sin(thetaI2)+0.5;
-
-        /* outer shell of marker */
-        trig_list_add(list, x11, y11, z11,
-                x12, y12, z12,
-                x22, y22, z22, reverse);
-        trig_list_add(list, x11, y11, z11,
-                x22, y22, z22,
-                x21, y21, z21, reverse);
-    }
-
-    trig_list_scale(&edge, 1.0, dc, 1.0);
-    trig_list_move(&edge, r, c, 0.0);
+    if( rotated != 0 )
+        trig_list_rotate_axial(&edge, 2, M_PI/2.0);
+    trig_list_move(&edge, r+rOffset, c+cOffset, 0.0);
 
     trig_list_copy(list, &edge);
     trig_list_free(&edge);
@@ -559,13 +513,13 @@ static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position
 
     /* add straight segments */
     if( lSide != 0 )
-        maze_add_edge1(list, maze, r, c, -1, face, radius, scale, dir);
+        maze_add_edge(list, maze, r, c, face, radius, scale, 0, -1, 0);
     if( rSide != 0 )
-        maze_add_edge1(list, maze, r, c, 1, face, radius, scale, dir);
+        maze_add_edge(list, maze, r, c, face, radius, scale, 0, 1, 0);
     if( tSide != 0 )
-        maze_add_edge2(list, maze, r, c, -1, face, radius, scale, dir);
+        maze_add_edge(list, maze, r, c, face, radius, scale, 1, 0, -1);
     if( bSide != 0 )
-        maze_add_edge2(list, maze, r, c, 1, face, radius, scale, dir);
+        maze_add_edge(list, maze, r, c, face, radius, scale, 1, 0, 1);
 }
 
 static void maze_add_cube(trig_list_t *list, double x, double y, double z, char face_mask, double scaleX, double scaleY, double scaleZ) {
