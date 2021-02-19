@@ -907,9 +907,9 @@ int maze_add_solution(maze_t *maze, trig_list_t *list) {
     double scale = 1.0;
     for(int i=0; i<maze->solution.posListNum; ++i) {
         double x, y, z;
-        x = maze->solution.positions[i][0];
-        y = maze->solution.positions[i][1];
-        z = maze->solution.positions[i][2];
+        x = maze->solution.positions[i][0]+0.5*scale;
+        y = maze->solution.positions[i][1]+0.5*scale;
+        z = maze->solution.positions[i][2]+0.5*scale;
         maze_add_cube(list, x, y, z, 0, scale, scale, scale);
     }
 
