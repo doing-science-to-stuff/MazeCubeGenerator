@@ -156,7 +156,7 @@ static void trig_list_free(trig_list_t *list) {
 static int trig_list_add(trig_list_t *list,
     double x1, double y1, double z1,
     double x2, double y2, double z2,
-    double x3, double y3, double z3, int rev) {
+    double x3, double y3, double z3) {
 
     /* reallocate list, if needed */
     if( list->num == list->cap ) {
@@ -177,23 +177,14 @@ static int trig_list_add(trig_list_t *list,
     list->trig[pos].y[0] = y1;
     list->trig[pos].z[0] = z1;
 
-    if( rev <= 0 ) {
-        list->trig[pos].x[1] = x2;
-        list->trig[pos].y[1] = y2;
-        list->trig[pos].z[1] = z2;
+    list->trig[pos].x[1] = x2;
+    list->trig[pos].y[1] = y2;
+    list->trig[pos].z[1] = z2;
 
-        list->trig[pos].x[2] = x3;
-        list->trig[pos].y[2] = y3;
-        list->trig[pos].z[2] = z3;
-    } else {
-        list->trig[pos].x[1] = x3;
-        list->trig[pos].y[1] = y3;
-        list->trig[pos].z[1] = z3;
+    list->trig[pos].x[2] = x3;
+    list->trig[pos].y[2] = y3;
+    list->trig[pos].z[2] = z3;
 
-        list->trig[pos].x[2] = x2;
-        list->trig[pos].y[2] = y2;
-        list->trig[pos].z[2] = z2;
-    }
     ++list->num;
 
     return 0;
@@ -206,7 +197,7 @@ static void trig_list_copy(trig_list_t *dst, trig_list_t *src) {
         trig_t *t = &src->trig[i];
         trig_list_add(dst, t->x[0], t->y[0], t->z[0],
             t->x[1], t->y[1], t->z[1],
-            t->x[2], t->y[2], t->z[2], 0);
+            t->x[2], t->y[2], t->z[2]);
     }
 }
 
@@ -281,8 +272,6 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
     int c = pos[d2];
     int r = pos[d1];
 
-    int reverse = 0;
-
     const int numSegsI = 64;
     const int numSegsJ = 8;
     for(int i=0; i<numSegsI; ++i) {
@@ -345,20 +334,20 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
                 /* curved surface of marker */
                 trig_list_add(list, x11, y11, z11,
                         x22, y22, z22,
-                        x12, y12, z12, reverse);
+                        x12, y12, z12);
                 trig_list_add(list, x11, y11, z11,
                         x21, y21, z21,
-                        x22, y22, z22, reverse);
+                        x22, y22, z22);
             } else if( cell1 && !cell2 && j>0 ) {
                 /* cap one end */
                 trig_list_add(list, x10, y10, z10,
                                     x12, y12, z12,
-                                    x11, y11, z11, reverse);
+                                    x11, y11, z11);
             } else if( !cell1 && cell2 && j>0 ) {
                 /* cap other end */
                 trig_list_add(list, x20, y20, z20,
                                     x21, y21, z21,
-                                    x22, y22, z22, reverse);
+                                    x22, y22, z22);
             }
         }
     }
@@ -371,9 +360,6 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
     /* local triangle list */
     trig_list_t corner;
     trig_list_init(&corner);
-
-    /* some faces need normals inverted */
-    int reverse = 0;
 
     double x10 = 0.0, y10 = 0.0, z10 = 0.0;
     double x30 = 0.0, y30 = 0.0, z30 = 0.0;
@@ -421,29 +407,29 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
         /* curved surface of marker */
         trig_list_add(&corner, x11, y11, z11,
                 x22, y22, z22,
-                x12, y12, z12, reverse);
+                x12, y12, z12);
         trig_list_add(&corner, x11, y11, z11,
                 x21, y21, z21,
-                x22, y22, z22, reverse);
+                x22, y22, z22);
 
         trig_list_add(&corner, x31, y31, z31,
                 x32, y32, z32,
-                x22, y22, z22, reverse);
+                x22, y22, z22);
         trig_list_add(&corner, x31, y31, z31,
                 x22, y22, z22,
-                x21, y21, z21, reverse);
+                x21, y21, z21);
 
         /* add end caps */
         if( rCap==0 ) {
             trig_list_add(&corner, x11, y11, z11,
                     x12, y12, z12,
-                    x10, y10, z10, reverse);
+                    x10, y10, z10);
         }
 
         if( cCap==0 ) {
             trig_list_add(&corner, x31, y31, z31,
                     x30, y30, z30,
-                    x32, y32, z32, reverse);
+                    x32, y32, z32);
         }
     }
 
@@ -460,14 +446,6 @@ static void maze_add_edge(trig_list_t *list, maze_t *maze, int r, int c, int fac
     /* local triangle list */
     trig_list_t edge;
     trig_list_init(&edge);
-
-    /* some faces need normals inverted */
-    int reverse = 0;
-
-    #if 0
-    if( dr < 0 )
-        reverse ^= 1;
-    #endif
 
     int numSegs = 32;
     for(int i=0; i<numSegs; ++i) {
@@ -494,12 +472,10 @@ static void maze_add_edge(trig_list_t *list, maze_t *maze, int r, int c, int fac
         /* outer shell of marker */
         trig_list_add(&edge, x11, y11, z11,
                 x12, y12, z12,
-                x22, y22, z22,
-                reverse);
+                x22, y22, z22);
         trig_list_add(&edge, x11, y11, z11,
                 x22, y22, z22,
-                x21, y21, z21,
-                reverse);
+                x21, y21, z21);
     }
 
     if( rotated != 0 )
@@ -558,57 +534,57 @@ static void maze_add_cube(trig_list_t *list, double x, double y, double z, char 
         /* left (-x) */
         trig_list_add(list, x-dx, y-dy, z-dz,
                 x-dx, y-dy, z+dz,
-                x-dx, y+dy, z+dz, 0);
+                x-dx, y+dy, z+dz);
         trig_list_add(list, x-dx, y-dy, z-dz,
                 x-dx, y+dy, z+dz,
-                x-dx, y+dy, z-dz, 0);
+                x-dx, y+dy, z-dz);
     }
     if( (face_mask & (1<<1)) == 0) {
         /* right (+x) */
         trig_list_add(list, x+dx, y-dy, z-dz,
                 x+dx, y+dy, z+dz,
-                x+dx, y-dy, z+dz, 0);
+                x+dx, y-dy, z+dz);
         trig_list_add(list, x+dx, y-dy, z-dz,
                 x+dx, y+dy, z-dz,
-                x+dx, y+dy, z+dz, 0);
+                x+dx, y+dy, z+dz);
     }
 
     if( (face_mask & (1<<2)) == 0) {
         /* front (-y) */
         trig_list_add(list, x-dx, y-dy, z-dz,
                 x+dx, y-dy, z+dz,
-                x-dx, y-dy, z+dz, 0);
+                x-dx, y-dy, z+dz);
         trig_list_add(list, x-dx, y-dy, z-dz,
                 x+dx, y-dy, z-dz,
-                x+dx, y-dy, z+dz, 0);
+                x+dx, y-dy, z+dz);
     }
     if( (face_mask & (1<<3)) == 0) {
         /* back (+y) */
         trig_list_add(list, x-dx, y+dy, z-dz,
                 x-dx, y+dy, z+dz,
-                x+dx, y+dy, z+dz, 0);
+                x+dx, y+dy, z+dz);
         trig_list_add(list, x-dx, y+dy, z-dz,
                 x+dx, y+dy, z+dz,
-                x+dx, y+dy, z-dz, 0);
+                x+dx, y+dy, z-dz);
     }
 
     if( (face_mask & (1<<4)) == 0) {
         /* bottom (-z) */
         trig_list_add(list, x-dx, y-dy, z-dz,
                 x+dx, y+dy, z-dz,
-                x+dx, y-dy, z-dz, 0);
+                x+dx, y-dy, z-dz);
         trig_list_add(list, x-dx, y+dy, z-dz,
                 x+dx, y+dy, z-dz,
-                x-dx, y-dy, z-dz, 0);
+                x-dx, y-dy, z-dz);
     }
     if( (face_mask & (1<<5)) == 0) {
         /* top (+z face) */
         trig_list_add(list, x-dx, y-dy, z+dz,
                 x+dx, y-dy, z+dz,
-                x+dx, y+dy, z+dz, 0);
+                x+dx, y+dy, z+dz);
         trig_list_add(list, x-dx, y+dy, z+dz,
                 x-dx, y-dy, z+dz,
-                x+dx, y+dy, z+dz, 0);
+                x+dx, y+dy, z+dz);
     }
 }
 
@@ -783,26 +759,26 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
         /* top flat face */
         trig_list_add(list, xo[i], yo[i], z1,
                                      xo[j], yo[j], z1,
-                                     xi[i], yi[i], z1, 0);
+                                     xi[i], yi[i], z1);
         trig_list_add(list, xi[i], yi[i], z1,
                                      xo[j], yo[j], z1,
-                                     xi[j], yi[j], z1, 0);
+                                     xi[j], yi[j], z1);
 
         /* outer sloped face */
         trig_list_add(list, xo[i], yo[i], z1,
                                      xi[i], yi[i], z0,
-                                     xi[j], yi[j], z0, 0);
+                                     xi[j], yi[j], z0);
         trig_list_add(list, xo[i], yo[i], z1,
                                      xi[j], yi[j], z0,
-                                     xo[j], yo[j], z1, 0);
+                                     xo[j], yo[j], z1);
 
         /* inner vertical face */
         trig_list_add(list, xi[i], yi[i], z1,
                                      xi[j], yi[j], z1,
-                                     xi[j], yi[j], z0, 0);
+                                     xi[j], yi[j], z0);
         trig_list_add(list, xi[i], yi[i], z1,
                                      xi[j], yi[j], z0,
-                                     xi[i], yi[i], z0, 0);
+                                     xi[i], yi[i], z0);
     }
 
     return 0;
