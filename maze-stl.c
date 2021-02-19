@@ -264,7 +264,7 @@ static void maze_export_get_normal(double x1, double y1, double z1,
 
 
 /* circular marker */
-static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale, int dir) {
+static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale) {
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
@@ -355,7 +355,7 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
 
 
 /* square marker */
-static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int dir, int rCap, int cCap) {
+static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int dr, int dc, int face, double radius, double scale, int rCap, int cCap) {
 
     /* local triangle list */
     trig_list_t corner;
@@ -487,7 +487,7 @@ static void maze_add_edge(trig_list_t *list, maze_t *maze, int r, int c, int fac
 }
 
 
-static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale, int dir) {
+static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale) {
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
@@ -502,10 +502,10 @@ static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position
     int bSide = face_get_cell(&maze->faces[face], r, c+1);
 
     /* add corners */
-    maze_add_corner(list, maze, r, c, -1, -1, face, radius, scale, dir, lSide, tSide);
-    maze_add_corner(list, maze, r, c, -1, 1, face, radius, scale, dir, lSide, bSide);
-    maze_add_corner(list, maze, r, c, 1, -1, face, radius, scale, dir, rSide, tSide);
-    maze_add_corner(list, maze, r, c, 1, 1, face, radius, scale, dir, rSide, bSide);
+    maze_add_corner(list, maze, r, c, -1, -1, face, radius, scale, lSide, tSide);
+    maze_add_corner(list, maze, r, c, -1, 1, face, radius, scale, lSide, bSide);
+    maze_add_corner(list, maze, r, c, 1, -1, face, radius, scale, rSide, tSide);
+    maze_add_corner(list, maze, r, c, 1, 1, face, radius, scale, rSide, bSide);
 
     /* add straight segments */
     if( lSide != 0 )
@@ -646,8 +646,8 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list) {
 
     /* add end markers */
     double markerRadius = 0.1;
-    maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale, 1);
-    maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale, 1);
+    maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale);
+    maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale);
 
     return 1;
 }
