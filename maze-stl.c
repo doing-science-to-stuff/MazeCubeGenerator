@@ -116,7 +116,22 @@ static void trig_get_normal(trig_t *trig,
 static void trig_export_stl(FILE *fp, trig_t *trig) {
 
     double nx, ny, nz;
+    double epsilon = 1e-6;
+
+    /* get normal for triangle */
     trig_get_normal(trig, &nx, &ny, &nz);
+
+    /* round all values to remove noise */
+    nx = epsilon*round(nx/epsilon);
+    ny = epsilon*round(ny/epsilon);
+    nz = epsilon*round(nz/epsilon);
+    for(int i=0; i<3; ++i) {
+        trig->x[i] = epsilon*round(trig->x[i]/epsilon);
+        trig->y[i] = epsilon*round(trig->y[i]/epsilon);
+        trig->z[i] = epsilon*round(trig->z[i]/epsilon);
+    }
+
+    /* output triangle to fp */
     fprintf(fp, "facet normal %g %g %g\n", nx, ny, nz);
     fprintf(fp, "  outer loop\n");
     fprintf(fp, "    vertex %g %g %g\n", trig->x[0], trig->y[0], trig->z[0]);
