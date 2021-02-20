@@ -63,7 +63,13 @@ int main(int argc, char **argv) {
                 break;
             case 'h':
             case '?':
-                show_help(argc,argv);
+		free(sizes); sizes=NULL;
+		if(inputFile!=NULL) free(inputFile);
+		if(outputFile!=NULL) free(outputFile);
+		if(stlFile!=NULL) free(stlFile);
+		if(stlFileFlat!=NULL) free(stlFileFlat);
+		if(stlSolFile!=NULL) free(stlSolFile);
+		show_help(argc,argv);
                 break;
             case 'i':
                 /* load maze from file given as argument */
@@ -103,11 +109,23 @@ int main(int argc, char **argv) {
     /* check that sufficient settings exist */
     if( inputFile==NULL && !genMaze ) {
         fprintf(stderr,"\n\nNo maze source given, use -i to specify an input filename or -g to generate a random maze.\n\n");
-        show_help(argc,argv);
+	free(sizes); sizes=NULL;
+	if(inputFile!=NULL) free(inputFile);
+	if(outputFile!=NULL) free(outputFile);
+	if(stlFile!=NULL) free(stlFile);
+	if(stlFileFlat!=NULL) free(stlFileFlat);
+	if(stlSolFile!=NULL) free(stlSolFile);
+	show_help(argc,argv);
     }
     if( outputFile==NULL && stlFile==NULL && stlSolFile==NULL ) {
         fprintf(stderr,"\n\nNo output specified, use -o and/or -m to specify an output filename.\n\n");
-        show_help(argc,argv);
+	free(sizes); sizes=NULL;
+	if(inputFile!=NULL) free(inputFile);
+	if(outputFile!=NULL) free(outputFile);
+	if(stlFile!=NULL) free(stlFile);
+	if(stlFileFlat!=NULL) free(stlFileFlat);
+	if(stlSolFile!=NULL) free(stlSolFile);
+	show_help(argc,argv);
     }
 
     /* generate/load maze and solve if requested/needed */
@@ -126,8 +144,16 @@ int main(int argc, char **argv) {
     else if( inputFile ) {
         /* load a maze from an input file */
         printf("Loading maze from '%s'.\n", inputFile);
-        if( maze_load(&maze,inputFile) < 0 )
-            return 1;
+        if( maze_load(&maze,inputFile) < 0 ) {
+            fprintf(stderr, "Failed to load maze from '%s'\n", inputFile);
+	    free(sizes); sizes=NULL;
+	    if(inputFile!=NULL) free(inputFile);
+	    if(outputFile!=NULL) free(outputFile);
+	    if(stlFile!=NULL) free(stlFile);
+	    if(stlFileFlat!=NULL) free(stlFileFlat);
+	    if(stlSolFile!=NULL) free(stlSolFile);
+            return 0;
+	}
     }
 
     /* solve the maze, if requested/needed */
@@ -155,7 +181,14 @@ int main(int argc, char **argv) {
         maze_export_stl_flat(&maze, stlFileFlat);
     }
 
+    /* free memory */
     maze_free(&maze);
+    free(sizes); sizes=NULL;
+    if(inputFile!=NULL) free(inputFile);
+    if(outputFile!=NULL) free(outputFile);
+    if(stlFile!=NULL) free(stlFile);
+    if(stlFileFlat!=NULL) free(stlFileFlat);
+    if(stlSolFile!=NULL) free(stlSolFile);
 
     return 0;
 }
