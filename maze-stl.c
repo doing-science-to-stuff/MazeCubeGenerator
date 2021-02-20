@@ -1,3 +1,9 @@
+/*
+ * maze-stl.c
+ * MazeCubeGen: maze cube generator
+ *
+ * Copyright (c) 2020-2021 Bryan Franklin. All rights reserved.
+ */
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

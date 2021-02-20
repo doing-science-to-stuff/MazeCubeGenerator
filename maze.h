@@ -2,7 +2,7 @@
  * maze.h
  * MazeCubeGen: maze cube generator
  *
- * Copyright (c) 2020 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020-2021 Bryan Franklin. All rights reserved.
  */
 #ifndef MAZE_H
 #define MAZE_H
@@ -47,8 +47,5 @@ int maze_solve(maze_t *maze);
 int maze_generate(maze_t *maze);
 int maze_write(maze_t *maze, char *filename);
 int maze_load(maze_t *maze, char *filename);
-int maze_export_stl(maze_t *maze, char *filename);
-int maze_export_stl_flat(maze_t *maze, char *filename);
-int maze_export_stl_solution(maze_t *maze, char *filename);
 
 #endif /* MAZE_H */

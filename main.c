@@ -2,13 +2,14 @@
  * main.c
  * MazeCubeGen: maze cube generator
  *
- * Copyright (c) 2020 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020-2021 Bryan Franklin. All rights reserved.
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include "maze.h"
+#include "maze-stl.h"
 
 static void show_help(int argc, char **argv) {
     printf("%s [-d dims] {-g l,w,h | -i file} [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-f flat.stl] [-k maxSegments] [-p solution.stl]\n\n",
