@@ -771,14 +771,6 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
     for(int i=0; i<4; ++i) {
         int j = (i+1)%4;
 
-        /* top flat face */
-        trig_list_add(list, xo[i], yo[i], z1,
-                                     xo[j], yo[j], z1,
-                                     xi[i], yi[i], z1);
-        trig_list_add(list, xi[i], yi[i], z1,
-                                     xo[j], yo[j], z1,
-                                     xi[j], yi[j], z1);
-
         /* outer sloped face */
         trig_list_add(list, xo[i], yo[i], z1,
                                      xi[i], yi[i], z0,
@@ -786,14 +778,6 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
         trig_list_add(list, xo[i], yo[i], z1,
                                      xi[j], yi[j], z0,
                                      xo[j], yo[j], z1);
-
-        /* inner vertical face */
-        trig_list_add(list, xi[i], yi[i], z1,
-                                     xi[j], yi[j], z1,
-                                     xi[j], yi[j], z0);
-        trig_list_add(list, xi[i], yi[i], z1,
-                                     xi[j], yi[j], z0,
-                                     xi[i], yi[i], z0);
     }
 
     return 0;
