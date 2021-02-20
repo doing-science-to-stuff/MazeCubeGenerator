@@ -34,10 +34,29 @@ add_custom_target(debug-build
                   COMMAND bash -c 'cmake -DCMAKE_BUILD_TYPE=Debug . && make'
                   )
 
-# add a valgrind testing target
-add_custom_target(valgrind
-                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg
+# add a valgrind testing targets
+add_custom_target(valgrind1
+                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg --help
                   DEPENDS debug-build
+                  )
+add_custom_target(valgrind2
+                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -d 4 -d 3 -i vg.txt -f vg_flat.stl -m vg.stl -s -p vg_sol.stl
+                  DEPENDS debug-build
+                  )
+add_custom_target(valgrind3
+                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg --help
+                  DEPENDS debug-build
+                  )
+add_custom_target(valgrind4
+                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -i vg.txt
+                  DEPENDS debug-build
+                  )
+add_custom_target(valgrind5
+                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -o vg2.txt
+                  DEPENDS debug-build
+                  )
+add_custom_target(valgrind
+                  DEPENDS valgrind1 valgrind2 valgrind3 valgrind4 valgrind5
                   )
 
 # add common system libraries
