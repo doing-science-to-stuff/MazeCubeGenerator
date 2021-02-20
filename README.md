@@ -60,10 +60,12 @@ along with the solution to `solved_maze.txt`.
 Write 3D model of solution:<br/>
 `$ ./mcg -i unsolved_maze.txt -s -p solution.stl`<br/>
 Loads a maze from `unsolved_maze.txt`, finds the solution, and writes a 3D
-model of the solition to `solution.stl`.
+model of the solution to `solution.stl`.
 
 Write unfolded/flattened model for easier 3D printing:<br/>
 `$ ./mcg -i maze.txt -f maze_flat.stl`
+Loads a maze from `maze.txt` and writes a flat-pack style 3D model to
+`maze_flat.stl` for easier 3D printing.
 
 Hyper-dimensional maze:<br/>
 `$ ./mcg -r 1 -d 4 -g 11,11,11,11 -s -o maze4d.txt`<br/>
