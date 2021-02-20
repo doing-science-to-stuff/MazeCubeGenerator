@@ -263,27 +263,6 @@ static void trig_list_export_stl(FILE *fp, trig_list_t *list) {
 }
 
 
-static void maze_export_get_normal(double x1, double y1, double z1,
-                                   double x2, double y2, double z2,
-                                   double x3, double y3, double z3,
-                                   double *nx, double *ny, double *nz) {
-    /* get two edge vectors */
-    double ux = x2-x1;
-    double uy = y2-y1;
-    double uz = z2-z1;
-    double vx = x3-x1;
-    double vy = y3-y1;
-    double vz = z3-z1;
-
-    /* compute normal for triangle defined by coordinates
-     * see: https://mathworld.wolfram.com/CrossProduct.html
-     * Equation 2 */
-    *nx = uy*vz - uz*vy;
-    *ny = uz*vx - ux*vz;
-    *nz = ux*vy - uy*vx;
-}
-
-
 /* circular marker */
 static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale) {
     int d1 = maze->faces[face].d1;
@@ -500,7 +479,7 @@ static void maze_add_edge(trig_list_t *list, maze_t *maze, int r, int c, int fac
     }
 
     if( rotated != 0 )
-        trig_list_rotate_axial(&edge, 2, M_PI/2.0);
+        trig_list_rotate_axial_around(&edge, 2, M_PI/2.0, 0.0, 0.0, 0.0);
     trig_list_move(&edge, r+rOffset, c+cOffset, 0.0);
 
     trig_list_copy(list, &edge);
