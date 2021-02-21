@@ -63,8 +63,8 @@ Write 3D model of solution:<br/>
 Loads a maze from `unsolved_maze.txt`, finds the solution, and writes a 3D
 model of the solution to `solution.stl`.
 
-Write unfolded/flattened model for easier 3D printing:<br/>
-`$ ./mcg -i maze.txt -f maze_flat.stl`
+Write unfolded/flattened model:<br/>
+`$ ./mcg -i maze.txt -f maze_flat.stl`<br/>
 Loads a maze from `maze.txt` and writes a flat-pack style 3D model to
 `maze_flat.stl` for easier 3D printing.
 
