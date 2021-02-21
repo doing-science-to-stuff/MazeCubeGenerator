@@ -15,3 +15,17 @@ written with a solution using the `-s` flag.
 
 When rendering mazes with more than three spatial dimensions, the `-d` flag
 must also be used to indicate the number of dimensions for the maze.
+
+# Examples
+
+Below are several renderings done using this scene plugin.
+
+Oskar's Cube:<br/>
+[![How to solve Oskar's Cube](https://img.youtube.com/vi/gjdJImQ5XTg/0.jpg)](https://youtu.be/gjdJImQ5XTg)
+
+Larger 3D Maze Cube:<br/>
+[![How to solve Larger 3D Cube](https://img.youtube.com/vi/ZAMD7rTCrj0/0.jpg)](https://youtu.be/ZAMD7rTCrj0)
+
+4D Maze Hypercube:<br/>
+[![How to solve 4D Maze hypercube](https://img.youtube.com/vi/8f80fnufwG0/0.jpg)](https://youtu.be/8f80fnufwG0)
+
