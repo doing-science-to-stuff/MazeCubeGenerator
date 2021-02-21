@@ -807,6 +807,10 @@ static int maze_add_flat_slider(trig_list_t *list, double xOffset, double yOffse
     double yPos = yOffset*scale;
     double zPos = (size-scale)/2.0;
 
+    /* double sizes, so it doesn't fall out */
+    xSize *= 2.0;
+    ySize *= 2.0;
+
     /* 'y' direction */
     int dir = 1;
     if( ySize < 0.0 )
