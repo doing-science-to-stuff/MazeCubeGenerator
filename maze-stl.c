@@ -293,8 +293,7 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
         int cell1 = face_get_cell(&maze->faces[face], row1, col1);
         int cell2 = face_get_cell(&maze->faces[face], row2, col2);
 
-        double x10 = 0.0, y10 = 0.0, z10 = 0.0;
-        double x20 = 0.0, y20 = 0.0, z20 = 0.0;
+        double xc0 = 0.0, yc0 = 0.0, zc0 = 0.0;
         for(int j=0; j<numSegsJ; ++j) {
             double thetaJ1 =  M_PI * j / numSegsJ;
             double thetaJ2 =  M_PI * (j+1) / numSegsJ;
@@ -316,21 +315,50 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
             double y22 = sin(thetaI2) * (1+radius*cos(thetaJ2))+c;
             double z22 = radius*sin(thetaJ2)+0.5;
 
-            /* TODO: When crossing a cell boundary, end cap points should be
-             * interpolated to exactly match the boundary. */
+            /* interpolate crossing point when transitioning to/from
+             * an open cell */
+            double xc1 = 0.0, yc1 = 0.0, zc1 = 0.0;
+            double xc2 = 0.0, yc2 = 0.0, zc2 = 0.0;
+            if( row1 != row2 ) {
+                /* compute crossing points */
+                double t1 = (round(x21*2)/2-x11)/(x21-x11);
+                xc1 = x11 + t1*(x21-x11);
+                yc1 = y11 + t1*(y21-y11);
+                zc1 = z11 + t1*(z21-z11);
+                double t2 = (round(x22*2)/2-x12)/(x22-x12);
+                xc2 = x12 + t2*(x22-x12);
+                yc2 = y12 + t2*(y22-y12);
+                zc2 = z12 + t2*(z22-z12);
+            }
+            if( col1 != col2 ) {
+                /* compute crossing points */
+                double t1 = (round(y21*2)/2-y11)/(y21-y11);
+                xc1 = x11 + t1*(x21-x11);
+                yc1 = y11 + t1*(y21-y11);
+                zc1 = z11 + t1*(z21-z11);
+                double t2 = (round(y22*2)/2-y12)/(y22-y12);
+                xc2 = x12 + t2*(x22-x12);
+                yc2 = y12 + t2*(y22-y12);
+                zc2 = z12 + t2*(z22-z12);
+            }
+
+            /* replace appropriate values */
+            if( cell1!=0 && cell2==0 ) {
+                x21 = xc1; y21 = yc1; z21 = zc1;
+                x22 = xc2; y22 = yc2; z22 = zc2;
+            }
+            else if( cell1==0 && cell2!=0 ) {
+                x11 = xc1; y11 = yc1; z11 = zc1;
+                x12 = xc2; y12 = yc2; z12 = zc2;
+            }
 
             /* record first point along surface for end caps */
-            if( j == 0 && (!cell1 || !cell2) ) {
-                x10 = x11;
-                y10 = y11;
-                z10 = z11;
-                x20 = x21;
-                y20 = y21;
-                z20 = z21;
+            if( cell1 != cell2 && j == 0 ) {
+                xc0 = xc1; yc0 = yc1; zc0 = zc1;
             }
 
             /* output triangles */
-            if( cell1 && cell2 ) {
+            if( cell1 || cell2 ) {
                 /* curved surface of marker */
                 trig_list_add(list, x11, y11, z11,
                         x22, y22, z22,
@@ -338,16 +366,18 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
                 trig_list_add(list, x11, y11, z11,
                         x21, y21, z21,
                         x22, y22, z22);
-            } else if( cell1 && !cell2 && j>0 ) {
+            }
+            if( cell1==0 && cell2!=0 && j>0 ) {
                 /* cap one end */
-                trig_list_add(list, x10, y10, z10,
-                                    x12, y12, z12,
-                                    x11, y11, z11);
-            } else if( !cell1 && cell2 && j>0 ) {
+                trig_list_add(list, xc0, yc0, zc0,
+                                    xc1, yc1, zc1,
+                                    xc2, yc2, zc2);
+            }
+            if( cell1!=0 && cell2==0 && j>0 ) {
                 /* cap other end */
-                trig_list_add(list, x20, y20, z20,
-                                    x21, y21, z21,
-                                    x22, y22, z22);
+                trig_list_add(list, xc0, yc0, zc0,
+                                    xc2, yc2, zc2,
+                                    xc1, yc1, zc1);
             }
         }
     }
