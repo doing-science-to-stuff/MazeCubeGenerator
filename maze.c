@@ -36,6 +36,12 @@ int face_free(face_t *face) {
 }
 
 static int face_set_cell(face_t *face, int row, int col, int value) {
+    if( row < 0 || row>=face->rows
+        || col < 0 || col >=face->cols ) {
+        fprintf(stderr, "Request to set out of bounds face cell %i,%i (size: %ix%i)\n",
+            row, col, face->rows, face->cols);
+        return 0;
+    }
     int pos = row*face->cols + col;
     int old = face->cells[pos];
     face->cells[pos] = value;
@@ -65,6 +71,9 @@ static int pos_list_init(position_list_t *list, int numDimensions) {
 
 
 static int pos_list_free(position_list_t *list) {
+    for(int i=0; i<list->posListNum; ++i) {
+        free(list->positions[i]); list->positions[i] = NULL;
+    }
     free(list->positions); list->positions=NULL;
     memset(list,'\0',sizeof(*list));
     return 0;
@@ -193,9 +202,12 @@ int maze_free(maze_t *maze) {
     for(int face=0; face<maze->numFaces; ++face) {
         face_free(&maze->faces[face]);
     }
+    pos_list_free(&maze->reachable);
+    pos_list_free(&maze->solution);
     free(maze->startPos); maze->startPos=NULL;
     free(maze->endPos); maze->endPos=NULL;
     free(maze->faces); maze->faces=NULL;
+    free(maze->dimensions); maze->dimensions=NULL;
     memset(maze,'\0', sizeof(*maze));
 
     return 0;
@@ -277,6 +289,8 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
         if( filledCells == 9 )
             breaksWall = 1;
     }
+    free(midPos); midPos=NULL;
+    free(nextPos); nextPos=NULL;
 
     return (allowed&&breaksWall);
 }
@@ -472,11 +486,15 @@ static int maze_solve_dfs(maze_t *maze, position_t pos) {
         }
 
         /* recurse */
-        if( maze_solve_dfs(maze, newPos) )
+        if( maze_solve_dfs(maze, newPos) ) {
+            free(newPos); newPos=NULL;
             return 1;
+        }
     }
 
     pos_list_pop(&maze->solution, NULL);
+    free(newPos); newPos=NULL;
+
     return 0;
 }
 
@@ -494,8 +512,10 @@ int maze_solve(maze_t *maze) {
     pos_list_clear(&maze->solution);
     if( maze_solve_dfs(maze, maze->startPos) ) {
         printf("Found solution with length %i\n", maze->solution.posListNum);
+        free(validMoves); validMoves=NULL;
         return 1;
     }
+    free(validMoves); validMoves=NULL;
 
     printf("No solution found!\n");
     return 0;
@@ -569,6 +589,7 @@ int maze_generate(maze_t *maze) {
             maze_gen_step(maze, restartPos);
             ++restarts;
         }
+        free(restartPos); restartPos=NULL;
     } while( maze->maxSegments>0
         && (restarts+1)>maze->maxSegments );
     printf("\t%i segments\n", restarts+1);
