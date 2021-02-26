@@ -36,23 +36,23 @@ add_custom_target(debug-build
 
 # add a valgrind testing targets
 add_custom_target(valgrind1
-                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg --help
+                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg --help || true
                   DEPENDS debug-build
                   )
 add_custom_target(valgrind2
-                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -d 4 -d 3 -i vg.txt -f vg_flat.stl -m vg.stl -s -p vg_sol.stl || true
+                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -d 4 -d 3 -g 9,11,13 -r 12345 -k 1 -o vg.txt -f vg_flat.stl -m vg.stl -s -p vg_sol.stl
                   DEPENDS debug-build
                   )
 add_custom_target(valgrind3
-                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg --help
+                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -i no_such_file.txt -o no_such_output.txt || true
                   DEPENDS debug-build
                   )
 add_custom_target(valgrind4
-                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -i vg.txt
+                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -i vg.txt -s -o vg_out.txt
                   DEPENDS debug-build
                   )
 add_custom_target(valgrind5
-                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -o vg2.txt
+                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -o vg2.txt || true
                   DEPENDS debug-build
                   )
 add_custom_target(valgrind
