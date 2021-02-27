@@ -444,8 +444,12 @@ int maze_pick_goals(maze_t *maze) {
     if( maze->reachable.posListNum < 2 )
         return 0;
 
-    pos_list_random(&maze->reachable, maze->startPos);
-    pos_list_random(&maze->reachable, maze->endPos);
+    size_t posSize = sizeof(*maze->startPos) * maze->numDimensions;
+    int numRetries = 100;
+    do {
+        pos_list_random(&maze->reachable, maze->startPos);
+        pos_list_random(&maze->reachable, maze->endPos);
+    } while( !memcmp(maze->startPos, maze->endPos, posSize) && --numRetries>0);
 
     return 1;
 }
