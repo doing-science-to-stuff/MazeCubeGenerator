@@ -723,6 +723,48 @@ int maze_load(maze_t *maze, char *filename) {
     return 0;
 }
 
+static int maze_cell_trival(maze_t *maze, position_t pos) {
+
+    if( !maze_position_clear(maze, pos) )
+        return 0;
+
+    /* return 1 if moves from cell are only possible in opposite directions
+     * along a single axis */
+    position_t posDir = NULL, negDir = NULL;
+    posDir = malloc(maze->numDimensions * sizeof(*posDir));
+    negDir = malloc(maze->numDimensions * sizeof(*negDir));
+    int num = 0;
+    for(int d = 0; d<maze->numDimensions; ++d) {
+        /* copy current pos */
+        memcpy(posDir, pos, maze->numDimensions * sizeof(*posDir));
+        memcpy(negDir, pos, maze->numDimensions * sizeof(*negDir));
+
+        /* update along axis d */
+        ++posDir[d];
+        --negDir[d];
+
+        /* check neighboring positions */
+        int posClear = maze_position_clear(maze, posDir);
+        int negClear = maze_position_clear(maze, negDir);
+        if( (posClear && !negClear) || (!posClear && negClear) ) {
+            /* can only move one direction along axis d */
+            free(posDir); posDir=NULL;
+            free(negDir); negDir=NULL;
+            return 0;
+        }
+        if( posClear && negClear )
+            ++num;
+    }
+    free(posDir); posDir=NULL;
+    free(negDir); negDir=NULL;
+
+    if( num==1 ) {
+        return 1;
+    }
+
+    return 0;
+}
+
 int maze_export_dot(maze_t *maze, char *filename) {
     /* open file */
     FILE *fp = fopen(filename,"w");
@@ -754,8 +796,9 @@ int maze_export_dot(maze_t *maze, char *filename) {
     int done = 0;
     while( !done ) {
 
-        /* for each open cell */
-        if( maze_position_clear(maze, pos) ) {
+        /* for each non-trivial open cell */
+        if( maze_position_clear(maze, pos)
+            && !maze_cell_trival(maze, pos) ) {
 
             /* check neighbor in each direction */
             for(int m = 0; m<2*maze->numDimensions; ++m) {
@@ -763,13 +806,18 @@ int maze_export_dot(maze_t *maze, char *filename) {
                 /* compute neighbor position */
                 memcpy(neighbor, pos, sizeof(*pos)*maze->numDimensions);
                 int move = moves[m];
-                if( move >= 0 )
-                    neighbor[move-1] += 1;
-                else
-                    neighbor[-move-1] -= 1;
+
+                int length = 0;
+                do {
+                    if( move >= 0 )
+                        neighbor[move-1] += 1;
+                    else
+                        neighbor[-move-1] -= 1;
+                    ++length;
+                } while( maze_cell_trival(maze, neighbor) );
 
                 /* export edge to each accessible neighbor */
-                if( maze_position_clear(maze, neighbor) ) {
+                if( length>0 && maze_position_clear(maze, neighbor) ) {
                     fprintf(fp, "\"%i", pos[0]);
                     for(int i=1; i<maze->numDimensions; ++i) {
                         fprintf(fp, ",%i", pos[i]);
@@ -778,7 +826,7 @@ int maze_export_dot(maze_t *maze, char *filename) {
                     for(int i=1; i<maze->numDimensions; ++i) {
                         fprintf(fp, ",%i", neighbor[i]);
                     }
-                    fprintf(fp, "\";\n");
+                    fprintf(fp, "\" [ label = \"%i\" ];\n", length);
                 }
             }
         }
