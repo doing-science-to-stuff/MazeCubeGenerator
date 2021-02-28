@@ -788,7 +788,14 @@ int maze_export_dot(maze_t *maze, char *filename) {
         moves[i+1] = -(dir+1);
     }
 
-    fprintf(fp, "digraph G {\n");
+    fprintf(fp, "graph G {\nrankdir=TB;\n");
+    fprintf(fp, "node [shape = doublecircle]; \"%i", maze->startPos[0]);
+    for(int i=1; i<maze->numDimensions; ++i)
+        fprintf(fp, ",%i", maze->startPos[i]);
+    fprintf(fp, "\" \"%i", maze->endPos[0]);
+    for(int i=1; i<maze->numDimensions; ++i)
+        fprintf(fp, ",%i", maze->endPos[i]);
+	fprintf(fp, "\";\nnode [shape = circle];\n");
 
     /* iterate through all possible positions */
     position_t neighbor = NULL;
@@ -817,12 +824,14 @@ int maze_export_dot(maze_t *maze, char *filename) {
                 } while( maze_cell_trival(maze, neighbor) );
 
                 /* export edge to each accessible neighbor */
-                if( length>0 && maze_position_clear(maze, neighbor) ) {
+                if( length>0
+                    && memcmp(pos, neighbor, sizeof(*pos)*maze->numDimensions) < 0
+                    && maze_position_clear(maze, neighbor) ) {
                     fprintf(fp, "\"%i", pos[0]);
                     for(int i=1; i<maze->numDimensions; ++i) {
                         fprintf(fp, ",%i", pos[i]);
                     }
-                    fprintf(fp, "\" -> \"%i", neighbor[0]);
+                    fprintf(fp, "\" -- \"%i", neighbor[0]);
                     for(int i=1; i<maze->numDimensions; ++i) {
                         fprintf(fp, ",%i", neighbor[i]);
                     }
