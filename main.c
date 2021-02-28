@@ -17,6 +17,7 @@ static char *outputFile = NULL;
 static char *stlFile = NULL;
 static char *stlFileFlat = NULL;
 static char *stlSolFile = NULL;
+static char *dotFile = NULL;
 
 static void free_buffers() {
     free(sizes); sizes=NULL;
@@ -52,7 +53,7 @@ int main(int argc, char **argv) {
     genMaze = 0;
 
     char ch='\0';
-    while( (ch=getopt(argc, argv, "d:f:g:hi:k:l:m:o:p:r:s"))!=-1 ) {
+    while( (ch=getopt(argc, argv, "d:f:g:hi:k:l:m:o:p:r:sv:"))!=-1 ) {
         switch(ch) {
             case 'd':
                 dims = atoi(optarg);
@@ -109,6 +110,10 @@ int main(int argc, char **argv) {
                 /* generate a solution */
                 doSolve = 1;
                 break;
+            case 'v':
+                /* output graphviz dot to file given as argument */
+                dotFile = strdup(optarg);
+                break;
         }
     }
 
@@ -117,7 +122,7 @@ int main(int argc, char **argv) {
         fprintf(stderr,"\n\nNo maze source given, use -i to specify an input filename or -g to generate a random maze.\n\n");
         show_help(argc,argv);
     }
-    if( outputFile==NULL && stlFile==NULL && stlSolFile==NULL ) {
+    if( outputFile==NULL && stlFile==NULL && stlSolFile==NULL && dotFile==NULL ) {
         fprintf(stderr,"\n\nNo output specified, use -o and/or -m to specify an output filename.\n\n");
         show_help(argc,argv);
     }
@@ -168,6 +173,10 @@ int main(int argc, char **argv) {
     if( stlFileFlat ) {
         printf("Exporting %iD maze to flat-packed STL file `%s`.\n", maze.numDimensions, stlFileFlat);
         maze_export_stl_flat(&maze, stlFileFlat);
+    }
+    if( dotFile ) {
+        printf("Exporting %iD maze to graphviz dot file `%s`.\n", maze.numDimensions, dotFile);
+        maze_export_dot(&maze, dotFile);
     }
 
     /* free memory */

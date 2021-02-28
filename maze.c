@@ -722,3 +722,79 @@ int maze_load(maze_t *maze, char *filename) {
 
     return 0;
 }
+
+int maze_export_dot(maze_t *maze, char *filename) {
+    /* open file */
+    FILE *fp = fopen(filename,"w");
+    if(fp==NULL ) {
+        perror("fopen");
+        return -1;
+    }
+
+    /* start position counter at all 1s */
+    position_t pos = NULL;
+    pos = malloc(maze->numDimensions * sizeof(*pos));
+    for(int i = 0; i<maze->numDimensions; ++i) {
+        pos[i] = 1;
+    }
+
+    /* make list of valid moves */
+    int *moves = calloc(2*maze->numDimensions, sizeof(int));
+    for(int i=0; i<2*maze->numDimensions; i+=2) {
+        int dir = i/2;
+        moves[i] = dir+1;
+        moves[i+1] = -(dir+1);
+    }
+
+    fprintf(fp, "digraph G {\n");
+
+    /* iterate through all possible positions */
+    position_t neighbor = NULL;
+    neighbor = malloc(maze->numDimensions * sizeof(*neighbor));
+    int done = 0;
+    while( !done ) {
+
+        /* for each open cell */
+        if( maze_position_clear(maze, pos) ) {
+
+            /* check neighbor in each direction */
+            for(int m = 0; m<2*maze->numDimensions; ++m) {
+
+                /* compute neighbor position */
+                memcpy(neighbor, pos, sizeof(*pos)*maze->numDimensions);
+                int move = moves[m];
+                if( move >= 0 )
+                    neighbor[move-1] += 1;
+                else
+                    neighbor[-move-1] -= 1;
+
+                /* export edge to each accessible neighbor */
+                if( maze_position_clear(maze, neighbor) ) {
+                    fprintf(fp, "\"%i", pos[0]);
+                    for(int i=1; i<maze->numDimensions; ++i) {
+                        fprintf(fp, ",%i", pos[i]);
+                    }
+                    fprintf(fp, "\" -> \"%i", neighbor[0]);
+                    for(int i=1; i<maze->numDimensions; ++i) {
+                        fprintf(fp, ",%i", neighbor[i]);
+                    }
+                    fprintf(fp, "\";\n");
+                }
+            }
+        }
+
+        /* update pos */
+        done = position_increment(maze, pos);
+    }
+
+    fprintf(fp, "}\n");
+
+    free(neighbor); neighbor=NULL;
+    free(pos); pos=NULL;
+    free(moves); moves=NULL;
+
+    /* close file */
+    fclose(fp); fp=NULL;
+
+    return 0;
+}

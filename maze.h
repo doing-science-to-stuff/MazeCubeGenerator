@@ -47,5 +47,6 @@ int maze_solve(maze_t *maze);
 int maze_generate(maze_t *maze);
 int maze_write(maze_t *maze, char *filename);
 int maze_load(maze_t *maze, char *filename);
+int maze_export_dot(maze_t *maze, char *filename);
 
 #endif /* MAZE_H */
