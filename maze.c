@@ -539,6 +539,7 @@ int maze_generate(maze_t *maze) {
     int restarts = 0;
     do {
         maze_reset_faces(maze);
+        pos_list_clear(&maze->reachable);
 
         /* set starting point for generation */
         int *start = calloc(maze->numDimensions,sizeof(int));
@@ -588,6 +589,7 @@ int maze_generate(maze_t *maze) {
             for(int i=0; i<maze->numDimensions; ++i)
                 printf("%i ", restartPos[i]);
             printf("\n");
+            pos_list_clear(&maze->reachable);
 
             /* try using as an unreachable starting point */
             maze_gen_step(maze, restartPos);
