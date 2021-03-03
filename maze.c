@@ -227,16 +227,6 @@ void maze_set_path_length(maze_t *maze, int len) {
 static int maze_clear_cell(maze_t *maze, int *pos) {
     int ret = 0;
 
-    #if 0
-    printf("\tclearing %i,%i,%i\n", pos[0], pos[1], pos[2]);
-    int testPos[] = {2,9,9};
-    if( pos[0] == testPos[0] && pos[1] == testPos[1] )
-        printf("partial match of %i,%i,%i XY\n", testPos[0], testPos[1], testPos[2]);
-    if (pos[1] == testPos[1] && pos[2] == testPos[2]) 
-        printf("partial match of %i,%i,%i YZ\n", testPos[0], testPos[1], testPos[2]);
-    if (pos[0] == testPos[0] && pos[2] == testPos[2])
-        printf("partial match of %i,%i,%i XZ\n", testPos[0], testPos[1], testPos[2]);
-    #endif /* 0 */
     for(int face = 0; face < maze->numFaces; ++face) {
         int row = pos[maze->faces[face].d1];
         int col = pos[maze->faces[face].d2];
@@ -332,9 +322,6 @@ static int maze_gen_step(maze_t *maze, int *pos) {
     /* clear cell at position pos */
     maze_clear_cell(maze,pos);
     pos_list_push(&maze->reachable, pos);
-    #if 0
-    printf("\t%i,%i,%i\n", pos[0], pos[1], pos[2]);
-    #endif
 
     /* enumerate neighbors that can be moved to */
     int *validMoves = calloc(maze->numDimensions*2, sizeof(int));
@@ -370,9 +357,6 @@ static int maze_gen_step(maze_t *maze, int *pos) {
 
         /* recurse to current position, to check for remaining valid moves */
         if( numMoves > 1 ) {
-            #if 0
-            printf("  branching at %i,%i,%i\n", pos[0], pos[1], pos[2]);
-            #endif /* 0 */
             maze_gen_step(maze,pos);
         }
     }
@@ -548,12 +532,6 @@ int maze_solve(maze_t *maze) {
     free(validMoves); validMoves=NULL;
 
     printf("No solution found!\n");
-    #if 0
-    printf("Writing graphviz file 'no_solution.gv' for unsolvable maze.\n");
-    maze_export_dot(maze, "no_solution.gv");
-    exit(1);
-    #endif /* 0 */
-
     return 0;
 }
 
@@ -562,9 +540,6 @@ static void maze_reset_faces(maze_t *maze) {
     for(int i=0; i<maze->numFaces; ++i) {
         face_reset(&maze->faces[i]);
     }
-    #if 0
-    maze_export_dot(maze, "post_reset.gv");
-    #endif /* 0 */
 }
 
 
@@ -835,7 +810,7 @@ int maze_export_dot(maze_t *maze, char *filename) {
 	fprintf(fp, "\";\n");
 
     #if 0
-    /* highlight rechable set */
+    /* highlight reachable set */
     fprintf(fp, "node [shape = circle, color = green];");
     for(int j=0; j<maze->reachable.posListNum; ++j) {
         fprintf(fp, " \"%i", maze->reachable.positions[j][0]);
