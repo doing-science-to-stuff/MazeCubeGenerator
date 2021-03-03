@@ -760,7 +760,7 @@ int maze_load(maze_t *maze, char *filename) {
     return 0;
 }
 
-static int maze_cell_trival(maze_t *maze, position_t pos) {
+static int maze_cell_trivial(maze_t *maze, position_t pos) {
 
     if( !maze_position_clear(maze, pos) )
         return 0;
@@ -856,7 +856,7 @@ int maze_export_dot(maze_t *maze, char *filename) {
 
         /* for each non-trivial open cell */
         if( maze_position_clear(maze, pos)
-            && !maze_cell_trival(maze, pos) ) {
+            && !maze_cell_trivial(maze, pos) ) {
 
             /* check neighbor in each direction */
             for(int m = 0; m<2*maze->numDimensions; ++m) {
@@ -872,7 +872,7 @@ int maze_export_dot(maze_t *maze, char *filename) {
                     else
                         neighbor[-move-1] -= 1;
                     ++length;
-                } while( maze_cell_trival(maze, neighbor) );
+                } while( maze_cell_trivial(maze, neighbor) );
 
                 /* export edge to each accessible neighbor */
                 if( length>0
