@@ -237,6 +237,19 @@ static int maze_clear_cell(maze_t *maze, int *pos) {
 }
 
 
+int maze_position_clear(maze_t *maze, int *pos) {
+    int isClear = 1;
+    for(int face = 0; isClear && face < maze->numFaces; ++face) {
+        int row = pos[maze->faces[face].d1];
+        int col = pos[maze->faces[face].d2];
+        if( face_get_cell(&maze->faces[face], row, col)!=0 )
+            isClear = 0;
+    }
+
+    return isClear;
+}
+
+
 static int maze_allow_clear(maze_t *maze, int *pos, int move) {
     /* check for border violations */
     if( move < 0 ) {
@@ -260,6 +273,15 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
         nextPos[move-1] += 2;
     else
         nextPos[-move-1] -= 2;
+
+    /* check if those positions are both cleared but not in the reachable set */
+    if( maze_position_clear(maze, midPos)
+            && maze_position_clear(maze, nextPos)
+            && pos_list_rfind(&maze->reachable, nextPos) < 0 ) {
+        /* path already exists due to overlap with previous path building */
+        printf("refound open path!\n");
+        return 1;
+    }
 
     /* check to see if that position can be safely cleared */
     int allowed = 1;
@@ -364,19 +386,6 @@ int maze_unfinished(maze_t *maze) {
 
     /* no unfinished sections found */
     return 0;
-}
-
-
-int maze_position_clear(maze_t *maze, int *pos) {
-    int isClear = 1;
-    for(int face = 0; isClear && face < maze->numFaces; ++face) {
-        int row = pos[maze->faces[face].d1];
-        int col = pos[maze->faces[face].d2];
-        if( face_get_cell(&maze->faces[face], row, col)!=0 )
-            isClear = 0;
-    }
-
-    return isClear;
 }
 
 
