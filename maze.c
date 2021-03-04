@@ -589,7 +589,7 @@ int maze_generate(maze_t *maze) {
         /* while not completely full (i.e., any uncleared 2x2 region exists) */
         restarts = 0;
         int *restartPos = calloc(maze->numDimensions,sizeof(int));
-        retries = 250;
+        retries = 10000;
         if( maze->maxSegments > 0 )
             retries  = maze->maxSegments-1;
         while(maze_unfinished(maze) && --retries) {
