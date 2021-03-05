@@ -25,7 +25,7 @@ behavior.  Below is a list of command-line options and their purpose.
 
 **Basic:**
 
-`-g size` Generate a new maze with given size (`size` format: `l,w,h`, e.g., `11,11,11`).<br/>
+`-d size` Generate a new maze with given size (`size` format: `l,w,h`, e.g., `11,11,11`).<br/>
 `-h` Print usage information.<br/>
 `-i filename.txt` Load an existing maze from `filename.txt` as produced by `-o`.<br/>
 `-m filename.stl` Write maze as STL to `filename.stl`.<br/>
@@ -37,17 +37,17 @@ behavior.  Below is a list of command-line options and their purpose.
 
 **Advanced:**
 
-`-d num` Sets the number of spatial dimensions for a maze to `num`.<br/>
 `-l num` Generate mazes until a solution with length &geq;`num` is found.<br/>
 `-k num` Generate mazes until at most `num` disconnected regions in maze.<br/>
+`-g filename.gv` Writes an input file for [graphviz](https://graphviz.org/) to `filename.gv`.
 
 ## Examples
 Basic random maze generation:<br/>
-`$ ./mcg -r 12345 -g 11,11,11 -o output.txt`<br/>
+`$ ./mcg -r 12345 -d 11,11,11 -o output.txt`<br/>
 Seeds the random number generator with `12345`, generate a random 11x11x11 maze and store the results in `output.txt`.
 
 Larger maze with long solution:<br/>
-`$ ./mcg -r 1 -g 21,21,21 -l 70 -k 1 -m maze21.stl -o maze21.txt`<br/>
+`$ ./mcg -r 1 -d 21,21,21 -l 70 -k 1 -m maze21.stl -o maze21.txt`<br/>
 Seeds the random number generate with `1`, generates random 21x21x21 mazes
 until one with a solution of 70 or more is found and all maze positions belong
 to the same region.  The resulting maze is then stored in `maze21.stl` and
@@ -69,6 +69,6 @@ Loads a maze from `maze.txt` and writes a flat-pack style 3D model to
 `maze_flat.stl` for easier 3D printing.
 
 Hyper-dimensional maze:<br/>
-`$ ./mcg -r 1 -d 4 -g 11,11,11,11 -s -o maze4d.txt`<br/>
+`$ ./mcg -r 1 -d 11,11,11,11 -s -o maze4d.txt`<br/>
 Generates a 4-dimensional maze with size 11x11x11x11, and writes the maze
 along with its solution to `maze4d.txt`.
