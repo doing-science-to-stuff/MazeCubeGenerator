@@ -40,7 +40,7 @@ add_custom_target(valgrind1
                   DEPENDS debug-build
                   )
 add_custom_target(valgrind2
-                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -d 4 -d 3 -g 9,11,13 -r 12345 -k 1 -o vg.txt -f vg_flat.stl -m vg.stl -s -p vg_sol.stl
+                  COMMAND valgrind --leak-check=full --show-reachable=yes --vgdb-error=0 -v ./mcg -d 9,11,13 -r 12345 -k 1 -o vg.txt -f vg_flat.stl -m vg.stl -s -p vg_sol.stl -g vg.gv
                   DEPENDS debug-build
                   )
 add_custom_target(valgrind3
