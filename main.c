@@ -11,16 +11,16 @@
 #include "maze.h"
 #include "maze-stl.h"
 
-static int *sizes=NULL;
+static char *configStr = NULL;
 static char *inputFile = NULL;
 static char *outputFile = NULL;
 static char *stlFile = NULL;
 static char *stlFileFlat = NULL;
 static char *stlSolFile = NULL;
-static char *dotFile = NULL;
+static char *gvFile = NULL;
 
 static void free_buffers() {
-    free(sizes); sizes=NULL;
+    if(configStr!=NULL) free(configStr);
     if(inputFile!=NULL) free(inputFile);
     if(outputFile!=NULL) free(outputFile);
     if(stlFile!=NULL) free(stlFile);
@@ -37,7 +37,6 @@ static void show_help(int argc, char **argv) {
 
 int main(int argc, char **argv) {
     maze_t maze;
-    int dims = 3;
     int genMaze = 0;
     int doSolve = 0;
     int minSolutionLen = -1;
@@ -45,34 +44,23 @@ int main(int argc, char **argv) {
     int maxSegments = -1;
 
     /* set defaults */
-    dims = 3;
-    sizes = calloc(dims,sizeof(int));
-    sizes[0] = 11;
-    sizes[1] = 11;
-    sizes[2] = 11;
     genMaze = 0;
 
     char ch='\0';
-    while( (ch=getopt(argc, argv, "d:f:g:hi:k:l:m:o:p:r:sv:"))!=-1 ) {
+    while( (ch=getopt(argc, argv, "d:f:g:hi:k:l:m:o:p:r:s"))!=-1 ) {
         switch(ch) {
             case 'd':
-                dims = atoi(optarg);
-                sizes = realloc(sizes,dims*sizeof(int));
+                configStr = strdup(optarg);
+                maze_init_str(&maze, configStr);
+                genMaze = 1;
                 break;
             case 'f':
                 /* output flat STL model to file given as argument */
                 stlFileFlat = strdup(optarg);
                 break;
             case 'g':
-                /* generate maze */
-                genMaze = 1;
-                /* argument is dimensions */
-                char *str = strtok(optarg,",x");
-                sizes[0] = atoi(str);
-                for(int i=1; i<dims; ++i) {
-                    sizes[i] = atoi(str);
-                    str = strtok(NULL,",x");
-                }
+                /* output graphviz gv to file given as argument */
+                gvFile = strdup(optarg);
                 break;
             case 'h':
             case '?':
@@ -110,10 +98,6 @@ int main(int argc, char **argv) {
                 /* generate a solution */
                 doSolve = 1;
                 break;
-            case 'v':
-                /* output graphviz dot to file given as argument */
-                dotFile = strdup(optarg);
-                break;
         }
     }
 
@@ -122,7 +106,7 @@ int main(int argc, char **argv) {
         fprintf(stderr,"\n\nNo maze source given, use -i to specify an input filename or -g to generate a random maze.\n\n");
         show_help(argc,argv);
     }
-    if( outputFile==NULL && stlFile==NULL && stlSolFile==NULL && dotFile==NULL ) {
+    if( outputFile==NULL && stlFile==NULL && stlSolFile==NULL && gvFile==NULL ) {
         fprintf(stderr,"\n\nNo output specified, use -o and/or -m to specify an output filename.\n\n");
         show_help(argc,argv);
     }
@@ -130,7 +114,10 @@ int main(int argc, char **argv) {
     /* generate/load maze and solve if requested/needed */
     if( genMaze ) {
         /* create a new maze */
-        maze_init(&maze, dims, sizes);
+        if( configStr )
+            maze_init_str(&maze, configStr);
+        else
+            maze_init_str(&maze, "11x11x11");
         if( maxSegments > 0 )
             maze_set_segments(&maze, maxSegments);
         if( minSolutionLen > 0 )
@@ -174,9 +161,9 @@ int main(int argc, char **argv) {
         printf("Exporting %iD maze to flat-packed STL file `%s`.\n", maze.numDimensions, stlFileFlat);
         maze_export_stl_flat(&maze, stlFileFlat);
     }
-    if( dotFile ) {
-        printf("Exporting %iD maze to graphviz dot file `%s`.\n", maze.numDimensions, dotFile);
-        maze_export_dot(&maze, dotFile);
+    if( gvFile ) {
+        printf("Exporting %iD maze to graphviz gv file `%s`.\n", maze.numDimensions, gvFile);
+        maze_export_gv(&maze, gvFile);
     }
 
     /* free memory */

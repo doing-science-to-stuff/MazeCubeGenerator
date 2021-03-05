@@ -150,6 +150,46 @@ int position_increment(maze_t *maze, position_t pos) {
 }
 
 
+int maze_init_str(maze_t *maze, char *dimStr) {
+
+    int numDimensions = 3;
+    int *sizes = NULL;
+
+    /* count separators in dimStr */
+    char *str = strdup(dimStr);
+    char *curr = str;
+    int numSep = 0;
+    while(*curr) {
+        if( *curr=='x' || *curr==',' )
+            ++numSep;
+        ++curr;
+    }
+    numDimensions = numSep+1;
+
+    /* allocate sizes array */
+    sizes = calloc(numDimensions, sizeof(int));
+
+    /* extract dimensions form dimStr */
+    char *tok = strtok(str,",x");
+    sizes[0] = atoi(tok);
+    for(int i=1; i<numDimensions; ++i) {
+        sizes[i] = atoi(tok);
+        tok = strtok(NULL,",x");
+    }
+    free(str); str=NULL;
+
+    #if 1
+    printf("%s -> %i\t%i", dimStr, numDimensions, sizes[0]);
+    for(int i=1; i<numDimensions; ++i) {
+        printf(",%i", sizes[i]);
+    }
+    printf("\n");
+    #endif /* 0 */
+
+    return maze_init(maze, numDimensions, sizes);
+}
+
+
 int maze_init(maze_t *maze, int numDimensions, int *sizes) {
 
     /* initialize maze structure */
@@ -777,7 +817,7 @@ static int maze_cell_trivial(maze_t *maze, position_t pos) {
     return 0;
 }
 
-int maze_export_dot(maze_t *maze, char *filename) {
+int maze_export_gv(maze_t *maze, char *filename) {
     /* open file */
     FILE *fp = fopen(filename,"w");
     if(fp==NULL ) {
