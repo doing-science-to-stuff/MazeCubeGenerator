@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
     if( doSolve || minSolutionLen>0 ) {
         maze_solve(&maze);
         if( minSolutionLen>0 )
-            printf("solution length is %i.\n", maze.solution.posListNum);
+            printf("solution length is %i.\n", maze.solution.num);
     }
 
     /* write requested output */

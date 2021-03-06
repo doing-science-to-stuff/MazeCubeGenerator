@@ -923,7 +923,7 @@ int maze_export_stl_flat(maze_t *maze, char *filename) {
 
 int maze_add_solution(maze_t *maze, trig_list_t *list) {
     double scale = 1.0;
-    for(int i=0; i<maze->solution.posListNum; ++i) {
+    for(int i=0; i<maze->solution.num; ++i) {
         double x, y, z;
         x = maze->solution.positions[i][0]+0.5*scale;
         y = maze->solution.positions[i][1]+0.5*scale;
