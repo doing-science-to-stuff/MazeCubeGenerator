@@ -63,15 +63,15 @@ int face_get_cell(face_t *face, int row, int col) {
 
 static int pos_list_init(position_list_t *list, int numDimensions) {
     list->numDimensions = numDimensions;
-    list->posListCap = 10;
-    list->posListNum = 0;
-    list->positions = calloc(list->posListCap,sizeof(position_t));
+    list->capacity = 10;
+    list->num = 0;
+    list->positions = calloc(list->capacity,sizeof(position_t));
     return (list->positions!=NULL);
 }
 
 
 static int pos_list_free(position_list_t *list) {
-    for(int i=0; i<list->posListNum; ++i) {
+    for(int i=0; i<list->num; ++i) {
         free(list->positions[i]); list->positions[i] = NULL;
     }
     free(list->positions); list->positions=NULL;
@@ -82,31 +82,31 @@ static int pos_list_free(position_list_t *list) {
 
 static int pos_list_push(position_list_t *list, position_t pos) {
     /* add to list of restart locations */
-    if( list->posListNum == list->posListCap ) {
-        int newCap = list->posListCap*2+1;
+    if( list->num == list->capacity ) {
+        int newCap = list->capacity*2+1;
         void *tmp = realloc(list->positions,newCap*sizeof(int*));
         if( tmp==NULL ) {
             perror("realloc");
             return 0;
         }
         list->positions = tmp;
-        list->posListCap = newCap;
+        list->capacity = newCap;
     }
-    list->positions[list->posListNum] = calloc(list->numDimensions,sizeof(int));
-    memcpy(list->positions[list->posListNum], pos, list->numDimensions*sizeof(int));
-    ++list->posListNum;
+    list->positions[list->num] = calloc(list->numDimensions,sizeof(int));
+    memcpy(list->positions[list->num], pos, list->numDimensions*sizeof(int));
+    ++list->num;
     return 1;
 }
 
 
 static int pos_list_pop(position_list_t *list, position_t pos) {
-    if( list->posListNum <= 0 )
+    if( list->num <= 0 )
         return 0;
     if( pos!=NULL )
-        memcpy(pos,list->positions[list->posListNum-1],list->numDimensions*sizeof(int));
-    if( list->posListNum > 0 ) {
-        free(list->positions[list->posListNum-1]); list->positions[list->posListNum-1]=NULL;
-        --list->posListNum;
+        memcpy(pos,list->positions[list->num-1],list->numDimensions*sizeof(int));
+    if( list->num > 0 ) {
+        free(list->positions[list->num-1]); list->positions[list->num-1]=NULL;
+        --list->num;
     }
     return 1;
 }
@@ -119,16 +119,16 @@ static int pos_list_clear(position_list_t *list) {
 
 
 static int pos_list_random(position_list_t *list, position_t pos) {
-    if( list->posListNum <= 0 )
+    if( list->num <= 0 )
         return 0;
-    int which = rand()%list->posListNum;
+    int which = rand()%list->num;
     memcpy(pos, list->positions[which], list->numDimensions*sizeof(int));
     return 1;
 }
 
 
 static int pos_list_rfind(position_list_t *list, position_t pos) {
-    for(int i=list->posListNum-1; i>=0; --i) {
+    for(int i=list->num-1; i>=0; --i) {
         if( memcmp(list->positions[i], pos, list->numDimensions*sizeof(int)) == 0 )
         return i;
     }
@@ -491,7 +491,7 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
 
 int maze_pick_goals(maze_t *maze) {
 
-    if( maze->reachable.posListNum < 2 )
+    if( maze->reachable.num < 2 )
         return 0;
 
     size_t posSize = sizeof(*maze->startPos) * maze->numDimensions;
@@ -565,7 +565,7 @@ int maze_solve(maze_t *maze) {
     /* start at startPos */
     pos_list_clear(&maze->solution);
     if( maze_solve_dfs(maze, maze->startPos) ) {
-        printf("Found solution with length %i\n", maze->solution.posListNum);
+        printf("Found solution with length %i\n", maze->solution.num);
         free(validMoves); validMoves=NULL;
         return 1;
     }
@@ -622,9 +622,9 @@ int maze_generate(maze_t *maze) {
             /* find and record solution */
             done = maze_solve(maze);
             if( done )
-                printf("\tsolution length: %i\n", maze->solution.posListNum);
+                printf("\tsolution length: %i\n", maze->solution.num);
         } while( --retries
-            && (!done || maze->solution.posListNum < maze->minPathLength) );
+            && (!done || maze->solution.num < maze->minPathLength) );
 
         /* while not completely full (i.e., any uncleared 2x2 region exists) */
         restarts = 0;
@@ -691,8 +691,8 @@ int maze_write(maze_t *maze, char *filename) {
     }
 
     /* write solution from start to end positions */
-    fprintf(fp, "%i\n", maze->solution.posListNum);
-    for(int m=0; m<maze->solution.posListNum; ++m) {
+    fprintf(fp, "%i\n", maze->solution.num);
+    for(int m=0; m<maze->solution.num; ++m) {
         for(int i=0; i<maze->numDimensions; ++i) {
             fprintf(fp, "%i ", maze->solution.positions[m][i]);
         }
@@ -852,7 +852,7 @@ int maze_export_gv(maze_t *maze, char *filename) {
     #if 0
     /* highlight reachable set */
     fprintf(fp, "node [shape = circle, color = green];");
-    for(int j=0; j<maze->reachable.posListNum; ++j) {
+    for(int j=0; j<maze->reachable.num; ++j) {
         fprintf(fp, " \"%i", maze->reachable.positions[j][0]);
         for(int i=1; i<maze->numDimensions; ++i)
             fprintf(fp, ",%i", maze->reachable.positions[j][i]);

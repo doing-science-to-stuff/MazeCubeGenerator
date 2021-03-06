@@ -20,8 +20,8 @@ int face_get_cell(face_t *face, int row, int col);
 typedef int* position_t;
 typedef struct position_list {
     int numDimensions;
-    int posListCap;
-    int posListNum;
+    int capacity;
+    int num;
     position_t *positions;
 } position_list_t;
 
