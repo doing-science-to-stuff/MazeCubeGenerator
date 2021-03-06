@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
         fprintf(stderr,"\n\nNo maze source given, use -i to specify an input filename or -g to generate a random maze.\n\n");
         show_help(argc,argv);
     }
-    if( outputFile==NULL && stlFile==NULL && stlSolFile==NULL && gvFile==NULL ) {
+    if( outputFile==NULL && stlFile==NULL && stlSolFile==NULL && stlFileFlat==NULL && gvFile==NULL ) {
         fprintf(stderr,"\n\nNo output specified, use -o and/or -m to specify an output filename.\n\n");
         show_help(argc,argv);
     }
