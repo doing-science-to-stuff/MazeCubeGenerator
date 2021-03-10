@@ -52,7 +52,6 @@ int main(int argc, char **argv) {
         switch(ch) {
             case 'd':
                 configStr = strdup(optarg);
-                maze_init_str(&maze, configStr);
                 genMaze = 1;
                 break;
             case 'f':
