@@ -26,6 +26,7 @@ static void free_buffers() {
     if(stlFile!=NULL) free(stlFile);
     if(stlFileFlat!=NULL) free(stlFileFlat);
     if(stlSolFile!=NULL) free(stlSolFile);
+    if(gvFile!=NULL) free(gvFile);
 }
 
 static void show_help(int argc, char **argv) {

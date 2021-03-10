@@ -319,6 +319,8 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
             && maze_position_clear(maze, nextPos)
             && pos_list_rfind(&maze->reachable, nextPos) < 0 ) {
         /* path already exists due to overlap with previous path building */
+        free(midPos); midPos=NULL;
+        free(nextPos); nextPos=NULL;
         return 1;
     }
 
