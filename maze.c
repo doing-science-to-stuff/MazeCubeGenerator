@@ -510,12 +510,12 @@ int maze_pick_goals(maze_t *maze) {
 
 
 static int* validMoves = NULL;
-static int maze_solve_dfs(maze_t *maze, position_t pos) {
+static int maze_find_path(maze_t *maze, position_t pos, position_list_t* path, position_t goal) {
 
-    pos_list_push(&maze->solution, pos);
+    pos_list_push(path, pos);
 
     /* check for endPos */
-    if( memcmp(maze->endPos, pos, maze->numDimensions*sizeof(int))==0 ) {
+    if( memcmp(goal, pos, maze->numDimensions*sizeof(int))==0 ) {
         return 1;
     }
 
@@ -539,18 +539,18 @@ static int maze_solve_dfs(maze_t *maze, position_t pos) {
         }
 
         /* check solution for next position */
-        if( pos_list_rfind(&maze->solution, newPos) >= 0 ) {
+        if( pos_list_rfind(path, newPos) >= 0 ) {
             continue;
         }
 
         /* recurse */
-        if( maze_solve_dfs(maze, newPos) ) {
+        if( maze_find_path(maze, newPos, path, goal) ) {
             free(newPos); newPos=NULL;
             return 1;
         }
     }
 
-    pos_list_pop(&maze->solution, NULL);
+    pos_list_pop(path, NULL);
     free(newPos); newPos=NULL;
 
     return 0;
@@ -568,7 +568,7 @@ int maze_solve(maze_t *maze) {
 
     /* start at startPos */
     pos_list_clear(&maze->solution);
-    if( maze_solve_dfs(maze, maze->startPos) ) {
+    if( maze_find_path(maze, maze->startPos, &maze->solution, maze->endPos) ) {
         printf("Found solution with length %i\n", maze->solution.num);
         free(validMoves); validMoves=NULL;
         return 1;
