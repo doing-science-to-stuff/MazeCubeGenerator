@@ -369,10 +369,12 @@ static int maze_gen_step(maze_t *maze, int *pos) {
     int *validMoves = calloc(maze->numDimensions*2, sizeof(int));
     int numMoves = 0;
     for(int i=0; i<maze->numDimensions; ++i) {
-        if( maze_allow_clear(maze,pos,i+1) ) {
+        if( pos[i]<maze->dimensions[i]
+            && maze_allow_clear(maze,pos,i+1) ) {
             validMoves[numMoves++] = i+1;
         }
-        if( maze_allow_clear(maze,pos,-(i+1)) ) {
+        if( pos[i]>0
+            && maze_allow_clear(maze,pos,-(i+1)) ) {
             validMoves[numMoves++] = -(i+1);
         }
     }
