@@ -186,7 +186,10 @@ int maze_init_str(maze_t *maze, char *dimStr) {
     printf("\n");
     #endif /* 0 */
 
-    return maze_init(maze, numDimensions, sizes);
+    int ret = maze_init(maze, numDimensions, sizes);
+    free(sizes); sizes=NULL;
+
+    return ret;
 }
 
 
