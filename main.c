@@ -166,6 +166,8 @@ int main(int argc, char **argv) {
         maze_export_gv(&maze, gvFile);
     }
 
+    maze_metrics(&maze);
+
     /* free memory */
     maze_free(&maze);
     free_buffers();
