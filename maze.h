@@ -36,10 +36,11 @@ typedef struct maze {
     position_list_t reachable;
     position_list_t solution;
     face_t *faces;
+    int optimal;
 } maze_t;
 
 int maze_init_str(maze_t *maze, char *dimStr);
-int maze_init(maze_t *maze, int numDimensions, int *sizes);
+int maze_init(maze_t *maze, int numDimensions, int *sizes, char *options);
 int maze_free(maze_t *maze);
 void maze_set_segments(maze_t *maze, int segs);
 void maze_set_path_length(maze_t *maze, int len);

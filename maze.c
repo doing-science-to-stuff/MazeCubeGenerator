@@ -150,14 +150,38 @@ static int position_increment(maze_t *maze, position_t pos) {
 }
 
 
-int maze_init_str(maze_t *maze, char *dimStr) {
+static int maze_parse_options(maze_t *maze, char *options) {
+
+    if( options[0] == 'o' )
+        maze->optimal = 1;
+    else if(options[0] == 'r' )
+        maze->optimal = 0;
+
+    return 0;
+}
+
+
+int maze_init_str(maze_t *maze, char *cfgStr) {
 
     int numDimensions = 3;
     int *sizes = NULL;
 
+    /* copy config string before destructly parsing it */
+    char *cfg = strdup(cfgStr);
+    char *options = NULL;
+    if( strchr(cfg, ':') ) {
+        /* config is more than just dimensions */
+        /* skip dimensions string */
+        strtok(cfg,":");
+        char *optionStr = strtok(NULL,":");
+        if( optionStr )
+            options = strdup(optionStr);
+    }
+
     /* count separators in dimStr */
-    char *str = strdup(dimStr);
-    char *curr = str;
+    char *dimStr = strdup(cfg);
+    free(cfg); cfg=NULL;
+    char *curr = dimStr;
     int numSep = 0;
     while(*curr) {
         if( *curr=='x' || *curr==',' )
@@ -170,13 +194,12 @@ int maze_init_str(maze_t *maze, char *dimStr) {
     sizes = calloc(numDimensions, sizeof(int));
 
     /* extract dimensions form dimStr */
-    char *tok = strtok(str,",x");
+    char *tok = strtok(dimStr,",x");
     sizes[0] = atoi(tok);
     for(int i=1; i<numDimensions; ++i) {
         sizes[i] = atoi(tok);
         tok = strtok(NULL,",x");
     }
-    free(str); str=NULL;
 
     #if 1
     printf("%s -> %i\t%i", dimStr, numDimensions, sizes[0]);
@@ -186,17 +209,22 @@ int maze_init_str(maze_t *maze, char *dimStr) {
     printf("\n");
     #endif /* 0 */
 
-    int ret = maze_init(maze, numDimensions, sizes);
+    int ret = maze_init(maze, numDimensions, sizes, options);
+    if( options ) {
+        free(options); options=NULL;
+    }
     free(sizes); sizes=NULL;
+    free(dimStr); dimStr=NULL;
 
     return ret;
 }
 
 
-int maze_init(maze_t *maze, int numDimensions, int *sizes) {
+int maze_init(maze_t *maze, int numDimensions, int *sizes, char *options) {
 
     /* initialize maze structure */
     printf("Initializing %iD maze.\n", numDimensions);
+    memset(maze,'\0',sizeof(*maze));
     maze->numDimensions = numDimensions;
     maze->numFaces = (numDimensions*(numDimensions-1))/2;
     maze->dimensions = calloc(numDimensions,sizeof(int));
@@ -213,6 +241,8 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes) {
         }
         maze->dimensions[i] = sizes[i];
     }
+    if( options )
+        maze_parse_options(maze, options);
 
     /* allocate start and end positions */
     maze->startPos = calloc(numDimensions,sizeof(int));
@@ -521,7 +551,7 @@ static size_t maze_cell_degree(maze_t *maze, position_t pos) {
 }
 
 
-int maze_pick_goals(maze_t *maze) {
+static int maze_pick_goals_random(maze_t *maze) {
 
     if( maze->reachable.num < 2 )
         return 0;
@@ -582,6 +612,96 @@ static int maze_find_path(maze_t *maze, position_t pos, position_list_t* path, p
     free(newPos); newPos=NULL;
 
     return 0;
+}
+
+
+int maze_pick_goals_optimal(maze_t *maze) {
+
+    /* TODO Add parameter to allow selecting of solution metric */
+
+    /* build list of all dead ends */
+    position_list_t dead_ends;
+    pos_list_init(&dead_ends, maze->numDimensions);
+    position_t pos = NULL;
+    pos = malloc(maze->numDimensions * sizeof(*pos));
+    for(int i = 0; i<maze->numDimensions; ++i) {
+        pos[i] = 1;
+    }
+
+    int done = 0;
+    while(!done) {
+        size_t degree = maze_cell_degree(maze, pos);
+
+        /* number of dead ends */
+        if( degree == 1 )
+            pos_list_push(&dead_ends, pos);
+
+        /* update pos */
+        done = position_increment(maze, pos);
+    }
+    printf("%s: dead ends: %i\n", __FUNCTION__, dead_ends.num);
+
+    /* initialize validMoves */
+    validMoves = calloc(2*maze->numDimensions, sizeof(int));
+    for(int i=0; i<maze->numDimensions; ++i) {
+        validMoves[i*2] = i+1;
+        validMoves[i*2+1] = -(i+1);
+    }
+
+    /* for all pairs of dead ends */
+    position_list_t path;
+    pos_list_init(&path, maze->numDimensions);
+    int best_length = 0;
+    for(int i=0; i<dead_ends.num; ++i) {
+        for(int j=i+1; j<dead_ends.num; ++j) {
+            /* find solution, if possible */
+            pos_list_clear(&path);
+            maze_find_path(maze, dead_ends.positions[i], &path, dead_ends.positions[j]);
+            if( path.num == 0 )
+                continue;
+
+            /* compute metrics for solution */
+            int length = path.num;
+
+            /* pick endpoints, if better than current best */
+            if( length > best_length ) {
+                printf("  new best path of length %i.\n", length);
+                if( maze->startPos==NULL )
+                    maze->startPos = calloc(maze->numDimensions, sizeof(*maze->startPos));
+                if( maze->endPos==NULL )
+                    maze->endPos = calloc(maze->numDimensions, sizeof(*maze->endPos));
+
+                /* randomly assign start/end to the dead ends */
+                if( rand()%2 ) {
+                    memcpy(maze->startPos, dead_ends.positions[i],
+                            maze->numDimensions*sizeof(*maze->startPos));
+                    memcpy(maze->endPos, dead_ends.positions[j],
+                            maze->numDimensions*sizeof(*maze->endPos));
+                } else {
+                    memcpy(maze->startPos, dead_ends.positions[j],
+                            maze->numDimensions*sizeof(*maze->startPos));
+                    memcpy(maze->endPos, dead_ends.positions[i],
+                            maze->numDimensions*sizeof(*maze->endPos));
+                }
+
+                best_length = length;
+            }
+        }
+    }
+    pos_list_free(&path);
+    pos_list_free(&dead_ends);
+    free(pos); pos=NULL;
+    free(validMoves); validMoves=NULL;
+
+    return 1;
+}
+
+
+int maze_pick_goals(maze_t *maze) {
+    if( maze->optimal )
+        return maze_pick_goals_optimal(maze);
+
+    return maze_pick_goals_random(maze);
 }
 
 
@@ -753,7 +873,7 @@ int maze_load(maze_t *maze, char *filename) {
         fscanf(fp,"%i ", &sizes[i]);   
 
     /* initialize the maze */
-    maze_init(maze, maze->numDimensions, sizes);
+    maze_init(maze, maze->numDimensions, sizes, NULL);
     free(sizes); sizes=NULL;
 
     /* read maze faces */
@@ -994,7 +1114,7 @@ int maze_metrics(maze_t *maze) {
     int done = 0;
     int dead_ends = 0;
     int branches = 0;
-    while( !done) {
+    while(!done) {
         size_t degree = maze_cell_degree(maze, pos);
 
         /* number of dead ends */

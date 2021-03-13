@@ -25,7 +25,7 @@ behavior.  Below is a list of command-line options and their purpose.
 
 **Basic:**
 
-`-d size` Generate a new maze with given size (`size` format: `l,w,h`, e.g., `11,11,11`).<br/>
+`-d size` Generate a new maze with given size (`size` format: `l,w,h` or `l,w,h:options`, e.g., `11,11,11` or `11,11,11:r`).<br/>
 `-h` Print usage information.<br/>
 `-i filename.txt` Load an existing maze from `filename.txt` as produced by `-o`.<br/>
 `-m filename.stl` Write maze as STL to `filename.stl`.<br/>
@@ -44,7 +44,7 @@ behavior.  Below is a list of command-line options and their purpose.
 ## Examples
 Basic random maze generation:<br/>
 `$ ./mcg -r 12345 -d 11,11,11 -o output.txt`<br/>
-Seeds the random number generator with `12345`, generate a random 11x11x11 maze and store the results in `output.txt`.
+Seeds the random number generator with `12345`, generates a random 11x11x11 maze and stores the results in `output.txt`.
 
 Larger maze with long solution:<br/>
 `$ ./mcg -r 1 -d 21,21,21 -l 70 -k 1 -m maze21.stl -o maze21.txt`<br/>
@@ -52,6 +52,10 @@ Seeds the random number generate with `1`, generates random 21x21x21 mazes
 until one with a solution of 70 or more is found and all maze positions belong
 to the same region.  The resulting maze is then stored in `maze21.stl` and
 `maze21.txt`.
+
+Maze generation with optimized start & end locations:<br/>
+`$ ./mcg -r 12345 -d 11,11,11:o -o optimal.txt`<br/>
+Seeds the random number generator with `12345`, generates a random 11x11x11 maze, finds start & end points that maximize solution length, and stores the results in `optimal.txt`.
 
 Solve an existing maze:<br/>
 `$ ./mcg -i unsolved_maze.txt -s -o solved_maze.txt`<br/>
