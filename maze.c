@@ -136,7 +136,7 @@ static int pos_list_rfind(position_list_t *list, position_t pos) {
 }
 
 
-int position_increment(maze_t *maze, position_t pos) {
+static int position_increment(maze_t *maze, position_t pos) {
     int done = 0;
     int j=0;
     while(j<maze->numDimensions && pos[j]==maze->dimensions[j]-1) {
@@ -413,7 +413,7 @@ static int maze_gen_step(maze_t *maze, int *pos) {
 }
 
 
-int maze_unfinished(maze_t *maze) {
+static int maze_unfinished(maze_t *maze) {
 
     /* check all faces for 2x2 regions of all uncleared cells */
     for(int face = 0; face < maze->numFaces; ++face) {
@@ -437,7 +437,7 @@ int maze_unfinished(maze_t *maze) {
 }
 
 
-int maze_get_restart_location(maze_t *maze, int *pos) {
+static int maze_get_restart_location(maze_t *maze, int *pos) {
 
     /* start position counter at all 1s */
     for(int i = 0; i<maze->numDimensions; ++i) {
@@ -493,6 +493,31 @@ int maze_get_restart_location(maze_t *maze, int *pos) {
     pos_list_free(&posList);
 
     return 0;
+}
+
+
+static size_t maze_cell_degree(maze_t *maze, position_t pos) {
+
+    if( !maze_position_clear(maze, pos) )
+        return 0;
+
+    position_t neighbor;
+    neighbor = calloc(maze->numDimensions,sizeof(*neighbor));
+    size_t degree = 0;
+    for(int i=0; i<maze->numDimensions; ++i) {
+        memcpy(neighbor, pos, sizeof(*neighbor)*maze->numDimensions);
+        ++neighbor[i];
+        if( maze_position_clear(maze, neighbor) )
+            ++degree;
+
+        memcpy(neighbor, pos, sizeof(*neighbor)*maze->numDimensions);
+        --neighbor[i];
+        if( maze_position_clear(maze, neighbor) )
+            ++degree;
+    }
+    free(neighbor); neighbor=NULL;
+
+    return degree;
 }
 
 
@@ -927,31 +952,6 @@ int maze_export_gv(maze_t *maze, char *filename) {
     fclose(fp); fp=NULL;
 
     return 0;
-}
-
-
-size_t maze_cell_degree(maze_t *maze, position_t pos) {
-
-    if( !maze_position_clear(maze, pos) )
-        return 0;
-
-    position_t neighbor;
-    neighbor = calloc(maze->numDimensions,sizeof(*neighbor));
-    size_t degree = 0;
-    for(int i=0; i<maze->numDimensions; ++i) {
-        memcpy(neighbor, pos, sizeof(*neighbor)*maze->numDimensions);
-        ++neighbor[i];
-        if( maze_position_clear(maze, neighbor) )
-            ++degree;
-
-        memcpy(neighbor, pos, sizeof(*neighbor)*maze->numDimensions);
-        --neighbor[i];
-        if( maze_position_clear(maze, neighbor) )
-            ++degree;
-    }
-    free(neighbor); neighbor=NULL;
-
-    return degree;
 }
 
 
