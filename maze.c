@@ -180,7 +180,6 @@ int maze_init_str(maze_t *maze, char *cfgStr) {
 
     /* count separators in dimStr */
     char *dimStr = strdup(cfg);
-    free(cfg); cfg=NULL;
     char *curr = dimStr;
     int numSep = 0;
     while(*curr) {
@@ -202,7 +201,7 @@ int maze_init_str(maze_t *maze, char *cfgStr) {
     }
 
     #if 1
-    printf("%s -> %i\t%i", dimStr, numDimensions, sizes[0]);
+    printf("%s -> %i\t%i", cfg, numDimensions, sizes[0]);
     for(int i=1; i<numDimensions; ++i) {
         printf(",%i", sizes[i]);
     }
@@ -215,6 +214,7 @@ int maze_init_str(maze_t *maze, char *cfgStr) {
     }
     free(sizes); sizes=NULL;
     free(dimStr); dimStr=NULL;
+    free(cfg); cfg=NULL;
 
     return ret;
 }
