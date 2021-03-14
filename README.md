@@ -47,7 +47,7 @@ Basic random maze generation:<br/>
 Seeds the random number generator with `12345`, generates a random 11x11x11 maze and stores the results in `output.txt`.
 
 Larger maze with long solution:<br/>
-`$ ./mcg -r 1 -d 21,21,21 -l 70 -k 1 -m maze21.stl -o maze21.txt`<br/>
+`$ ./mcg -r 1 -d 21,21,21:o -l 70 -k 1 -m maze21.stl -o maze21.txt`<br/>
 Seeds the random number generate with `1`, generates random 21x21x21 mazes
 until one with a solution of 70 or more is found and all maze positions belong
 to the same region.  The resulting maze is then stored in `maze21.stl` and
@@ -73,6 +73,6 @@ Loads a maze from `maze.txt` and writes a flat-pack style 3D model to
 `maze_flat.stl` for easier 3D printing.
 
 Hyper-dimensional maze:<br/>
-`$ ./mcg -r 1 -d 11,11,11,11 -s -o maze4d.txt`<br/>
+`$ ./mcg -r 1 -d 11,11,11,11:o -s -o maze4d.txt`<br/>
 Generates a 4-dimensional maze with size 11x11x11x11, and writes the maze
 along with its solution to `maze4d.txt`.
