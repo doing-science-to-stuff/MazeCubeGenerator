@@ -36,7 +36,7 @@ typedef struct maze {
     position_list_t reachable;
     position_list_t solution;
     face_t *faces;
-    int optimal;
+    char pathSelMode;
 } maze_t;
 
 int maze_init_str(maze_t *maze, char *dimStr);

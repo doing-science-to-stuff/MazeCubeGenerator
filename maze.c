@@ -2,8 +2,9 @@
  * maze.c
  * MazeCubeGen: maze cube generator
  *
- * Copyright (c) 2020 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020-2021 Bryan Franklin. All rights reserved.
  */
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -152,12 +153,12 @@ static int position_increment(maze_t *maze, position_t pos) {
 
 static int maze_parse_options(maze_t *maze, char *options) {
 
-    if( options[0] == 'o' )
-        maze->optimal = 1;
-    else if(options[0] == 'r' )
-        maze->optimal = 0;
+    if( !options )
+        return 0;
 
-    return 0;
+    maze->pathSelMode = tolower(options[0]);
+
+    return 1;
 }
 
 
@@ -208,7 +209,10 @@ int maze_init_str(maze_t *maze, char *cfgStr) {
     printf("\n");
     #endif /* 0 */
 
+    /* do actual initialization */
     int ret = maze_init(maze, numDimensions, sizes, options);
+
+    /* free buffers and extra copies of strings */
     if( options ) {
         free(options); options=NULL;
     }
@@ -615,7 +619,7 @@ static int maze_find_path(maze_t *maze, position_t pos, position_list_t* path, p
 }
 
 
-int maze_pick_goals_optimal(maze_t *maze) {
+static int maze_pick_goals_optimal(maze_t *maze, char mode) {
 
     /* TODO Add parameter to allow selecting of solution metric */
 
@@ -651,7 +655,7 @@ int maze_pick_goals_optimal(maze_t *maze) {
     /* for all pairs of dead ends */
     position_list_t path;
     pos_list_init(&path, maze->numDimensions);
-    int best_length = 0;
+    int best_value = 0;
     for(int i=0; i<dead_ends.num; ++i) {
         for(int j=i+1; j<dead_ends.num; ++j) {
             /* find solution, if possible */
@@ -661,11 +665,23 @@ int maze_pick_goals_optimal(maze_t *maze) {
                 continue;
 
             /* compute metrics for solution */
-            int length = path.num;
+            int value=0;
+            if( mode == 'l' || mode == 'o' ) {
+                value = path.num;
+            } else if( mode == 'b' ) {
+                value = 0;
+                for(int k=0; k<path.num; ++k) {
+                    /* count branch points */
+                    if( maze_cell_degree(maze, path.positions[k]) > 2 )
+                        ++value;
+                }
+            } else {
+                fprintf(stderr, "Unrecognized path metric mode '%c'.\n", mode);
+            }
 
             /* pick endpoints, if better than current best */
-            if( length > best_length ) {
-                printf("  new best path of length %i.\n", length);
+            if( value > best_value ) {
+                printf("  new best path metric value (%i).\n", value);
                 if( maze->startPos==NULL )
                     maze->startPos = calloc(maze->numDimensions, sizeof(*maze->startPos));
                 if( maze->endPos==NULL )
@@ -684,7 +700,7 @@ int maze_pick_goals_optimal(maze_t *maze) {
                             maze->numDimensions*sizeof(*maze->endPos));
                 }
 
-                best_length = length;
+                best_value = value;
             }
         }
     }
@@ -698,8 +714,10 @@ int maze_pick_goals_optimal(maze_t *maze) {
 
 
 int maze_pick_goals(maze_t *maze) {
-    if( maze->optimal )
-        return maze_pick_goals_optimal(maze);
+    if( maze->pathSelMode=='o'
+        || maze->pathSelMode=='l'
+        || maze->pathSelMode=='b' )
+        return maze_pick_goals_optimal(maze, maze->pathSelMode);
 
     return maze_pick_goals_random(maze);
 }
