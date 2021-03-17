@@ -29,12 +29,14 @@ static void free_buffers() {
     if(gvFile!=NULL) free(gvFile);
 }
 
+
 static void show_help(int argc, char **argv) {
     free_buffers();
-    printf("%s [-d dims] {-g l,w,h | -i file} [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-f flat.stl] [-k maxSegments] [-p solution.stl]\n\n",
+    printf("%s {-d l,w,h[:o] | -i file.txt} [-h] [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-f flat.stl] [-k maxSegments] [-p solution.stl] [-g graph.gv]\n\n",
             argv[0]);
     exit(0);
 }
+
 
 int main(int argc, char **argv) {
     maze_t maze;
