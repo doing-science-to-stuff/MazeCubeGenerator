@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "../scene.h"
 
-#include "../../PuzzleMaze/maze.c"
+#include "../../MazeCubeGenerator/maze.c"
 
 static maze_t maze;
 static int alternateView = 0;
@@ -31,7 +31,7 @@ int scene_frames(int dimensions, char *config) {
             alternateView = atoi(str);
     }
     maze_load(&maze,config);
-    int numFrames = (maze.solution.posListNum-1)*framesPerMove + 2*(dimensions-2)*framesPerSpin;
+    int numFrames = (maze.solution.num-1)*framesPerMove + 2*(dimensions-2)*framesPerSpin;
     return numFrames;
 }
 
@@ -563,10 +563,10 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
         pos2 = 0;
         posW = 0.0;
     }
-    if( pos2 >= maze->solution.posListNum ) {
+    if( pos2 >= maze->solution.num ) {
         /* pause for final spin */
-        pos1 = maze->solution.posListNum-1;
-        pos2 = maze->solution.posListNum-1;
+        pos1 = maze->solution.num-1;
+        pos2 = maze->solution.num-1;
         posW = 0.0;
     }
     for(int i=0; i<dimensions; ++i) {
@@ -762,7 +762,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     double angle1 = 0.0;
     int totalSpins = dimensions - 2;
     int totalSpinFrames = totalSpins*framesPerSpin;
-    int totalMoveFrames = (maze.solution.posListNum-1)*framesPerMove;
+    int totalMoveFrames = (maze.solution.num-1)*framesPerMove;
     int rotation = 0;
     int endFrame = frame - totalSpinFrames - totalMoveFrames;
     if( frame < framesPerSpin*totalSpins ) {
