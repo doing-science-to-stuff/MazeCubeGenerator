@@ -1099,10 +1099,12 @@ int maze_metrics(maze_t *maze) {
      * https://puzzling.stackexchange.com/a/5922
      */
 
+    printf("Maze metrics:\n");
+
     /* solution metrics */
     if( maze->solution.num > 0 ) {
         /* simple solution length */
-        printf("solution length: %i\n", maze->solution.num);
+        printf("  solution length: %i\n", maze->solution.num);
 
         int sol_dead_ends = 0;
         int sol_branches = 0;
@@ -1117,8 +1119,8 @@ int maze_metrics(maze_t *maze) {
             if( degree > 2 )
                 ++sol_branches;
         }
-        printf("dead ends: %i (solution)\n", sol_dead_ends);
-        printf("branch points: %i (solution)\n", sol_branches);
+        printf("  dead ends: %i (solution)\n", sol_dead_ends);
+        printf("  branch points: %i (solution)\n", sol_branches);
     }
 
     /* entire cube metrics */
@@ -1146,8 +1148,8 @@ int maze_metrics(maze_t *maze) {
         /* update pos */
         done = position_increment(maze, pos);
     }
-    printf("dead ends: %i\n", dead_ends);
-    printf("branch points: %i\n", branches);
+    printf("  dead ends: %i\n", dead_ends);
+    printf("  branch points: %i\n", branches);
 
     /* surface cell reuse */
 
