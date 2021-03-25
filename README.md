@@ -10,6 +10,7 @@ Maze Cube Generator creates random multi-dimensional mazes similar to the
  * Finds solutions
  * STL output (3D only)
  * Unfolded STL for easier 3D printing (3D Only)
+ * Multiple metrics to guage maze difficulty
 
 ## Building
 To build the maze cube generator on Linux or macOS you will first need to
