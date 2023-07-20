@@ -1,7 +1,7 @@
 /*
  * maze-cube.c
  *
- * Copyright (c) 2020 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020-2023 Bryan Franklin. All rights reserved.
  */
 #include <stdio.h>
 #include "../scene.h"
@@ -45,12 +45,12 @@ static int add_mirror(scene *scn, int dimensions, int which, double mirror_dist)
     object *mirror=NULL;
     scene_alloc_object(scn,dimensions,&mirror,"hplane");
 
-    mirror->red = 0.1;
-    mirror->green = 0.1;
-    mirror->blue = 0.1;
-    mirror->red_r = 0.95;
-    mirror->green_r = 0.95;
-    mirror->blue_r = 0.95;
+    mirror->mat.red = 0.1;
+    mirror->mat.green = 0.1;
+    mirror->mat.blue = 0.1;
+    mirror->mat.red_r = 0.95;
+    mirror->mat.green_r = 0.95;
+    mirror->mat.blue_r = 0.95;
 
     /* set normal */
     vectNd_reset(&offset);
@@ -68,49 +68,49 @@ static int add_mirror(scene *scn, int dimensions, int which, double mirror_dist)
 static void set_face_color(object *obj, int face) {
     switch(face) {
         case 0:
-            obj->red = 1.0;
-            obj->green = 1.0;
-            obj->blue = 1.0;
+            obj->mat.red = 1.0;
+            obj->mat.green = 1.0;
+            obj->mat.blue = 1.0;
             break;
         case 1:
-            obj->red = 0.0;
-            obj->green = 1.0;
-            obj->blue = 0.0;
+            obj->mat.red = 0.0;
+            obj->mat.green = 1.0;
+            obj->mat.blue = 0.0;
             break;
         case 2:
-            obj->red = 0.0;
-            obj->green = 0.0;
-            obj->blue = 1.0;
+            obj->mat.red = 0.0;
+            obj->mat.green = 0.0;
+            obj->mat.blue = 1.0;
             break;
         case 3:
-            obj->red = 0.0;
-            obj->green = 1.0;
-            obj->blue = 1.0;
+            obj->mat.red = 0.0;
+            obj->mat.green = 1.0;
+            obj->mat.blue = 1.0;
             break;
         case 4:
-            obj->red = 1.0;
-            obj->green = 1.0;
-            obj->blue = 0.0;
+            obj->mat.red = 1.0;
+            obj->mat.green = 1.0;
+            obj->mat.blue = 0.0;
             break;
         case 5:
-            obj->red = 0.5;
-            obj->green = 1.0;
-            obj->blue = 0.0;
+            obj->mat.red = 0.5;
+            obj->mat.green = 1.0;
+            obj->mat.blue = 0.0;
             break;
         case 6:
-            obj->red = 0.0;
-            obj->green = 0.5;
-            obj->blue = 1.0;
+            obj->mat.red = 0.0;
+            obj->mat.green = 0.5;
+            obj->mat.blue = 1.0;
             break;
         case 7:
-            obj->red = 1.0;
-            obj->green = 0.0;
-            obj->blue = 1.0;
+            obj->mat.red = 1.0;
+            obj->mat.green = 0.0;
+            obj->mat.blue = 1.0;
             break;
         default:
-            obj->red = 1.0;
-            obj->green = 0.0;
-            obj->blue = 0.0;
+            obj->mat.red = 1.0;
+            obj->mat.green = 0.0;
+            obj->mat.blue = 0.0;
             break;
     }
 }
@@ -515,6 +515,16 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
     object_add_flag(slider, 1);
     object_add_obj(puzzle, slider);
 
+    if( frame < 0 ) {
+        printf("negative frame (%i)?", frame);
+        return;
+    }
+
+    if( frames < 0 ) {
+        printf("negative frames (%i)?", frames);
+        return;
+    }
+
     /* for each dimension, add an hcube lengthened in that dimension */
     vectNd hcubeDir;
     vectNd_calloc(&hcubeDir, dimensions);
@@ -543,9 +553,9 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
                 vectNd_set(&offset, i, -0.5*edge_size);
     #endif // 0
             object_add_pos(obj,&offset);
-            obj->red = 0.8;
-            obj->blue = 0.8;
-            obj->green = 0.8;
+            obj->mat.red = 0.8;
+            obj->mat.blue = 0.8;
+            obj->mat.green = 0.8;
         }
     }
 
@@ -598,6 +608,8 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
         printf("\talternateView = %i (i.e., dimension %i)\n", alternateView, alternateView+2);
         snprintf(scn->name, sizeof(scn->name), "maze-cube-%i", alternateView);
     }
+    if( config == NULL )
+        printf("config string omitted,\n");
 
     /* basic setup */
     #if 1
@@ -670,9 +682,9 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     vectNd_set(&temp,1,1);
     object_add_dir(ground,&temp);  /* normal */
     double grassScaling = 0.75;
-    ground->red = 0.0225 * grassScaling;
-    ground->green = 1.0 * grassScaling;
-    ground->blue = 0.04 * grassScaling;
+    ground->mat.red = 0.0225 * grassScaling;
+    ground->mat.green = 1.0 * grassScaling;
+    ground->mat.blue = 0.04 * grassScaling;
     #endif /* 0 */
 
     #if 1
@@ -720,9 +732,9 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
         vectNd_set(&offset, i, -edge_size);
     #endif // 0
     object_add_pos(obj,&offset);
-    obj->red = 0.1;
-    obj->blue = 0.8;
-    obj->green = 0.1;
+    obj->mat.red = 0.1;
+    obj->mat.blue = 0.8;
+    obj->mat.green = 0.1;
     object_add_obj(clstr, obj);
     #else
     add_maze_faces(clstr, &maze, edge_size);
@@ -824,7 +836,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     return 1;
 }
 
-int scene_cleanup() {
+int scene_cleanup(void) {
     /* If any persistent resources were allocated,
      * they should be freed here. */
     maze_free(&maze);
