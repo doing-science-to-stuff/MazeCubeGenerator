@@ -1,8 +1,8 @@
 /*
- * maze-stl.c
+ * maze-export.c
  * MazeCubeGen: maze cube generator
  *
- * Copyright (c) 2020-2021 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020-2023 Bryan Franklin. All rights reserved.
  */
 #include <math.h>
 #include <stdio.h>
@@ -884,43 +884,6 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list) {
     return 0;
 }
 
-int maze_export_stl_flat(maze_t *maze, char *filename) {
-
-    if( maze->numDimensions != 3 ) {
-        fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
-        return -1;
-    }
-
-    trig_list_t trigs;
-    trig_list_init(&trigs);
-    maze_add_maze_flat(maze, &trigs);
-
-    /* open file */
-    FILE *fp = fopen(filename,"w");
-    if( fp == NULL ) {
-        perror("fopen");
-        return -1;
-    }
-
-    /* start solid */
-    fprintf(fp,"solid MazeCubeFaces\n");
-
-    /* write triangles to output file */
-    trig_list_export_stl(fp, &trigs);
-
-    /* free triangle list */
-    trig_list_free(&trigs);
-
-    /* close solid */
-    fprintf(fp,"endsolid MazeCubeFaces\n");
-
-    /* close file */
-    fclose(fp); fp=NULL;
-
-    return 0;
-}
-
-
 int maze_add_solution(maze_t *maze, trig_list_t *list) {
     double scale = 1.0;
     for(int i=0; i<maze->solution.num; ++i) {
@@ -930,41 +893,6 @@ int maze_add_solution(maze_t *maze, trig_list_t *list) {
         z = maze->solution.positions[i][2]+0.5*scale;
         maze_add_cube(list, x, y, z, 0, scale, scale, scale);
     }
-
-    return 1;
-}
-
-
-int maze_export_stl_solution(maze_t *maze, char *filename) {
-    if( maze->numDimensions != 3 ) {
-        fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
-        return -1;
-    }
-
-    trig_list_t trigs;
-    trig_list_init(&trigs);
-    maze_add_solution(maze, &trigs);
-
-    /* open file */
-    FILE *fp = fopen(filename,"w");
-    if( fp == NULL ) {
-        perror("fopen");
-        return -1;
-    }
-
-    /* open solid */
-    fprintf(fp,"solid MazeCubeSolution\n");
-
-    /* write triangles to output file */
-    trig_list_export_stl(fp, &trigs);
-
-    /* free triangle list */
-    trig_list_free(&trigs);
-
-    /* open solid */
-    fprintf(fp,"endsolid MazeCubeSolution\n");
-
-    fclose(fp); fp=NULL;
 
     return 1;
 }
@@ -1003,4 +931,133 @@ int maze_export_stl(maze_t *maze, char *filename) {
     fclose(fp); fp=NULL;
 
     return 0;
+}
+
+
+int maze_export_stl_flat(maze_t *maze, char *filename) {
+
+    if( maze->numDimensions != 3 ) {
+        fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
+        return -1;
+    }
+
+    trig_list_t trigs;
+    trig_list_init(&trigs);
+    maze_add_maze_flat(maze, &trigs);
+
+    /* open file */
+    FILE *fp = fopen(filename,"w");
+    if( fp == NULL ) {
+        perror("fopen");
+        return -1;
+    }
+
+    /* start solid */
+    fprintf(fp,"solid MazeCubeFaces\n");
+
+    /* write triangles to output file */
+    trig_list_export_stl(fp, &trigs);
+
+    /* free triangle list */
+    trig_list_free(&trigs);
+
+    /* close solid */
+    fprintf(fp,"endsolid MazeCubeFaces\n");
+
+    /* close file */
+    fclose(fp); fp=NULL;
+
+    return 0;
+}
+
+
+int maze_export_stl_solution(maze_t *maze, char *filename) {
+    if( maze->numDimensions != 3 ) {
+        fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
+        return -1;
+    }
+
+    trig_list_t trigs;
+    trig_list_init(&trigs);
+    maze_add_solution(maze, &trigs);
+
+    /* open file */
+    FILE *fp = fopen(filename,"w");
+    if( fp == NULL ) {
+        perror("fopen");
+        return -1;
+    }
+
+    /* open solid */
+    fprintf(fp,"solid MazeCubeSolution\n");
+
+    /* write triangles to output file */
+    trig_list_export_stl(fp, &trigs);
+
+    /* free triangle list */
+    trig_list_free(&trigs);
+
+    /* open solid */
+    fprintf(fp,"endsolid MazeCubeSolution\n");
+
+    fclose(fp); fp=NULL;
+
+    return 1;
+}
+
+
+/* Allocate opaque triangle list to be handed to the caller */
+void *maze_export_trig_list(maze_t *maze) {
+    trig_list_t* trigs = calloc(1, sizeof(trig_list_t));
+    trig_list_init(trigs);
+    maze_add_maze(maze, trigs);
+
+    return ((void*)trigs);
+}
+
+
+/* Free opaque triangle list */
+void maze_export_trig_list_free(void *list) {
+    if( list == NULL )  return;
+    trig_list_free((trig_list_t*)list);
+    return;
+}
+
+
+/* Get number of spatial dimensions, which will always be 3, for now. */
+int maze_export_num_dims(void *list) {
+    if( list == NULL )  return -1;
+    return 3;   /* hard coded for now, may change later */
+}
+
+
+/* Return the number of triangles in a list. */
+int maze_export_num_trigs(void *list) {
+    if( list == NULL )  return 0;
+    return ((trig_list_t*)list)->num;
+}
+
+
+/* Return a single component of a triangle vertex. */
+float maze_export_vertex_dim(void *list, int trig, int vertex, int dim) {
+    if( list == NULL )  return -1.0;
+    if( trig < 0 || trig > ((trig_list_t*)list)->num )  return -2.0;
+    if( vertex < 0 || vertex >= 3 )  return -3.0;
+    if( dim < 0 || dim >= 3 )  return -4.0;
+
+    trig_t* trig_ptr = &((trig_list_t*)list)->trig[trig];
+    switch(dim) {
+    case 0:
+        return trig_ptr->x[vertex];
+        break;
+    case 1:
+        return trig_ptr->y[vertex];
+        break;
+    case 2:
+        return trig_ptr->z[vertex];
+        break;
+    default:
+        return -5.0;
+        break;
+    }
 }

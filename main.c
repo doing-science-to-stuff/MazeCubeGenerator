@@ -9,7 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "maze.h"
-#include "maze-stl.h"
+#include "maze-export.h"
 
 static char *configStr = NULL;
 static char *inputFile = NULL;
