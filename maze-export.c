@@ -988,7 +988,7 @@ int maze_export_stl_solution(maze_t *maze, char *filename) {
         return -1;
     }
 
-    /* open solid */
+    /* start solid */
     fprintf(fp,"solid MazeCubeSolution\n");
 
     /* write triangles to output file */
@@ -997,7 +997,7 @@ int maze_export_stl_solution(maze_t *maze, char *filename) {
     /* free triangle list */
     trig_list_free(&trigs);
 
-    /* open solid */
+    /* close solid */
     fprintf(fp,"endsolid MazeCubeSolution\n");
 
     fclose(fp); fp=NULL;
