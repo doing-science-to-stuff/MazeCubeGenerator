@@ -1006,3 +1006,24 @@ int maze_export_stl_solution(maze_t *maze, char *filename) {
 }
 
 
+void *maze_export_trig_list(maze_t *maze) {
+    return NULL;
+}
+
+
+int maze_export_num_dims(void *list) {
+    return -1;
+}
+
+
+int maze_export_num_trigs(void *list) {
+    return -1;
+}
+
+
+float maze_export_vertex_dim(void *list, int trig, int dim) {
+    return -1;
+}
+
+
+
