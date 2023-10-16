@@ -1006,24 +1006,58 @@ int maze_export_stl_solution(maze_t *maze, char *filename) {
 }
 
 
+/* Allocate opaque triangle list to be handed to the caller */
 void *maze_export_trig_list(maze_t *maze) {
-    return NULL;
+    trig_list_t* trigs = calloc(1, sizeof(trig_list_t));
+    trig_list_init(trigs);
+    maze_add_maze(maze, trigs);
+
+    return ((void*)trigs);
 }
 
 
+/* Free opaque triangle list */
+void maze_export_trig_list_free(void *list) {
+    if( list == NULL )  return;
+    trig_list_free((trig_list_t*)list);
+    return;
+}
+
+
+/* Get number of spatial dimensions, which will always be 3, for now. */
 int maze_export_num_dims(void *list) {
-    return -1;
+    if( list == NULL )  return -1;
+    return 3;   /* hard coded for now, may change later */
 }
 
 
+/* Return the number of triangles in a list. */
 int maze_export_num_trigs(void *list) {
-    return -1;
+    if( list == NULL )  return 0;
+    return ((trig_list_t*)list)->num;
 }
 
 
-float maze_export_vertex_dim(void *list, int trig, int dim) {
-    return -1;
+/* Return a single component of a triangle vertex. */
+float maze_export_vertex_dim(void *list, int trig, int vertex, int dim) {
+    if( list == NULL )  return -1.0;
+    if( trig < 0 || trig > ((trig_list_t*)list)->num )  return -2.0;
+    if( vertex < 0 || vertex >= 3 )  return -3.0;
+    if( dim < 0 || dim >= 3 )  return -4.0;
+
+    trig_t* trig_ptr = &((trig_list_t*)list)->trig[trig];
+    switch(dim) {
+    case 0:
+        return trig_ptr->x[vertex];
+        break;
+    case 1:
+        return trig_ptr->y[vertex];
+        break;
+    case 2:
+        return trig_ptr->z[vertex];
+        break;
+    default:
+        return -5.0;
+        break;
+    }
 }
-
-
-

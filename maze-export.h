@@ -15,6 +15,7 @@ int maze_export_stl_solution(maze_t *maze, char *filename);
 
 /* export maze shape as series of triangles */
 void *maze_export_trig_list(maze_t *maze);
+void maze_export_trig_list_free(void *list);
 int maze_export_num_dims(void *list);
 int maze_export_num_trigs(void *list);
 float maze_export_vertex_dim(void *list, int trig, int dim);
