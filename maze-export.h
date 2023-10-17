@@ -19,5 +19,6 @@ void maze_export_trig_list_free(void *list);
 int maze_export_num_dims(void *list);
 int maze_export_num_trigs(void *list);
 float maze_export_vertex_dim(void *list, int trig, int vertex, int dim);
+float maze_export_normal_dim(void *list, int trig, int vertex, int dim);
 
 #endif /* MAZE_EXPORT_H */

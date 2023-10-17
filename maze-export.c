@@ -10,9 +10,65 @@
 #include <string.h>
 #include "maze.h"
 
+const double epsilon = 1e-6;
+
 typedef struct trig {
-    double x[3], y[3], z[3];
+    double x[3], y[3], z[3];    /* vertex coordinates */
+    double nx[3], ny[3], nz[3];   /* vertex normals */
 } trig_t;
+
+
+/* compute the normal of flat triangle using the cross product of two edge vectors */
+static void trig_get_normal(trig_t *trig) {
+    /* get two edge vectors */
+    double ux = trig->x[1]-trig->x[0];
+    double uy = trig->y[1]-trig->y[0];
+    double uz = trig->z[1]-trig->z[0];
+    double vx = trig->x[2]-trig->x[0];
+    double vy = trig->y[2]-trig->y[0];
+    double vz = trig->z[2]-trig->z[0];
+
+    /* compute normal for triangle defined by coordinates
+     * see: https://mathworld.wolfram.com/CrossProduct.html
+     * Equation 2 */
+    double nx = uy*vz - uz*vy;
+    double ny = uz*vx - ux*vz;
+    double nz = ux*vy - uy*vx;
+
+    /* round to epsilon precision */
+    nx = epsilon*round(nx/epsilon);
+    ny = epsilon*round(ny/epsilon);
+    nz = epsilon*round(nz/epsilon);
+
+    for(int i=0; i<3; ++i) {
+        trig->nx[i] = nx;
+        trig->ny[i] = ny;
+        trig->nz[i] = nz;
+    }
+}
+
+
+/* fill in a triangle */
+static void trig_fill(trig_t *trig,
+                      double x1, double y1, double z1,
+                      double x2, double y2, double z2,
+                      double x3, double y3, double z3) {
+    trig->x[0] = x1; trig->x[1] = x2; trig->x[2] = x3;
+    trig->y[0] = y1; trig->y[1] = y2; trig->y[2] = y3;
+    trig->z[0] = z1; trig->z[1] = z2; trig->z[2] = z3;
+    trig_get_normal(trig);
+}
+
+
+/* set the normal vector for all vertices */
+static void trig_set_normals(trig_t *trig,
+                             double x1, double y1, double z1,
+                             double x2, double y2, double z2,
+                             double x3, double y3, double z3) {
+    trig->nx[0] = x1; trig->nx[1] = x2; trig->nx[2] = x3;
+    trig->ny[0] = y1; trig->ny[1] = y2; trig->ny[2] = y3;
+    trig->nz[0] = z1; trig->nz[1] = z2; trig->nz[2] = z3;
+}
 
 
 /* move individual triangle */
@@ -48,43 +104,58 @@ static void trig_rotate_axial(trig_t *trig, int axis, double rad) {
     /* rotate triangle rad radians around spcified axis */
     for(int i=0; i<3; ++i) {
         double x0, y0, x1, y1;
+        double nx0, ny0, nx1, ny1;
 
         /* select coordinates to rotate */
         switch(axis) {
             case 0:
                 x0 = trig->y[i];
                 y0 = trig->z[i];
+                nx0 = trig->ny[i];
+                ny0 = trig->nz[i];
                 break;
             case 1:
                 x0 = trig->x[i];
                 y0 = trig->z[i];
+                nx0 = trig->nx[i];
+                ny0 = trig->nz[i];
                 break;
             case 2:
             default:
                 x0 = trig->x[i];
                 y0 = trig->y[i];
+                nx0 = trig->nx[i];
+                ny0 = trig->ny[i];
                 break;
         }
 
-        /* rotate x0,y0 by r radians to get x1,y1 */
+        /* rotate x0,y0 and nx0,ny0 by r radians to get x1,y1 and nx1,ny1 */
         /* see: https://en.wikipedia.org/wiki/Rotation_matrix#In_two_dimensions*/
         x1 = x0 * cos(rad) - y0 * sin(rad);
         y1 = x0 * sin(rad) + y0 * cos(rad);
+        nx1 = nx0 * cos(rad) - ny0 * sin(rad);
+        ny1 = nx0 * sin(rad) + ny0 * cos(rad);
 
         /* update appropriate coordinates */
         switch(axis) {
             case 0:
                 trig->y[i] = x1;
                 trig->z[i] = y1;
+                trig->ny[i] = nx1;
+                trig->nz[i] = ny1;
                 break;
             case 1:
                 trig->x[i] = x1;
                 trig->z[i] = y1;
+                trig->nx[i] = nx1;
+                trig->nz[i] = ny1;
                 break;
             case 2:
             default:
                 trig->x[i] = x1;
                 trig->y[i] = y1;
+                trig->nx[i] = nx1;
+                trig->ny[i] = ny1;
                 break;
         }
     }
@@ -100,41 +171,27 @@ static void trig_rotate_axial_around(trig_t *trig, int axis, double rad, double 
 
 
 /* export single triangle as STL */
-static void trig_get_normal(trig_t *trig,
-                            double *nx, double *ny, double *nz) {
-    /* get two edge vectors */
-    double ux = trig->x[1]-trig->x[0];
-    double uy = trig->y[1]-trig->y[0];
-    double uz = trig->z[1]-trig->z[0];
-    double vx = trig->x[2]-trig->x[0];
-    double vy = trig->y[2]-trig->y[0];
-    double vz = trig->z[2]-trig->z[0];
-
-    /* compute normal for triangle defined by coordinates
-     * see: https://mathworld.wolfram.com/CrossProduct.html
-     * Equation 2 */
-    *nx = uy*vz - uz*vy;
-    *ny = uz*vx - ux*vz;
-    *nz = ux*vy - uy*vx;
-}
-
-
 static void trig_export_stl(FILE *fp, trig_t *trig) {
 
-    double nx, ny, nz;
-    double epsilon = 1e-6;
-
     /* get normal for triangle */
-    trig_get_normal(trig, &nx, &ny, &nz);
+    trig_get_normal(trig);
 
     /* round all values to remove noise */
-    nx = epsilon*round(nx/epsilon);
-    ny = epsilon*round(ny/epsilon);
-    nz = epsilon*round(nz/epsilon);
     for(int i=0; i<3; ++i) {
         trig->x[i] = epsilon*round(trig->x[i]/epsilon);
         trig->y[i] = epsilon*round(trig->y[i]/epsilon);
         trig->z[i] = epsilon*round(trig->z[i]/epsilon);
+        trig->nx[i] = epsilon*round(trig->nx[i]/epsilon);
+        trig->ny[i] = epsilon*round(trig->ny[i]/epsilon);
+        trig->nz[i] = epsilon*round(trig->nz[i]/epsilon);
+    }
+
+    /* since STL only has one normal per facet, average normals */
+    double nx = 0.0, ny = 0.0, nz = 0.0;
+    for(int i=0; i<3; ++i) {
+        nx += trig->nx[i] / 3;
+        ny += trig->ny[i] / 3;
+        nz += trig->nz[i] / 3;
     }
 
     /* output triangle to fp */
@@ -206,19 +263,41 @@ static int trig_list_add(trig_list_t *list,
     list->trig[pos].y[2] = y3;
     list->trig[pos].z[2] = z3;
 
+    trig_get_normal(&list->trig[pos]);
+
     ++list->num;
 
     return 0;
 }
 
+static int trig_list_append(trig_list_t *list, trig_t *t) {
+
+    /* reallocate list, if needed */
+    if( list->num == list->cap ) {
+        int new_cap = (list->cap*2) + 1;
+
+        trig_t *new_buf = calloc(new_cap, sizeof(*list->trig));
+        if( !new_buf ) { return 0; }
+
+        memcpy(new_buf, list->trig, list->num*sizeof(*list->trig));
+        free(list->trig); list->trig=NULL;
+
+        list->trig = new_buf;
+        list->cap = new_cap;
+    }
+
+    /* copy trig into list */
+    trig_t *new_pos = &list->trig[list->num];
+    memcpy(new_pos, t, sizeof(*t));
+    ++list->num;
+
+    return 1;
+}
 
 /* copy one list into another */
 static void trig_list_copy(trig_list_t *dst, trig_list_t *src) {
     for(int i=0; i<src->num; ++i) {
-        trig_t *t = &src->trig[i];
-        trig_list_add(dst, t->x[0], t->y[0], t->z[0],
-            t->x[1], t->y[1], t->z[1],
-            t->x[2], t->y[2], t->z[2]);
+        trig_list_append(dst, &src->trig[i]);
     }
 }
 
@@ -1063,6 +1142,30 @@ float maze_export_vertex_dim(void *list, int trig, int vertex, int dim) {
         break;
     case 2:
         return trig_ptr->z[vertex];
+        break;
+    default:
+        return -5.0;
+        break;
+    }
+}
+
+/* Return a single component of a triangle vertex normal. */
+float maze_export_normal_dim(void *list, int trig, int vertex, int dim) {
+    if( list == NULL )  return -1.0;
+    if( trig < 0 || trig > ((trig_list_t*)list)->num )  return -2.0;
+    if( vertex < 0 || vertex >= 3 )  return -3.0;
+    if( dim < 0 || dim >= 3 )  return -4.0;
+
+    trig_t* trig_ptr = &((trig_list_t*)list)->trig[trig];
+    switch(dim) {
+    case 0:
+        return trig_ptr->nx[vertex];
+        break;
+    case 1:
+        return trig_ptr->ny[vertex];
+        break;
+    case 2:
+        return trig_ptr->nz[vertex];
         break;
     default:
         return -5.0;
