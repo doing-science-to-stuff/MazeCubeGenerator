@@ -685,7 +685,6 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list) {
 
 int maze_add_maze(maze_t *maze, trig_list_t *list) {
 
-    double scale = 1.0;
     /* for each face */
     for(int face=0; face<maze->numFaces; ++face) {
 
@@ -724,6 +723,14 @@ int maze_add_maze(maze_t *maze, trig_list_t *list) {
         trig_list_free(&faceTrigs1);
         trig_list_free(&faceTrigs2);
     }
+
+    trig_list_move(list, 0.5, 0.5, 0.5);
+
+    return 0;
+}
+
+static int maze_add_maze_slider(maze_t *maze, trig_list_t *list) {
+    double scale = 1.0;
 
     /* add slider */
     double startX = maze->startPos[0];
@@ -907,6 +914,7 @@ int maze_export_stl(maze_t *maze, char *filename) {
     trig_list_t trigs;
     trig_list_init(&trigs);
     maze_add_maze(maze, &trigs);
+    maze_add_maze_slider(maze, &trigs);
 
     /* open file */
     FILE *fp = fopen(filename,"w");
