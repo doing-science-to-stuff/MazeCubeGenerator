@@ -89,6 +89,8 @@ static void trig_scale(trig_t *trig, double sx, double sy, double sz) {
         trig->z[i] *= sz;
     }
 
+    /* TODO: fix how normals ae handled */
+    
     if( sx*sy*sz < 0.0 ) {
         /* normal will be reversed */
         double temp;
@@ -295,7 +297,7 @@ static int trig_list_append(trig_list_t *list, trig_t *t) {
 }
 
 /* copy one list into another */
-static void trig_list_copy(trig_list_t *dst, trig_list_t *src) {
+static void trig_list_concatenate(trig_list_t *dst, trig_list_t *src) {
     for(int i=0; i<src->num; ++i) {
         trig_list_append(dst, &src->trig[i]);
     }
@@ -545,7 +547,7 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
     trig_list_scale(&corner, dr, dc, 1.0);
     trig_list_move(&corner, r, c, 0.0);
 
-    trig_list_copy(list, &corner);
+    trig_list_concatenate(list, &corner);
     trig_list_free(&corner);
 }
 
@@ -591,7 +593,7 @@ static void maze_add_edge(trig_list_t *list, maze_t *maze, int r, int c, int fac
         trig_list_rotate_axial_around(&edge, 2, M_PI/2.0, 0.0, 0.0, 0.0);
     trig_list_move(&edge, r+rOffset, c+cOffset, 0.0);
 
-    trig_list_copy(list, &edge);
+    trig_list_concatenate(list, &edge);
     trig_list_free(&edge);
 }
 
@@ -796,8 +798,8 @@ int maze_add_maze(maze_t *maze, trig_list_t *list) {
         }
         
         /* add face to maze list */
-        trig_list_copy(list, &faceTrigs1);
-        trig_list_copy(list, &faceTrigs2);
+        trig_list_concatenate(list, &faceTrigs1);
+        trig_list_concatenate(list, &faceTrigs2);
 
         trig_list_free(&faceTrigs1);
         trig_list_free(&faceTrigs2);
@@ -950,8 +952,8 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list) {
         trig_list_move(&faceTrigs2, xBase2, yBase2, 0.0);
         
         /* add face to maze list */
-        trig_list_copy(list, &faceTrigs1);
-        trig_list_copy(list, &faceTrigs2);
+        trig_list_concatenate(list, &faceTrigs1);
+        trig_list_concatenate(list, &faceTrigs2);
 
         trig_list_free(&faceTrigs1);
         trig_list_free(&faceTrigs2);
