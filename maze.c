@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "maze.h"
 
 int face_init(face_t *face, int *sizes, int d1, int d2) {
@@ -756,6 +757,7 @@ static void maze_reset_faces(maze_t *maze) {
 int maze_generate(maze_t *maze) {
     printf("Generating %iD maze.\n", maze->numDimensions);
 
+    srand(time(NULL));
     int restarts = 0;
     do {
         maze_reset_faces(maze);
