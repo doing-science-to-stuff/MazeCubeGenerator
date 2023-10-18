@@ -18,6 +18,37 @@ typedef struct trig {
 } trig_t;
 
 
+/* set the normal vector for all vertices */
+static void trig_set_normals(trig_t *trig,
+                             double x1, double y1, double z1,
+                             double x2, double y2, double z2,
+                             double x3, double y3, double z3) {
+    /* get lengths of the normal vectors */
+    double len1 = sqrt(x1*x1 + y1*y1 + z1*z1);
+    double len2 = sqrt(x2*x2 + y2*y2 + z2*z2);
+    double len3 = sqrt(x3*x3 + y3*y3 + z3*z3);
+    
+    /* "normalize" the normals */
+    if( fabs(len1) > epsilon ) {
+        double invLen = 1.0/len1;
+        x1 *= invLen; y1 *= invLen; z1 *= invLen;
+    }
+    if( fabs(len2) > epsilon ) {
+        double invLen = 1.0/len2;
+        x2 *= invLen; y2 *= invLen; z2 *= invLen;
+    }
+    if( fabs(len1) > epsilon ) {
+        double invLen = 1.0/len3;
+        x3 *= invLen; y3 *= invLen; z3 *= invLen;
+    }
+    
+    /* update triangle */
+    trig->nx[0] = x1; trig->nx[1] = x2; trig->nx[2] = x3;
+    trig->ny[0] = y1; trig->ny[1] = y2; trig->ny[2] = y3;
+    trig->nz[0] = z1; trig->nz[1] = z2; trig->nz[2] = z3;
+}
+
+
 /* compute the normal of flat triangle using the cross product of two edge vectors */
 static void trig_get_normal(trig_t *trig) {
     /* get two edge vectors */
@@ -40,11 +71,10 @@ static void trig_get_normal(trig_t *trig) {
     ny = epsilon*round(ny/epsilon);
     nz = epsilon*round(nz/epsilon);
 
-    for(int i=0; i<3; ++i) {
-        trig->nx[i] = nx;
-        trig->ny[i] = ny;
-        trig->nz[i] = nz;
-    }
+    trig_set_normals(trig,
+                     nx, ny, nz,
+                     nx, ny, nz,
+                     nx, ny, nz);
 }
 
 
@@ -57,17 +87,6 @@ static void trig_fill(trig_t *trig,
     trig->y[0] = y1; trig->y[1] = y2; trig->y[2] = y3;
     trig->z[0] = z1; trig->z[1] = z2; trig->z[2] = z3;
     trig_get_normal(trig);
-}
-
-
-/* set the normal vector for all vertices */
-static void trig_set_normals(trig_t *trig,
-                             double x1, double y1, double z1,
-                             double x2, double y2, double z2,
-                             double x3, double y3, double z3) {
-    trig->nx[0] = x1; trig->nx[1] = x2; trig->nx[2] = x3;
-    trig->ny[0] = y1; trig->ny[1] = y2; trig->ny[2] = y3;
-    trig->nz[0] = z1; trig->nz[1] = z2; trig->nz[2] = z3;
 }
 
 
@@ -296,7 +315,7 @@ static int trig_list_append(trig_list_t *list, trig_t *t) {
     return 1;
 }
 
-/* copy one list into another */
+/* copy one list onto end of another list */
 static void trig_list_concatenate(trig_list_t *dst, trig_list_t *src) {
     for(int i=0; i<src->num; ++i) {
         trig_list_append(dst, &src->trig[i]);
@@ -396,20 +415,52 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
             double y22 = sin(thetaI2) * (1+radius*cos(thetaJ2))+c;
             double z22 = radius*sin(thetaJ2)+0.5;
 
+            /* compute normals */
+            double x1c = cos(thetaI1) + r;
+            double y1c = sin(thetaI1) + c;
+            double z1c = 0.5;
+            double x2c = cos(thetaI2) + r;
+            double y2c = sin(thetaI2) + c;
+            double z2c = 0.5;
+
+            double nx11 = x11 - x1c;
+            double ny11 = y11 - y1c;
+            double nz11 = z11 - z1c;
+
+            double nx12 = x12 - x1c;
+            double ny12 = y12 - y1c;
+            double nz12 = z12 - z1c;
+
+            double nx21 = x21 - x2c;
+            double ny21 = y21 - y2c;
+            double nz21 = z21 - z2c;
+
+            double nx22 = x22 - x2c;
+            double ny22 = y22 - y2c;
+            double nz22 = z22 - z2c;
+
             /* interpolate crossing point when transitioning to/from
              * an open cell */
             double xc1 = 0.0, yc1 = 0.0, zc1 = 0.0;
             double xc2 = 0.0, yc2 = 0.0, zc2 = 0.0;
+            double nxc1 = 0.0, nyc1 = 0.0, nzc1 = 0.0;
+            double nxc2 = 0.0, nyc2 = 0.0, nzc2 = 0.0;
             if( row1 != row2 ) {
                 /* compute crossing points */
                 double t1 = (round(x21*2)/2-x11)/(x21-x11);
                 xc1 = x11 + t1*(x21-x11);
                 yc1 = y11 + t1*(y21-y11);
                 zc1 = z11 + t1*(z21-z11);
+                nxc1 = nx11 + t1*(nx21-nx11);
+                nyc1 = ny11 + t1*(ny21-ny11);
+                nzc1 = nz11 + t1*(nz21-nz11);
                 double t2 = (round(x22*2)/2-x12)/(x22-x12);
                 xc2 = x12 + t2*(x22-x12);
                 yc2 = y12 + t2*(y22-y12);
                 zc2 = z12 + t2*(z22-z12);
+                nxc2 = nx12 + t2*(nx22-nx12);
+                nyc2 = ny12 + t2*(ny22-ny12);
+                nzc2 = nz12 + t2*(nz22-nz12);
             }
             if( col1 != col2 ) {
                 /* compute crossing points */
@@ -417,20 +468,30 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
                 xc1 = x11 + t1*(x21-x11);
                 yc1 = y11 + t1*(y21-y11);
                 zc1 = z11 + t1*(z21-z11);
+                nxc1 = nx11 + t1*(nx21-nx11);
+                nyc1 = ny11 + t1*(ny21-ny11);
+                nzc1 = nz11 + t1*(nz21-nz11);
                 double t2 = (round(y22*2)/2-y12)/(y22-y12);
                 xc2 = x12 + t2*(x22-x12);
                 yc2 = y12 + t2*(y22-y12);
                 zc2 = z12 + t2*(z22-z12);
+                nxc2 = nx12 + t2*(nx22-nx12);
+                nyc2 = ny12 + t2*(ny22-ny12);
+                nzc2 = nz12 + t2*(nz22-nz12);
             }
 
             /* replace appropriate values */
             if( cell1!=0 && cell2==0 ) {
                 x21 = xc1; y21 = yc1; z21 = zc1;
                 x22 = xc2; y22 = yc2; z22 = zc2;
+                nx21 = nxc1; ny21 = nyc1; nz21 = nzc1;
+                nx22 = nxc2; ny22 = nyc2; nz22 = nzc2;
             }
             else if( cell1==0 && cell2!=0 ) {
                 x11 = xc1; y11 = yc1; z11 = zc1;
                 x12 = xc2; y12 = yc2; z12 = zc2;
+                nx11 = nxc1; ny11 = nyc1; nz11 = nzc1;
+                nx12 = nxc2; ny12 = nyc2; nz12 = nzc2;
             }
 
             /* record first point along surface for end caps */
@@ -441,24 +502,39 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
             /* output triangles */
             if( cell1 || cell2 ) {
                 /* curved surface of marker */
-                trig_list_add(list, x11, y11, z11,
+                trig_t t1, t2;
+                trig_fill(&t1,
+                        x11, y11, z11,
                         x22, y22, z22,
                         x12, y12, z12);
-                trig_list_add(list, x11, y11, z11,
+                trig_fill(&t2,
+                        x11, y11, z11,
                         x21, y21, z21,
                         x22, y22, z22);
+                trig_set_normals(&t1,
+                                 nx11, ny11, nz11,
+                                 nx22, ny22, nz22,
+                                 nx12, ny12, nz12);
+                trig_set_normals(&t2,
+                                 nx11, ny11, nz11,
+                                 nx21, ny21, nz21,
+                                 nx22, ny22, nz22);
+                trig_list_append(list, &t1);
+                trig_list_append(list, &t2);
             }
             if( cell1==0 && cell2!=0 && j>0 ) {
                 /* cap one end */
                 trig_list_add(list, xc0, yc0, zc0,
                                     xc1, yc1, zc1,
                                     xc2, yc2, zc2);
+                /* end-caps are flat, so default normals are fine */
             }
             if( cell1!=0 && cell2==0 && j>0 ) {
                 /* cap other end */
                 trig_list_add(list, xc0, yc0, zc0,
                                     xc2, yc2, zc2,
                                     xc1, yc1, zc1);
+                /* end-caps are flat, so default normals are fine */
             }
         }
     }
@@ -515,32 +591,97 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
             z30 = z31;
         }
 
+        /* compute normals */
+        double x1c = 1.0;
+        double y1c = 0.5;
+        double z1c = 0.5;
+
+        double x2c = 1.0;
+        double y2c = 1.0;
+        double z2c = 0.5;
+
+        double x3c = 0.5;
+        double y3c = 1.0;
+        double z3c = 0.5;
+
+        double nx11 = x11 - x1c;
+        double ny11 = y11 - y1c;
+        double nz11 = z11 - z1c;
+        
+        double nx12 = x12 - x1c;
+        double ny12 = y12 - y1c;
+        double nz12 = z12 - z1c;
+            
+        double nx21 = x21 - x2c;
+        double ny21 = y21 - y2c;
+        double nz21 = z21 - z2c;
+            
+        double nx22 = x22 - x2c;
+        double ny22 = y22 - y2c;
+        double nz22 = z22 - z2c;
+        
+        double nx31 = x31 - x3c;
+        double ny31 = y31 - y3c;
+        double nz31 = z31 - z3c;
+            
+        double nx32 = x32 - x3c;
+        double ny32 = y32 - y3c;
+        double nz32 = z32 - z3c;
+        
         /* curved surface of marker */
-        trig_list_add(&corner, x11, y11, z11,
+        trig_t t1, t2, t3, t4;
+        trig_fill(&t1,
+                x11, y11, z11,
                 x22, y22, z22,
                 x12, y12, z12);
-        trig_list_add(&corner, x11, y11, z11,
+        trig_set_normals(&t1,
+                         nx11, ny11, nz11,
+                         nx22, ny22, nz22,
+                         nx12, ny12, nz12);
+        trig_fill(&t2,
+                x11, y11, z11,
                 x21, y21, z21,
                 x22, y22, z22);
+        trig_set_normals(&t2,
+                         nx11, ny11, nz11,
+                         nx21, ny21, nz21,
+                         nx22, ny22, nz22);
 
-        trig_list_add(&corner, x31, y31, z31,
+        trig_fill(&t3,
+                x31, y31, z31,
                 x32, y32, z32,
                 x22, y22, z22);
-        trig_list_add(&corner, x31, y31, z31,
+        trig_set_normals(&t3,
+                         nx31, ny31, nz31,
+                         nx32, ny32, nz32,
+                         nx22, ny22, nz22);
+        trig_fill(&t4,
+                x31, y31, z31,
                 x22, y22, z22,
                 x21, y21, z21);
+        trig_set_normals(&t4,
+                         nx31, ny31, nz31,
+                         nx22, ny22, nz22,
+                         nx21, ny21, nz21);
+
+        trig_list_append(&corner, &t1);
+        trig_list_append(&corner, &t2);
+        trig_list_append(&corner, &t3);
+        trig_list_append(&corner, &t4);
 
         /* add end caps */
         if( rCap==0 ) {
             trig_list_add(&corner, x11, y11, z11,
                     x12, y12, z12,
                     x10, y10, z10);
+            /* end-caps are flat, so default normals are fine */
         }
 
         if( cCap==0 ) {
             trig_list_add(&corner, x31, y31, z31,
                     x30, y30, z30,
                     x32, y32, z32);
+            /* end-caps are flat, so default normals are fine */
         }
     }
 
@@ -580,13 +721,51 @@ static void maze_add_edge(trig_list_t *list, maze_t *maze, int r, int c, int fac
         double y22 = -0.5;
         double z22 = radius*sin(thetaI2)+0.5;
 
+        /* compute normals */
+        double x1c = 0.0;
+        double y1c = 0.5;
+        double z1c = 0.5;
+        
+        double x2c = 0.0;
+        double y2c = -0.5;
+        double z2c = 0.5;
+        
+        double nx11 = x11 - x1c;
+        double ny11 = y11 - y1c;
+        double nz11 = z11 - z1c;
+
+        double nx12 = x12 - x1c;
+        double ny12 = y12 - y1c;
+        double nz12 = z12 - z1c;
+
+        double nx21 = x21 - x2c;
+        double ny21 = y21 - y2c;
+        double nz21 = z21 - z2c;
+
+        double nx22 = x22 - x2c;
+        double ny22 = y22 - y2c;
+        double nz22 = z22 - z2c;
+        
         /* outer shell of marker */
-        trig_list_add(&edge, x11, y11, z11,
+        trig_t t1, t2;
+        trig_fill(&t1,
+                x11, y11, z11,
                 x12, y12, z12,
                 x22, y22, z22);
-        trig_list_add(&edge, x11, y11, z11,
+        trig_fill(&t2,
+                x11, y11, z11,
                 x22, y22, z22,
                 x21, y21, z21);
+        trig_set_normals(&t1,
+                         nx11, ny11, nz11,
+                         nx12, ny12, nz12,
+                         nx22, ny22, nz22);
+        trig_set_normals(&t2,
+                         nx11, ny11, nz11,
+                         nx22, ny22, nz22,
+                         nx21, ny21, nz21);
+        trig_list_append(&edge, &t1);
+        trig_list_append(&edge, &t2);
     }
 
     if( rotated != 0 )
