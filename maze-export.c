@@ -19,34 +19,37 @@ typedef struct trig {
 } trig_t;
 
 
+/* adjust lengths of normals to be unit length */
+static void trig_unitize_normals(trig_t *trig) {
+    for(int i=0; i<3; ++i) {
+        /* get lengths of the normal vectors */
+        double len = sqrt(pow(trig->nx[i],2.0)
+                        + pow(trig->ny[i],2.0)
+                        + pow(trig->nz[i],2.0));
+
+        /* "normalize" the normals */
+        if( fabs(len) > epsilon ) {
+            double invLen = 1.0/len;
+            trig->nx[i] *= invLen;
+            trig->ny[i] *= invLen;
+            trig->nz[i] *= invLen;
+        }
+    }
+}
+
+
 /* set the normal vector for all vertices */
 static void trig_set_normals(trig_t *trig,
                              double x1, double y1, double z1,
                              double x2, double y2, double z2,
                              double x3, double y3, double z3) {
-    /* get lengths of the normal vectors */
-    double len1 = sqrt(x1*x1 + y1*y1 + z1*z1);
-    double len2 = sqrt(x2*x2 + y2*y2 + z2*z2);
-    double len3 = sqrt(x3*x3 + y3*y3 + z3*z3);
-    
-    /* "normalize" the normals */
-    if( fabs(len1) > epsilon ) {
-        double invLen = 1.0/len1;
-        x1 *= invLen; y1 *= invLen; z1 *= invLen;
-    }
-    if( fabs(len2) > epsilon ) {
-        double invLen = 1.0/len2;
-        x2 *= invLen; y2 *= invLen; z2 *= invLen;
-    }
-    if( fabs(len1) > epsilon ) {
-        double invLen = 1.0/len3;
-        x3 *= invLen; y3 *= invLen; z3 *= invLen;
-    }
-    
     /* update triangle */
     trig->nx[0] = x1; trig->nx[1] = x2; trig->nx[2] = x3;
     trig->ny[0] = y1; trig->ny[1] = y2; trig->ny[2] = y3;
     trig->nz[0] = z1; trig->nz[1] = z2; trig->nz[2] = z3;
+
+    /* "normalize" the normals */
+    trig_unitize_normals(trig);
 }
 
 
@@ -135,6 +138,11 @@ static void trig_scale(trig_t *trig, double sx, double sy, double sz) {
         temp = trig->y[1]; trig->y[1] = trig->y[2]; trig->y[2] = temp;
         temp = trig->z[1]; trig->z[1] = trig->z[2]; trig->z[2] = temp;
     }
+#endif // 0?
+
+    /* "normalize" the normals */
+    trig_unitize_normals(trig);
+
 }
 
 
