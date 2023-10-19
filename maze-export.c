@@ -15,6 +15,7 @@ const double epsilon = 1e-6;
 typedef struct trig {
     double x[3], y[3], z[3];    /* vertex coordinates */
     double nx[3], ny[3], nz[3];   /* vertex normals */
+    int groupId;
 } trig_t;
 
 
@@ -78,15 +79,32 @@ static void trig_get_normal(trig_t *trig) {
 }
 
 
+/* initialize a trig */
+static void trig_init(trig_t *trig) {
+    if( !trig ) return;
+    memset(trig, '\0', sizeof(*trig));
+    trig->groupId = -1;
+}
+
+
 /* fill in a triangle */
 static void trig_fill(trig_t *trig,
                       double x1, double y1, double z1,
                       double x2, double y2, double z2,
                       double x3, double y3, double z3) {
+    if( !trig ) return;
+    trig_init(trig);
     trig->x[0] = x1; trig->x[1] = x2; trig->x[2] = x3;
     trig->y[0] = y1; trig->y[1] = y2; trig->y[2] = y3;
     trig->z[0] = z1; trig->z[1] = z2; trig->z[2] = z3;
     trig_get_normal(trig);
+}
+
+
+/* set a grouping id to aid in color assignment */
+static void trig_set_group(trig_t *trig, int id) {
+    if( !trig ) return;
+    trig->groupId = id;
 }
 
 
@@ -251,18 +269,15 @@ static void trig_list_free(trig_list_t *list) {
 }
 
 
-/* add triangle to list */
-static int trig_list_add(trig_list_t *list,
-    double x1, double y1, double z1,
-    double x2, double y2, double z2,
-    double x3, double y3, double z3) {
-
-    /* reallocate list, if needed */
+/* reallocate list, if needed */
+static void trig_list_resize(trig_list_t *list) {
+    if( !list ) { return; }
+    
     if( list->num == list->cap ) {
         int new_cap = (list->cap*2) + 1;
 
         trig_t *new_buf = calloc(new_cap, sizeof(*list->trig));
-        if( !new_buf ) { return 0; }
+        if( !new_buf ) { return; }
 
         memcpy(new_buf, list->trig, list->num*sizeof(*list->trig));
         free(list->trig); list->trig=NULL;
@@ -270,8 +285,20 @@ static int trig_list_add(trig_list_t *list,
         list->trig = new_buf;
         list->cap = new_cap;
     }
+}
+
+
+/* add triangle to list */
+static int trig_list_add(trig_list_t *list,
+    double x1, double y1, double z1,
+    double x2, double y2, double z2,
+    double x3, double y3, double z3) {
+
+    /* reallocate list, if needed */
+    trig_list_resize(list);
 
     int pos = list->num;
+    trig_init(&list->trig[pos]);
     list->trig[pos].x[0] = x1;
     list->trig[pos].y[0] = y1;
     list->trig[pos].z[0] = z1;
@@ -294,18 +321,7 @@ static int trig_list_add(trig_list_t *list,
 static int trig_list_append(trig_list_t *list, trig_t *t) {
 
     /* reallocate list, if needed */
-    if( list->num == list->cap ) {
-        int new_cap = (list->cap*2) + 1;
-
-        trig_t *new_buf = calloc(new_cap, sizeof(*list->trig));
-        if( !new_buf ) { return 0; }
-
-        memcpy(new_buf, list->trig, list->num*sizeof(*list->trig));
-        free(list->trig); list->trig=NULL;
-
-        list->trig = new_buf;
-        list->cap = new_cap;
-    }
+    trig_list_resize(list);
 
     /* copy trig into list */
     trig_t *new_pos = &list->trig[list->num];
@@ -363,8 +379,31 @@ static void trig_list_export_stl(FILE *fp, trig_list_t *list) {
 }
 
 
+/* set group id for all triangles in a list */
+static void trig_list_set_groupid(trig_list_t *list, int id) {
+    if( !list ) return;
+    for(int i=0; i<list->num; ++i) {
+        list->trig[i].groupId = id;
+    }
+}
+
+
+/* replace group ids for all triangles with the target group id */
+static void trig_list_replace_groupid(trig_list_t *list, int id, int target_id) {
+    if( !list ) return;
+    for(int i=0; i<list->num; ++i) {
+        if( list->trig[i].groupId == target_id ) {
+            list->trig[i].groupId = id;
+        }
+    }
+}
+
+
 /* circular marker */
 static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale) {
+    trig_list_t marker;
+    trig_list_init(&marker);
+
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
@@ -519,25 +558,32 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
                                  nx11, ny11, nz11,
                                  nx21, ny21, nz21,
                                  nx22, ny22, nz22);
-                trig_list_append(list, &t1);
-                trig_list_append(list, &t2);
+                trig_list_append(&marker, &t1);
+                trig_list_append(&marker, &t2);
             }
             if( cell1==0 && cell2!=0 && j>0 ) {
                 /* cap one end */
-                trig_list_add(list, xc0, yc0, zc0,
+                trig_list_add(&marker, xc0, yc0, zc0,
                                     xc1, yc1, zc1,
                                     xc2, yc2, zc2);
                 /* end-caps are flat, so default normals are fine */
             }
             if( cell1!=0 && cell2==0 && j>0 ) {
                 /* cap other end */
-                trig_list_add(list, xc0, yc0, zc0,
+                trig_list_add(&marker, xc0, yc0, zc0,
                                     xc2, yc2, zc2,
                                     xc1, yc1, zc1);
                 /* end-caps are flat, so default normals are fine */
             }
         }
     }
+    
+    /* assign marker to a group */
+    trig_list_set_groupid(&marker, 4);
+    
+    /* append marker into passed-in list */
+    trig_list_concatenate(list, &marker);
+    trig_list_free(&marker);
 }
 
 
@@ -778,6 +824,9 @@ static void maze_add_edge(trig_list_t *list, maze_t *maze, int r, int c, int fac
 
 
 static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale) {
+    trig_list_t marker;
+    trig_list_init(&marker);
+
     int d1 = maze->faces[face].d1;
     int d2 = maze->faces[face].d2;
 
@@ -792,20 +841,27 @@ static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position
     int bSide = face_get_cell(&maze->faces[face], r, c+1);
 
     /* add corners */
-    maze_add_corner(list, maze, r, c, -1, -1, face, radius, scale, lSide, tSide);
-    maze_add_corner(list, maze, r, c, -1, 1, face, radius, scale, lSide, bSide);
-    maze_add_corner(list, maze, r, c, 1, -1, face, radius, scale, rSide, tSide);
-    maze_add_corner(list, maze, r, c, 1, 1, face, radius, scale, rSide, bSide);
+    maze_add_corner(&marker, maze, r, c, -1, -1, face, radius, scale, lSide, tSide);
+    maze_add_corner(&marker, maze, r, c, -1, 1, face, radius, scale, lSide, bSide);
+    maze_add_corner(&marker, maze, r, c, 1, -1, face, radius, scale, rSide, tSide);
+    maze_add_corner(&marker, maze, r, c, 1, 1, face, radius, scale, rSide, bSide);
 
     /* add straight segments */
     if( lSide != 0 )
-        maze_add_edge(list, maze, r, c, face, radius, scale, 0, -1, 0);
+        maze_add_edge(&marker, maze, r, c, face, radius, scale, 0, -1, 0);
     if( rSide != 0 )
-        maze_add_edge(list, maze, r, c, face, radius, scale, 0, 1, 0);
+        maze_add_edge(&marker, maze, r, c, face, radius, scale, 0, 1, 0);
     if( tSide != 0 )
-        maze_add_edge(list, maze, r, c, face, radius, scale, 1, 0, -1);
+        maze_add_edge(&marker, maze, r, c, face, radius, scale, 1, 0, -1);
     if( bSide != 0 )
-        maze_add_edge(list, maze, r, c, face, radius, scale, 1, 0, 1);
+        maze_add_edge(&marker, maze, r, c, face, radius, scale, 1, 0, 1);
+    
+    /* assign marker to a group */
+    trig_list_set_groupid(&marker, 3);
+    
+    /* append marker into passed-in list */
+    trig_list_concatenate(list, &marker);
+    trig_list_free(&marker);
 }
 
 static void maze_add_cube(trig_list_t *list, double x, double y, double z, char face_mask, double scaleX, double scaleY, double scaleZ) {
@@ -975,7 +1031,9 @@ int maze_add_maze(maze_t *maze, trig_list_t *list) {
             trig_list_move(&faceTrigs2, 0.0, 0.0, 0.0);
             trig_list_move(&faceTrigs1, maze->dimensions[0]-1.0, 0.0, 0.0);
         }
-        
+        trig_list_replace_groupid(&faceTrigs1, face, -1);
+        trig_list_replace_groupid(&faceTrigs2, face, -1);
+
         /* add face to maze list */
         trig_list_concatenate(list, &faceTrigs1);
         trig_list_concatenate(list, &faceTrigs2);
@@ -1352,4 +1410,13 @@ float maze_export_normal_dim(void *list, int trig, int vertex, int dim) {
         return -5.0;
         break;
     }
+}
+
+
+/* return the group id of a triangle */
+int maze_export_groupid(void *list, int trig) {
+    if( list == NULL )  return -1.0;
+    if( trig < 0 || trig > ((trig_list_t*)list)->num )  return -2.0;
+    
+    return ((trig_list_t*)list)->trig[trig].groupId;
 }
