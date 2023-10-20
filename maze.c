@@ -2,7 +2,7 @@
  * maze.c
  * MazeCubeGen: maze cube generator
  *
- * Copyright (c) 2020-2021 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020-2023 Bryan Franklin. All rights reserved.
  */
 #include <ctype.h>
 #include <stdio.h>
