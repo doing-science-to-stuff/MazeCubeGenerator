@@ -396,7 +396,7 @@ static void trig_list_export_stl(FILE *fp, trig_list_t *list) {
 static void trig_list_set_groupid(trig_list_t *list, int id) {
     if( !list ) return;
     for(int i=0; i<list->num; ++i) {
-        list->trig[i].groupId = id;
+        trig_set_group(&list->trig[i], id);
     }
 }
 
@@ -406,7 +406,7 @@ static void trig_list_replace_groupid(trig_list_t *list, int id, int target_id) 
     if( !list ) return;
     for(int i=0; i<list->num; ++i) {
         if( list->trig[i].groupId == target_id ) {
-            list->trig[i].groupId = id;
+            trig_set_group(&list->trig[i], id);
         }
     }
 }
