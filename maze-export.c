@@ -127,18 +127,23 @@ static void trig_scale(trig_t *trig, double sx, double sy, double sz) {
         trig->x[i] *= sx;
         trig->y[i] *= sy;
         trig->z[i] *= sz;
+        /* see: https://paroj.github.io/gltut/Illumination/Tut09%20Normal%20Transformation.html */
+        if( fabs(sx) > epsilon ) trig->nx[i] /= sx;
+        if( fabs(sy) > epsilon ) trig->ny[i] /= sy;
+        if( fabs(sz) > epsilon ) trig->nz[i] /= sz;
     }
 
-    /* TODO: fix how normals ae handled */
-    
     if( sx*sy*sz < 0.0 ) {
-        /* normal will be reversed */
+        /* normal will be reversed, so vertex order needs to reverse as well */
         double temp;
         temp = trig->x[1]; trig->x[1] = trig->x[2]; trig->x[2] = temp;
         temp = trig->y[1]; trig->y[1] = trig->y[2]; trig->y[2] = temp;
         temp = trig->z[1]; trig->z[1] = trig->z[2]; trig->z[2] = temp;
+        /* normals need to be swapped along with vertices */
+        temp = trig->nx[1]; trig->nx[1] = trig->nx[2]; trig->nx[2] = temp;
+        temp = trig->ny[1]; trig->ny[1] = trig->ny[2]; trig->ny[2] = temp;
+        temp = trig->nz[1]; trig->nz[1] = trig->nz[2]; trig->nz[2] = temp;
     }
-#endif // 0?
 
     /* "normalize" the normals */
     trig_unitize_normals(trig);
@@ -446,21 +451,21 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
             double thetaJ2 =  M_PI * (j+1) / numSegsJ;
 
             /* compute raw torus coordinates */
-            double x11 = cos(thetaI1) * (1+radius*cos(thetaJ1))+r;
-            double y11 = sin(thetaI1) * (1+radius*cos(thetaJ1))+c;
-            double z11 = radius*sin(thetaJ1)+0.5;
+            double x11 = cos(thetaI1) * (1+radius*cos(thetaJ1)) + r;
+            double y11 = sin(thetaI1) * (1+radius*cos(thetaJ1)) + c;
+            double z11 = radius*sin(thetaJ1) + 0.5;
 
-            double x12 = cos(thetaI1) * (1+radius*cos(thetaJ2))+r;
-            double y12 = sin(thetaI1) * (1+radius*cos(thetaJ2))+c;
-            double z12 = radius*sin(thetaJ2)+0.5;
+            double x12 = cos(thetaI1) * (1+radius*cos(thetaJ2)) + r;
+            double y12 = sin(thetaI1) * (1+radius*cos(thetaJ2)) + c;
+            double z12 = radius*sin(thetaJ2) + 0.5;
 
-            double x21 = cos(thetaI2) * (1+radius*cos(thetaJ1))+r;
-            double y21 = sin(thetaI2) * (1+radius*cos(thetaJ1))+c;
+            double x21 = cos(thetaI2) * (1+radius*cos(thetaJ1)) + r;
+            double y21 = sin(thetaI2) * (1+radius*cos(thetaJ1)) + c;
             double z21 = radius*sin(thetaJ1)+0.5;
 
-            double x22 = cos(thetaI2) * (1+radius*cos(thetaJ2))+r;
-            double y22 = sin(thetaI2) * (1+radius*cos(thetaJ2))+c;
-            double z22 = radius*sin(thetaJ2)+0.5;
+            double x22 = cos(thetaI2) * (1+radius*cos(thetaJ2)) + r;
+            double y22 = sin(thetaI2) * (1+radius*cos(thetaJ2)) + c;
+            double z22 = radius*sin(thetaJ2) + 0.5;
 
             /* compute normals */
             double x1c = cos(thetaI1) + r;
