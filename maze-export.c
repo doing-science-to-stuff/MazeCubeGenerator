@@ -238,16 +238,11 @@ static void trig_export_stl(FILE *fp, trig_t *trig) {
         trig->nz[i] = epsilon*round(trig->nz[i]/epsilon);
     }
 
-    /* since STL only has one normal per facet, average normals */
-    double nx = 0.0, ny = 0.0, nz = 0.0;
-    for(int i=0; i<3; ++i) {
-        nx += trig->nx[i] / 3;
-        ny += trig->ny[i] / 3;
-        nz += trig->nz[i] / 3;
-    }
-
     /* output triangle to fp */
-    fprintf(fp, "facet normal %g %g %g\n", nx, ny, nz);
+    /* Note: since STL only has one normal per facet
+             and trig_get_normal sets all three to be the same,
+             just use first vertex's normal. */
+    fprintf(fp, "facet normal %g %g %g\n", trig->nx[0], trig->ny[0], trig->nz[0]);
     fprintf(fp, "  outer loop\n");
     fprintf(fp, "    vertex %g %g %g\n", trig->x[0], trig->y[0], trig->z[0]);
     fprintf(fp, "    vertex %g %g %g\n", trig->x[1], trig->y[1], trig->z[1]);
