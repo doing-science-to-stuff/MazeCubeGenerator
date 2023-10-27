@@ -1039,8 +1039,16 @@ int maze_add_maze(maze_t *maze, trig_list_t *list) {
             trig_list_move(&faceTrigs2, 0.0, 0.0, 0.0);
             trig_list_move(&faceTrigs1, maze->dimensions[0]-1.0, 0.0, 0.0);
         }
-        trig_list_replace_groupid(&faceTrigs1, face, -1);
-        trig_list_replace_groupid(&faceTrigs2, face, -1);
+        
+        /* update group ids for markers */
+        trig_list_replace_groupid(&faceTrigs1, 3*face+1, 3);
+        trig_list_replace_groupid(&faceTrigs1, 3*face+2, 4);
+        trig_list_replace_groupid(&faceTrigs2, 3*face+1 + 9, 3);
+        trig_list_replace_groupid(&faceTrigs2, 3*face+2 + 9, 4);
+
+        /* set group id for the rest of the face */
+        trig_list_replace_groupid(&faceTrigs1, 3*face, -1);
+        trig_list_replace_groupid(&faceTrigs2, 3*face + 9, -1);
 
         /* add face to maze list */
         trig_list_concatenate(list, &faceTrigs1);
