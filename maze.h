@@ -51,6 +51,7 @@ void maze_set_segments(maze_t *maze, int segs);
 void maze_set_path_length(maze_t *maze, int len);
 int maze_pick_goals(maze_t *maze);
 int maze_solve(maze_t *maze);
+int maze_get_distance(maze_t *maze, position_t posA, position_t posB);
 int maze_generate(maze_t *maze);
 int maze_write(maze_t *maze, char *filename);
 int maze_load(maze_t *maze, char *filename);
