@@ -145,6 +145,7 @@ static int pos_list_pop(position_list_t *list, position_t pos) {
 
 
 static int pos_list_clear(position_list_t *list) {
+    /* remove elements until list is empty */
     while(pos_list_pop(list,NULL));
     return 0;
 }
@@ -178,6 +179,7 @@ static int position_increment(maze_t *maze, position_t pos) {
         ++pos[j];
     else
         done = 1;
+    
     return done;
 }
 
@@ -772,6 +774,24 @@ int maze_solve(maze_t *maze) {
 
     printf("No solution found!\n");
     return 0;
+}
+
+
+int maze_get_distance(maze_t *maze, position_t posA, position_t posB) {
+
+    /* call find path */
+    position_list_t path;
+    pos_list_init(&path, maze->numDimensions);
+    maze_find_path(maze, posA, &path, posB);
+    
+    /* record the length of the path */
+    int length = path.num;
+    
+    /* free path */
+    pos_list_free(&path);
+    
+    /* return length of path */
+    return length;
 }
 
 
