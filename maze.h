@@ -18,6 +18,11 @@ int face_free(face_t *face);
 int face_get_cell(face_t *face, int row, int col);
 
 typedef int* position_t;
+int position_init(position_t *pos, int dimensions);
+int position_copy(position_t *dst, position_t *src, int dimensions);
+int position_compare(position_t *pos1, position_t *pos2, int dimensions);
+int position_free(position_t *pos);
+
 typedef struct position_list {
     int numDimensions;
     int capacity;
