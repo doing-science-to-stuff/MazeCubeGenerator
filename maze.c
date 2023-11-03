@@ -609,6 +609,9 @@ static int maze_pick_goals_random(maze_t *maze) {
 static int* validMoves = NULL;
 static int maze_find_path(maze_t *maze, position_t pos, position_list_t* path, position_t goal) {
 
+    if( validMoves == NULL )
+        return 0;
+
     pos_list_push(path, pos);
 
     /* check for endPos */
@@ -631,7 +634,7 @@ static int maze_find_path(maze_t *maze, position_t pos, position_list_t* path, p
             --newPos[(-move)-1];
 
         /* if move valid */
-        if( !maze_position_clear(maze,newPos) ) {
+        if( !maze_position_clear(maze, newPos) ) {
             continue;
         }
 
@@ -779,11 +782,22 @@ int maze_solve(maze_t *maze) {
 
 int maze_get_distance(maze_t *maze, position_t posA, position_t posB) {
 
+    /* initialize validMoves */
+    validMoves = calloc(2*maze->numDimensions, sizeof(int));
+    for(int i=0; i<maze->numDimensions; ++i) {
+        validMoves[i*2] = i+1;
+        validMoves[i*2+1] = -(i+1);
+    }
+
     /* call find path */
     position_list_t path;
     pos_list_init(&path, maze->numDimensions);
-    maze_find_path(maze, posA, &path, posB);
-    
+    if( !maze_find_path(maze, posA, &path, posB) ) {
+        free(validMoves); validMoves=NULL;
+        return -1;
+    }
+    free(validMoves); validMoves=NULL;
+
     /* record the length of the path */
     int length = path.num;
     
