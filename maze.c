@@ -179,7 +179,7 @@ static int position_increment(maze_t *maze, position_t pos) {
         ++pos[j];
     else
         done = 1;
-    
+
     return done;
 }
 
@@ -800,10 +800,10 @@ int maze_get_distance(maze_t *maze, position_t posA, position_t posB) {
 
     /* record the length of the path */
     int length = path.num;
-    
+
     /* free path */
     pos_list_free(&path);
-    
+
     /* return length of path */
     return length;
 }
