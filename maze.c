@@ -162,7 +162,7 @@ static int pos_list_random(position_list_t *list, position_t pos) {
 
 static int pos_list_rfind(position_list_t *list, position_t pos) {
     for(int i=list->num-1; i>=0; --i) {
-        if( position_copy(&list->positions[i], &pos, list->numDimensions) == 0 )
+        if( position_compare(&list->positions[i], &pos, list->numDimensions) == 0 )
         return i;
     }
     return -1;
