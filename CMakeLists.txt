@@ -29,6 +29,11 @@ AUX_SOURCE_DIRECTORY(. SOURCE_FILES)
 add_executable(mcg ${SOURCE_FILES})
 set_property(TARGET mcg PROPERTY C_STANDARD 99)
 
+# add a target to remove files cmake creates
+add_custom_target(full-clean
+                  COMMAND bash -c 'rm -frv CMakeCache.txt CMakeFiles Makefile'
+                  )
+
 # add a debug build target
 add_custom_target(debug-build
                   COMMAND bash -c 'cmake -DCMAKE_BUILD_TYPE=Debug . && make'
