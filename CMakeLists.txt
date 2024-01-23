@@ -33,6 +33,9 @@ set_property(TARGET mcg PROPERTY C_STANDARD 99)
 add_custom_target(full-clean
                   COMMAND bash -c 'rm -frv CMakeCache.txt CMakeFiles Makefile'
                   )
+add_custom_target(fix-cmake
+                  DEPENDS full-clean
+                  )
 
 # add a debug build target
 add_custom_target(debug-build
