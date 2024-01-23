@@ -8,6 +8,10 @@
 
 #include "../../MazeCubeGenerator/maze.c"
 
+#if 1
+#define WITH_MIRRORS
+#endif /* 1 */
+
 static maze_t maze;
 static int alternateView = 0;
 /* there are 90 moves in the original puzzle each direction */
@@ -35,6 +39,7 @@ int scene_frames(int dimensions, char *config) {
     return numFrames;
 }
 
+#if WITH_MIRRORS
 static int add_mirror(scene *scn, int dimensions, int which, double mirror_dist) {
 
     vectNd offset, normal;
@@ -64,6 +69,7 @@ static int add_mirror(scene *scn, int dimensions, int which, double mirror_dist)
 
     return 0;
 }
+#endif // WITH_MIRRORS
 
 static void set_face_color(object *obj, int face) {
     switch(face) {
@@ -507,6 +513,7 @@ static void add_maze_faces(object *puzzle, maze_t *maze, double edge_size) {
 
 static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame, int frames) {
     
+    printf("START %s\n", __FUNCTION__);
     double scale = edge_size / maze->faces[0].rows;
 
     int dimensions = maze->numDimensions;
@@ -516,13 +523,17 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
     object_add_obj(puzzle, slider);
 
     if( frame < 0 ) {
-        printf("negative frame (%i)?", frame);
-        return;
+        printf("negative frame (%i)?\n", frame);
+        printf("ERROR %s\n", __FUNCTION__);
+        //return;
+        frame = 1;
     }
 
     if( frames < 0 ) {
-        printf("negative frames (%i)?", frames);
-        return;
+        printf("negative frames (%i)?\n", frames);
+        printf("ERROR %s\n", __FUNCTION__);
+        //return;
+        frames = 1;
     }
 
     /* for each dimension, add an hcube lengthened in that dimension */
@@ -595,6 +606,7 @@ static void add_slider(object *puzzle, maze_t *maze, double edge_size, int frame
     /* move slider cluster to correct location */
     object_move(slider, &scaledPos);
     vectNd_free(&scaledPos);
+    printf("END %s\n", __FUNCTION__);
 }
 
 int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
@@ -608,8 +620,17 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
         printf("\talternateView = %i (i.e., dimension %i)\n", alternateView, alternateView+2);
         snprintf(scn->name, sizeof(scn->name), "maze-cube-%i", alternateView);
     }
-    if( config == NULL )
+    if( config == NULL ) {
         printf("config string omitted,\n");
+        printf("Generating random maze, otherwise use -u maze.txt to load a specific maze.\n");
+        int *sizes = calloc(dimensions, sizeof(int));
+        for(int i=0; i<dimensions; ++i)
+            sizes[i] = 11;
+        maze_init(&maze, dimensions, sizes, "");
+        srand(frame);
+        frame = 0;
+        maze_generate(&maze);
+    }
 
     /* basic setup */
     #if 1
@@ -620,6 +641,11 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     scn->ambient.red = 0.0;
     scn->ambient.green = 0.0;
     scn->ambient.blue = 0.0;
+
+    //scn->bg_alpha = 0.0;
+    scn->bg_red = 0.25;
+    scn->bg_green = 0.25;
+    scn->bg_blue = 0.25;
 
     /* setup lighting */
     light *lgt=NULL;
@@ -687,7 +713,7 @@ int scene_setup(scene *scn, int dimensions, int frame, int frames, char *config)
     ground->mat.blue = 0.04 * grassScaling;
     #endif /* 0 */
 
-    #if 1
+    #if WITH_MIRRORS
     /* add mirrors */
     double mirror_dist = 66;
     /* positive z (or higher) */
