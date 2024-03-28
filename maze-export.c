@@ -2,7 +2,7 @@
  * maze-export.c
  * MazeCubeGen: maze cube generator
  *
- * Copyright (c) 2020-2023 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020-2024 Bryan Franklin. All rights reserved.
  */
 #include <math.h>
 #include <stdio.h>
@@ -148,6 +148,24 @@ static void trig_scale(trig_t *trig, double sx, double sy, double sz) {
     /* "normalize" the normals */
     trig_unitize_normals(trig);
 
+}
+
+
+static void trig_set_minimum(trig_t *trig, double min, int dim) {
+    for(int i=0; i<3; ++i) {
+        switch(dim) {
+        case 0:
+            if( trig->x[i] < min ) trig->x[i] = min;
+            break;
+        case 1:
+            if( trig->y[i] < min ) trig->y[i] = min;
+            break;
+        case 2:
+            if( trig->z[i] < min ) trig->z[i] = min;
+            break;
+        }
+    }
+    trig_get_normal(trig);
 }
 
 
@@ -359,6 +377,14 @@ static void trig_list_move(trig_list_t *list, double dx, double dy, double dz) {
 static void trig_list_scale(trig_list_t *list, double sx, double sy, double sz) {
     for(int i=0; i<list->num; ++i) {
         trig_scale(&list->trig[i], sx, sy, sz);
+    }
+}
+
+
+/* set minimum value in specified dimension for all points */
+static void trig_list_set_minimum(trig_list_t *list, double min, double dim) {
+    for(int i=0; i<list->num; ++i) {
+        trig_set_minimum(&list->trig[i], min, dim);
     }
 }
 
@@ -1084,14 +1110,15 @@ static int maze_add_maze_slider(maze_t *maze, trig_list_t *list) {
 }
 
 
-static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffset, double xSize, double ySize, double scale) {
+static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffset, double xSize, double ySize, double edgeWidth, double scale) {
 
     #if 0
     printf("%s\n", __FUNCTION__);
+    printf("tedgeWidth: %g\tscale: %g\n", edgeWidth, scale);
     printf("x,y: %g,%g; w,h: %g,%g\n", xOffset, yOffset, xSize, ySize);
     #endif /* 0 */
 
-    double xi[4], yi[4], xo[4], yo[4];
+    double xi[4], yi[4], xm[4], ym[4], xo[4], yo[4];
 
     xo[0] = xOffset;
     xi[0] = xOffset+1;
@@ -1113,7 +1140,7 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
     yo[3] = yOffset+ySize;
     yi[3] = yOffset+ySize-1;
 
-    double z0 = -0.5*scale;
+    double z0 = -0.5*scale + edgeWidth;
     double z1 = 0.5*scale;
 
     /* adjust scaling */
@@ -1124,16 +1151,39 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
         yi[i] *= scale;
     }
 
+    if( edgeWidth < 0 ) edgeWidth = 0.0;
+    if( edgeWidth >= scale ) edgeWidth = scale;
+
+    xm[0] = xi[0] - edgeWidth;
+    ym[0] = yi[0] - edgeWidth;
+
+    xm[1] = xi[1] + edgeWidth;
+    ym[1] = yi[1] - edgeWidth;
+
+    xm[2] = xi[2] + edgeWidth;
+    ym[2] = yi[2] + edgeWidth;
+
+    xm[3] = xi[3] - edgeWidth;
+    ym[3] = yi[3] + edgeWidth;
+
     for(int i=0; i<4; ++i) {
         int j = (i+1)%4;
 
         /* outer sloped face */
         trig_list_add(list, xo[i], yo[i], z1,
-                                     xi[i], yi[i], z0,
-                                     xi[j], yi[j], z0);
+                            xm[i], ym[i], z0,
+                            xm[j], ym[j], z0);
         trig_list_add(list, xo[i], yo[i], z1,
-                                     xi[j], yi[j], z0,
-                                     xo[j], yo[j], z1);
+                            xm[j], ym[j], z0,
+                            xo[j], yo[j], z1);
+
+        /* flat section for build-plate */
+        trig_list_add(list, xm[i], ym[i], z0,
+                            xi[i], yi[i], z0,
+                            xi[j], yi[j], z0);
+        trig_list_add(list, xm[i], ym[i], z0,
+                            xi[j], yi[j], z0,
+                            xm[j], ym[j], z0);
     }
 
     return 0;
@@ -1172,8 +1222,7 @@ static int maze_add_flat_slider(trig_list_t *list, double xOffset, double yOffse
 }
 
 
-int maze_add_maze_flat(maze_t *maze, trig_list_t *list) {
-    double scale = 1.0;
+int maze_add_maze_flat(maze_t *maze, trig_list_t *list, double edgeWidth, double scale) {
     /* write faces */
     /* for each face */
     for(int face=0; face<maze->numFaces; ++face) {
@@ -1186,9 +1235,23 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list) {
         maze_add_maze_face(maze, face, &faceTrigs1);
         maze_add_maze_face(maze, face, &faceTrigs2);
 
+        /* scale face */
+        trig_list_scale(&faceTrigs1, scale, scale, scale);
+        trig_list_scale(&faceTrigs2, -scale, scale, scale);
+
+        trig_list_t border1, border2;
+        trig_list_init(&border1);
+        trig_list_init(&border2);
+
         /* add perimeters */
-        maze_add_flat_border(&faceTrigs1, -0.5, -0.5, cols, rows, scale);
-        maze_add_flat_border(&faceTrigs2, -0.5, -0.5, cols, rows, scale);
+        maze_add_flat_border(&border1, -0.5, -0.5, cols, rows, edgeWidth, scale);
+        maze_add_flat_border(&border2, -0.5, -0.5, cols, rows, edgeWidth, scale);
+
+        /* move border2 into proper location */
+        trig_list_move(&border2, (-cols+1) * scale, 0.0, 0.0);
+
+        trig_list_concatenate(&faceTrigs1, &border1);
+        trig_list_concatenate(&faceTrigs2, &border2);
 
         /* compute base offsets for face */
         double xBase1 = -cols-1.0;
@@ -1200,9 +1263,12 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list) {
         double yBase2 = yBase1;
 
         /* translate face */
-        trig_list_scale(&faceTrigs2, -1.0, 1.0, 1.0);
-        trig_list_move(&faceTrigs1, xBase1, yBase1, 0.0);
-        trig_list_move(&faceTrigs2, xBase2, yBase2, 0.0);
+        trig_list_move(&faceTrigs1, xBase1*scale, yBase1*scale, -edgeWidth);
+        trig_list_move(&faceTrigs2, xBase2*scale, yBase2*scale, -edgeWidth);
+
+        double minZ = -0.5*scale + edgeWidth;
+        trig_list_set_minimum(&faceTrigs1, minZ, 2);
+        trig_list_set_minimum(&faceTrigs2, minZ, 2);
         
         /* add face to maze list */
         trig_list_concatenate(list, &faceTrigs1);
@@ -1210,15 +1276,24 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list) {
 
         trig_list_free(&faceTrigs1);
         trig_list_free(&faceTrigs2);
+        trig_list_free(&border1);
+        trig_list_free(&border2);
     }
 
     /* write slider pieces */
+    trig_list_t slider;
+    trig_list_init(&slider);
     int xSize, ySize, zSize;
     xSize = maze->dimensions[0];
     ySize = maze->dimensions[1];
     zSize = maze->dimensions[2];
-    maze_add_flat_slider(list, 0.0, ySize+1.0, xSize+1, -(ySize+1), scale);
-    maze_add_flat_slider(list, 0.0, ySize+zSize+4.0, zSize+1, ySize+1, scale);
+    maze_add_flat_slider(&slider, 0.0, ySize+1.0, xSize+1, -(ySize+1), scale);
+    maze_add_flat_slider(&slider, 0.0, ySize+zSize+4.0, zSize+1, ySize+1, scale);
+
+    /* move slider to account for edgeWidth */
+    trig_list_move(&slider, 0.0, 0.0, edgeWidth);
+    trig_list_concatenate(list, &slider);
+    trig_list_free(&slider);
 
     trig_list_move(list, 0.5, 0.5, 0.5);
 
@@ -1276,7 +1351,7 @@ int maze_export_stl(maze_t *maze, char *filename) {
 }
 
 
-int maze_export_stl_flat(maze_t *maze, char *filename) {
+int maze_export_stl_flat(maze_t *maze, char *filename, double edgeWidth, double scale) {
 
     if( maze->numDimensions != 3 ) {
         fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
@@ -1285,7 +1360,7 @@ int maze_export_stl_flat(maze_t *maze, char *filename) {
 
     trig_list_t trigs;
     trig_list_init(&trigs);
-    maze_add_maze_flat(maze, &trigs);
+    maze_add_maze_flat(maze, &trigs, edgeWidth, scale);
 
     /* open file */
     FILE *fp = fopen(filename,"w");

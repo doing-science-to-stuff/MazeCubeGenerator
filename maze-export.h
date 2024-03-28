@@ -10,7 +10,7 @@
 
 /* export maze shape to an STL file */
 int maze_export_stl(maze_t *maze, char *filename);
-int maze_export_stl_flat(maze_t *maze, char *filename);
+int maze_export_stl_flat(maze_t *maze, char *filename, double edgeWidth, double scale);
 int maze_export_stl_solution(maze_t *maze, char *filename);
 
 /* export maze shape as series of triangles */

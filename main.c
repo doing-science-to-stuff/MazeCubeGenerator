@@ -2,7 +2,7 @@
  * main.c
  * MazeCubeGen: maze cube generator
  *
- * Copyright (c) 2020-2023 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020-2024 Bryan Franklin. All rights reserved.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +32,7 @@ static void free_buffers() {
 
 static void show_help(int argc, char **argv) {
     free_buffers();
-    printf("%s {-d l,w,h[:o] | -i file.txt} [-h] [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-f flat.stl] [-k maxSegments] [-p solution.stl] [-g graph.gv]\n\n",
+    printf("%s {-d l,w,h[:o] | -i file.txt} [-h] [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-f flat.stl] [-k maxSegments] [-p solution.stl] [-g graph.gv] [-e edgeWidth] [-x scale]\n\n",
             argv[0]);
     exit(0);
 }
@@ -45,16 +45,21 @@ int main(int argc, char **argv) {
     int minSolutionLen = -1;
     int seed = 0;
     int maxSegments = -1;
+    double scale = 1.0;
+    double edgeWidth = 0.4;
 
     /* set defaults */
     genMaze = 0;
 
     char ch='\0';
-    while( (ch=getopt(argc, argv, "d:f:g:hi:k:l:m:o:p:r:s"))!=-1 ) {
+    while( (ch=getopt(argc, argv, "d:e:f:g:hi:k:l:m:o:p:r:sx:"))!=-1 ) {
         switch(ch) {
             case 'd':
                 configStr = strdup(optarg);
                 genMaze = 1;
+                break;
+            case 'e':
+                edgeWidth = atof(optarg);
                 break;
             case 'f':
                 /* output flat STL model to file given as argument */
@@ -99,6 +104,9 @@ int main(int argc, char **argv) {
             case 's':
                 /* generate a solution */
                 doSolve = 1;
+                break;
+            case 'x':
+                scale = atof(optarg);
                 break;
         }
     }
@@ -161,7 +169,7 @@ int main(int argc, char **argv) {
     }
     if( stlFileFlat ) {
         printf("Exporting %iD maze to flat-packed STL file `%s`.\n", maze.numDimensions, stlFileFlat);
-        maze_export_stl_flat(&maze, stlFileFlat);
+        maze_export_stl_flat(&maze, stlFileFlat, edgeWidth, scale);
     }
     if( gvFile ) {
         printf("Exporting %iD maze to graphviz gv file `%s`.\n", maze.numDimensions, gvFile);
