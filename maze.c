@@ -2,12 +2,13 @@
  * maze.c
  * MazeCubeGen: maze cube generator
  *
- * Copyright (c) 2020-2021 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020-2023 Bryan Franklin. All rights reserved.
  */
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "maze.h"
 
 int face_init(face_t *face, int *sizes, int d1, int d2) {
@@ -62,6 +63,32 @@ int face_get_cell(face_t *face, int row, int col) {
 }
 
 
+int position_init(position_t *pos, int dimensions) {
+    *pos = calloc(dimensions, sizeof(*pos));
+    return (*pos != NULL);
+}
+
+
+int position_copy(position_t *dst, position_t *src, int numDimensions) {
+    memcpy(*dst, *src, numDimensions*sizeof(int));
+    return 0;
+}
+
+
+int position_compare(position_t *pos1, position_t *pos2, int numDimensions) {
+    return memcmp(*pos1, *pos2, numDimensions*sizeof(int));
+}
+
+
+int position_free(position_t *pos) {
+    if( *pos != NULL ) {
+        free(*pos); *pos = NULL;
+        return 1;
+    }
+    return 0;
+}
+
+
 static int pos_list_init(position_list_t *list, int numDimensions) {
     list->numDimensions = numDimensions;
     list->capacity = 10;
@@ -94,7 +121,7 @@ static int pos_list_push(position_list_t *list, position_t pos) {
         list->capacity = newCap;
     }
     list->positions[list->num] = calloc(list->numDimensions,sizeof(int));
-    memcpy(list->positions[list->num], pos, list->numDimensions*sizeof(int));
+    position_copy(&list->positions[list->num], &pos, list->numDimensions);
     ++list->num;
     return 1;
 }
@@ -103,10 +130,14 @@ static int pos_list_push(position_list_t *list, position_t pos) {
 static int pos_list_pop(position_list_t *list, position_t pos) {
     if( list->num <= 0 )
         return 0;
-    if( pos!=NULL )
-        memcpy(pos,list->positions[list->num-1],list->numDimensions*sizeof(int));
+
+    if( pos!=NULL ) {
+        /* copy top of stack into output parameter */
+        position_copy(&pos, &list->positions[list->num-1], list->numDimensions);
+    }
     if( list->num > 0 ) {
-        free(list->positions[list->num-1]); list->positions[list->num-1]=NULL;
+        /* remove top element from stack */
+        position_free(&list->positions[list->num-1]); list->positions[list->num-1]=NULL;
         --list->num;
     }
     return 1;
@@ -114,6 +145,7 @@ static int pos_list_pop(position_list_t *list, position_t pos) {
 
 
 static int pos_list_clear(position_list_t *list) {
+    /* remove elements until list is empty */
     while(pos_list_pop(list,NULL));
     return 0;
 }
@@ -123,14 +155,14 @@ static int pos_list_random(position_list_t *list, position_t pos) {
     if( list->num <= 0 )
         return 0;
     int which = rand()%list->num;
-    memcpy(pos, list->positions[which], list->numDimensions*sizeof(int));
+    position_copy(&pos, &list->positions[which], list->numDimensions);
     return 1;
 }
 
 
 static int pos_list_rfind(position_list_t *list, position_t pos) {
     for(int i=list->num-1; i>=0; --i) {
-        if( memcmp(list->positions[i], pos, list->numDimensions*sizeof(int)) == 0 )
+        if( position_compare(&list->positions[i], &pos, list->numDimensions) == 0 )
         return i;
     }
     return -1;
@@ -147,6 +179,7 @@ static int position_increment(maze_t *maze, position_t pos) {
         ++pos[j];
     else
         done = 1;
+
     return done;
 }
 
@@ -249,8 +282,8 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes, char *options) {
         maze_parse_options(maze, options);
 
     /* allocate start and end positions */
-    maze->startPos = calloc(numDimensions,sizeof(int));
-    maze->endPos = calloc(numDimensions,sizeof(int));
+    position_init(&maze->startPos, numDimensions);
+    position_init(&maze->endPos, numDimensions);
     for(int i=0; i<numDimensions; ++i) {
         maze->startPos[i] = -1;
         maze->endPos[i] = -1;
@@ -301,7 +334,7 @@ void maze_set_path_length(maze_t *maze, int len) {
 }
 
 
-static int maze_clear_cell(maze_t *maze, int *pos) {
+static int maze_clear_cell(maze_t *maze, position_t pos) {
     int ret = 0;
 
     for(int face = 0; face < maze->numFaces; ++face) {
@@ -314,7 +347,7 @@ static int maze_clear_cell(maze_t *maze, int *pos) {
 }
 
 
-int maze_position_clear(maze_t *maze, int *pos) {
+int maze_position_clear(maze_t *maze, position_t pos) {
     int isClear = 1;
     for(int face = 0; isClear && face < maze->numFaces; ++face) {
         int row = pos[maze->faces[face].d1];
@@ -327,7 +360,7 @@ int maze_position_clear(maze_t *maze, int *pos) {
 }
 
 
-static int maze_allow_clear(maze_t *maze, int *pos, int move) {
+static int maze_allow_clear(maze_t *maze, position_t pos, int move) {
     /* check for border violations */
     if( move < 0 ) {
         if( pos[-move-1] <= 2 )
@@ -338,10 +371,11 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
     }
 
     /* determine where move would end up */
-    int *midPos = calloc(maze->numDimensions, sizeof(int));
-    int *nextPos = calloc(maze->numDimensions, sizeof(int));
-    memcpy(midPos, pos, maze->numDimensions*sizeof(int));
-    memcpy(nextPos, pos, maze->numDimensions*sizeof(int));
+    position_t midPos = NULL, nextPos = NULL;
+    position_init(&midPos, maze->numDimensions);
+    position_init(&nextPos, maze->numDimensions);
+    position_copy(&midPos, &pos, maze->numDimensions);
+    position_copy(&nextPos, &pos, maze->numDimensions);
     if( move >= 0 )
         midPos[move-1] += 1;
     else
@@ -356,8 +390,8 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
             && maze_position_clear(maze, nextPos)
             && pos_list_rfind(&maze->reachable, nextPos) < 0 ) {
         /* path already exists due to overlap with previous path building */
-        free(midPos); midPos=NULL;
-        free(nextPos); nextPos=NULL;
+        position_free(&midPos); midPos=NULL;
+        position_free(&nextPos); nextPos=NULL;
         return 1;
     }
 
@@ -389,14 +423,14 @@ static int maze_allow_clear(maze_t *maze, int *pos, int move) {
         if( filledCells == 9 )
             breaksWall = 1;
     }
-    free(midPos); midPos=NULL;
-    free(nextPos); nextPos=NULL;
+    position_free(&midPos); midPos=NULL;
+    position_free(&nextPos); nextPos=NULL;
 
     return (allowed&&breaksWall);
 }
 
 
-static int maze_gen_step(maze_t *maze, int *pos) {
+static int maze_gen_step(maze_t *maze, position_t pos) {
 
     /* clear cell at position pos */
     maze_clear_cell(maze,pos);
@@ -422,8 +456,9 @@ static int maze_gen_step(maze_t *maze, int *pos) {
         int move = validMoves[rand()%numMoves];
 
         /* recurse to new position */
-        int *nextPos = calloc(maze->numDimensions,sizeof(int));
-        memcpy(nextPos,pos,maze->numDimensions*sizeof(int));
+        position_t nextPos;
+        position_init(&nextPos, maze->numDimensions);
+        position_copy(&nextPos, &pos, maze->numDimensions);
         if( move > 0 )
             nextPos[move-1] += 1;
         else
@@ -471,7 +506,7 @@ static int maze_unfinished(maze_t *maze) {
 }
 
 
-static int maze_get_restart_location(maze_t *maze, int *pos) {
+static int maze_get_restart_location(maze_t *maze, position_t pos) {
 
     /* start position counter at all 1s */
     for(int i = 0; i<maze->numDimensions; ++i) {
@@ -535,21 +570,21 @@ static size_t maze_cell_degree(maze_t *maze, position_t pos) {
     if( !maze_position_clear(maze, pos) )
         return 0;
 
-    position_t neighbor;
-    neighbor = calloc(maze->numDimensions,sizeof(*neighbor));
+    position_t neighbor = NULL;
+    position_init(&neighbor, maze->numDimensions);
     size_t degree = 0;
     for(int i=0; i<maze->numDimensions; ++i) {
-        memcpy(neighbor, pos, sizeof(*neighbor)*maze->numDimensions);
+        position_copy(&neighbor, &pos, maze->numDimensions);
         ++neighbor[i];
         if( maze_position_clear(maze, neighbor) )
             ++degree;
 
-        memcpy(neighbor, pos, sizeof(*neighbor)*maze->numDimensions);
+        position_copy(&neighbor, &pos, maze->numDimensions);
         --neighbor[i];
         if( maze_position_clear(maze, neighbor) )
             ++degree;
     }
-    free(neighbor); neighbor=NULL;
+    position_free(&neighbor); neighbor=NULL;
 
     return degree;
 }
@@ -560,12 +595,12 @@ static int maze_pick_goals_random(maze_t *maze) {
     if( maze->reachable.num < 2 )
         return 0;
 
-    size_t posSize = sizeof(*maze->startPos) * maze->numDimensions;
     int numRetries = 100;
     do {
         pos_list_random(&maze->reachable, maze->startPos);
         pos_list_random(&maze->reachable, maze->endPos);
-    } while( !memcmp(maze->startPos, maze->endPos, posSize) && --numRetries>0);
+    } while( position_compare(&maze->startPos, &maze->endPos, maze->numDimensions) == 0
+            && --numRetries>0);
 
     return 1;
 }
@@ -574,21 +609,24 @@ static int maze_pick_goals_random(maze_t *maze) {
 static int* validMoves = NULL;
 static int maze_find_path(maze_t *maze, position_t pos, position_list_t* path, position_t goal) {
 
+    if( validMoves == NULL )
+        return 0;
+
     pos_list_push(path, pos);
 
     /* check for endPos */
-    if( memcmp(goal, pos, maze->numDimensions*sizeof(int))==0 ) {
+    if( position_compare(&goal, &pos, maze->numDimensions)==0 ) {
         return 1;
     }
 
     /* copy position */
     position_t newPos;
-    newPos = calloc(maze->numDimensions,sizeof(int));
+    position_init(&newPos, maze->numDimensions);
 
     /* enumerate moves */
     for(int i=0; i<maze->numDimensions*2; ++i ) {
         /* update position */
-        memcpy(newPos, pos, maze->numDimensions*sizeof(int));
+        position_copy(&newPos, &pos, maze->numDimensions);
         int move = validMoves[i];
         if( move > 0 )
             ++newPos[move-1];
@@ -596,7 +634,7 @@ static int maze_find_path(maze_t *maze, position_t pos, position_list_t* path, p
             --newPos[(-move)-1];
 
         /* if move valid */
-        if( !maze_position_clear(maze,newPos) ) {
+        if( !maze_position_clear(maze, newPos) ) {
             continue;
         }
 
@@ -607,13 +645,13 @@ static int maze_find_path(maze_t *maze, position_t pos, position_list_t* path, p
 
         /* recurse */
         if( maze_find_path(maze, newPos, path, goal) ) {
-            free(newPos); newPos=NULL;
+            position_free(&newPos); newPos=NULL;
             return 1;
         }
     }
 
     pos_list_pop(path, NULL);
-    free(newPos); newPos=NULL;
+    position_free(&newPos); newPos=NULL;
 
     return 0;
 }
@@ -627,7 +665,7 @@ static int maze_pick_goals_optimal(maze_t *maze, char mode) {
     position_list_t dead_ends;
     pos_list_init(&dead_ends, maze->numDimensions);
     position_t pos = NULL;
-    pos = malloc(maze->numDimensions * sizeof(*pos));
+    position_init(&pos, maze->numDimensions);
     for(int i = 0; i<maze->numDimensions; ++i) {
         pos[i] = 1;
     }
@@ -683,21 +721,17 @@ static int maze_pick_goals_optimal(maze_t *maze, char mode) {
             if( value > best_value ) {
                 printf("  new best path metric value (%i).\n", value);
                 if( maze->startPos==NULL )
-                    maze->startPos = calloc(maze->numDimensions, sizeof(*maze->startPos));
+                    position_init(&maze->startPos, maze->numDimensions);
                 if( maze->endPos==NULL )
-                    maze->endPos = calloc(maze->numDimensions, sizeof(*maze->endPos));
+                    position_init(&maze->endPos, maze->numDimensions);
 
                 /* randomly assign start/end to the dead ends */
                 if( rand()%2 ) {
-                    memcpy(maze->startPos, dead_ends.positions[i],
-                            maze->numDimensions*sizeof(*maze->startPos));
-                    memcpy(maze->endPos, dead_ends.positions[j],
-                            maze->numDimensions*sizeof(*maze->endPos));
+                    position_copy(&maze->startPos, &dead_ends.positions[i], maze->numDimensions);
+                    position_copy(&maze->endPos, &dead_ends.positions[j], maze->numDimensions);
                 } else {
-                    memcpy(maze->startPos, dead_ends.positions[j],
-                            maze->numDimensions*sizeof(*maze->startPos));
-                    memcpy(maze->endPos, dead_ends.positions[i],
-                            maze->numDimensions*sizeof(*maze->endPos));
+                    position_copy(&maze->startPos, &dead_ends.positions[j], maze->numDimensions);
+                    position_copy(&maze->endPos, &dead_ends.positions[i], maze->numDimensions);
                 }
 
                 best_value = value;
@@ -706,7 +740,7 @@ static int maze_pick_goals_optimal(maze_t *maze, char mode) {
     }
     pos_list_free(&path);
     pos_list_free(&dead_ends);
-    free(pos); pos=NULL;
+    position_free(&pos); pos=NULL;
     free(validMoves); validMoves=NULL;
 
     return 1;
@@ -746,6 +780,35 @@ int maze_solve(maze_t *maze) {
 }
 
 
+int maze_get_distance(maze_t *maze, position_t posA, position_t posB) {
+
+    /* initialize validMoves */
+    validMoves = calloc(2*maze->numDimensions, sizeof(int));
+    for(int i=0; i<maze->numDimensions; ++i) {
+        validMoves[i*2] = i+1;
+        validMoves[i*2+1] = -(i+1);
+    }
+
+    /* call find path */
+    position_list_t path;
+    pos_list_init(&path, maze->numDimensions);
+    if( !maze_find_path(maze, posA, &path, posB) ) {
+        free(validMoves); validMoves=NULL;
+        return -1;
+    }
+    free(validMoves); validMoves=NULL;
+
+    /* record the length of the path */
+    int length = path.num;
+
+    /* free path */
+    pos_list_free(&path);
+
+    /* return length of path */
+    return length;
+}
+
+
 static void maze_reset_faces(maze_t *maze) {
     for(int i=0; i<maze->numFaces; ++i) {
         face_reset(&maze->faces[i]);
@@ -756,13 +819,15 @@ static void maze_reset_faces(maze_t *maze) {
 int maze_generate(maze_t *maze) {
     printf("Generating %iD maze.\n", maze->numDimensions);
 
+    srand((unsigned int)time(NULL));
     int restarts = 0;
     do {
         maze_reset_faces(maze);
         pos_list_clear(&maze->reachable);
 
         /* set starting point for generation */
-        int *start = calloc(maze->numDimensions,sizeof(int));
+        position_t start;
+        position_init(&start, maze->numDimensions);
         for(int i=0; i<maze->numDimensions; ++i) {
             start[i] = rand()%(maze->dimensions[i]-2)+1;
             start[i] |= 1;  // force initial coordinate to be all odd
@@ -770,7 +835,7 @@ int maze_generate(maze_t *maze) {
 
         /* recursively clear cells */
         maze_gen_step(maze,start);
-        free(start); start=NULL;
+        position_free(&start); start=NULL;
 
         /* pick start and end positions */
         int done = 0;
@@ -798,7 +863,8 @@ int maze_generate(maze_t *maze) {
 
         /* while not completely full (i.e., any uncleared 2x2 region exists) */
         restarts = 0;
-        int *restartPos = calloc(maze->numDimensions,sizeof(int));
+        position_t restartPos;
+        position_init(&restartPos, maze->numDimensions);
         retries = 10000;
         if( maze->maxSegments > 0 )
             retries  = maze->maxSegments-1;
@@ -815,7 +881,7 @@ int maze_generate(maze_t *maze) {
             maze_gen_step(maze, restartPos);
             ++restarts;
         }
-        free(restartPos); restartPos=NULL;
+        position_free(&restartPos); restartPos=NULL;
     } while( maze->maxSegments>0
         && (restarts+1)>maze->maxSegments );
     printf("\t%i segments\n", restarts+1);
@@ -953,13 +1019,13 @@ static int maze_cell_trivial(maze_t *maze, position_t pos) {
     /* return 1 if moves from cell are only possible in opposite directions
      * along a single axis */
     position_t posDir = NULL, negDir = NULL;
-    posDir = malloc(maze->numDimensions * sizeof(*posDir));
-    negDir = malloc(maze->numDimensions * sizeof(*negDir));
+    position_init(&posDir, maze->numDimensions);
+    position_init(&negDir, maze->numDimensions);
     int num = 0;
     for(int d = 0; d<maze->numDimensions; ++d) {
         /* copy current pos */
-        memcpy(posDir, pos, maze->numDimensions * sizeof(*posDir));
-        memcpy(negDir, pos, maze->numDimensions * sizeof(*negDir));
+        position_copy(&posDir, &pos, maze->numDimensions);
+        position_copy(&negDir, &pos, maze->numDimensions);
 
         /* update along axis d */
         ++posDir[d];
@@ -970,15 +1036,15 @@ static int maze_cell_trivial(maze_t *maze, position_t pos) {
         int negClear = maze_position_clear(maze, negDir);
         if( (posClear && !negClear) || (!posClear && negClear) ) {
             /* can only move one direction along axis d */
-            free(posDir); posDir=NULL;
-            free(negDir); negDir=NULL;
+            position_free(&posDir); posDir=NULL;
+            position_free(&negDir); negDir=NULL;
             return 0;
         }
         if( posClear && negClear )
             ++num;
     }
-    free(posDir); posDir=NULL;
-    free(negDir); negDir=NULL;
+    position_free(&posDir); posDir=NULL;
+    position_free(&negDir); negDir=NULL;
 
     if( num==1 ) {
         return 1;
@@ -997,7 +1063,7 @@ int maze_export_gv(maze_t *maze, char *filename) {
 
     /* start position counter at all 1s */
     position_t pos = NULL;
-    pos = malloc(maze->numDimensions * sizeof(*pos));
+    position_init(&pos, maze->numDimensions);
     for(int i = 0; i<maze->numDimensions; ++i) {
         pos[i] = 1;
     }
@@ -1035,7 +1101,7 @@ int maze_export_gv(maze_t *maze, char *filename) {
 
     /* iterate through all possible positions */
     position_t neighbor = NULL;
-    neighbor = malloc(maze->numDimensions * sizeof(*neighbor));
+    position_init(&neighbor, maze->numDimensions);
     int done = 0;
     while( !done ) {
 
@@ -1047,7 +1113,7 @@ int maze_export_gv(maze_t *maze, char *filename) {
             for(int m = 0; m<2*maze->numDimensions; ++m) {
 
                 /* compute neighbor position */
-                memcpy(neighbor, pos, sizeof(*pos)*maze->numDimensions);
+                position_copy(&neighbor, &pos, maze->numDimensions);
                 int move = moves[m];
 
                 int length = 0;
@@ -1061,7 +1127,7 @@ int maze_export_gv(maze_t *maze, char *filename) {
 
                 /* export edge to each accessible neighbor */
                 if( length>0
-                    && memcmp(pos, neighbor, sizeof(*pos)*maze->numDimensions) < 0
+                    && position_compare(&pos, &neighbor, maze->numDimensions) < 0
                     && maze_position_clear(maze, neighbor) ) {
                     fprintf(fp, "\"%i", pos[0]);
                     for(int i=1; i<maze->numDimensions; ++i) {
@@ -1082,8 +1148,8 @@ int maze_export_gv(maze_t *maze, char *filename) {
 
     fprintf(fp, "}\n");
 
-    free(neighbor); neighbor=NULL;
-    free(pos); pos=NULL;
+    position_free(&neighbor); neighbor=NULL;
+    position_free(&pos); pos=NULL;
     free(moves); moves=NULL;
 
     /* close file */

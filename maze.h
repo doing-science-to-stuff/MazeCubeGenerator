@@ -18,6 +18,11 @@ int face_free(face_t *face);
 int face_get_cell(face_t *face, int row, int col);
 
 typedef int* position_t;
+int position_init(position_t *pos, int dimensions);
+int position_copy(position_t *dst, position_t *src, int dimensions);
+int position_compare(position_t *pos1, position_t *pos2, int dimensions);
+int position_free(position_t *pos);
+
 typedef struct position_list {
     int numDimensions;
     int capacity;
@@ -46,6 +51,7 @@ void maze_set_segments(maze_t *maze, int segs);
 void maze_set_path_length(maze_t *maze, int len);
 int maze_pick_goals(maze_t *maze);
 int maze_solve(maze_t *maze);
+int maze_get_distance(maze_t *maze, position_t posA, position_t posB);
 int maze_generate(maze_t *maze);
 int maze_write(maze_t *maze, char *filename);
 int maze_load(maze_t *maze, char *filename);
