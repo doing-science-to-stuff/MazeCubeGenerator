@@ -2,15 +2,15 @@
 # CMakeLists.txt
 # MazeCubeGen: maze cube generator
 #
-# Copyright (c) 2020-2023 Bryan Franklin. All rights reserved.
+# Copyright (c) 2020-2024 Bryan Franklin. All rights reserved.
 #
 cmake_minimum_required(VERSION 2.9)
 project (mcg)
 
 # The version number.
-set (MCG_VERSION_MAJOR 1)
-set (MCG_VERSION_MINOR 2)
-set (MCG_VERSION_PATCH 0)
+set (MCG_VERSION_MAJOR 0)
+set (MCG_VERSION_MINOR 0)
+set (MCG_VERSION_PATCH 1)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
