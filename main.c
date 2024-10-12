@@ -161,11 +161,11 @@ int main(int argc, char **argv) {
     }
     if( stlFile ) {
         printf("Exporting %iD maze to STL file `%s`.\n", maze.numDimensions, stlFile);
-        maze_export_stl(&maze, stlFile);
+        maze_export_stl(&maze, stlFile, scale);
     }
     if( stlSolFile ) {
         printf("Exporting %iD maze solution to STL file `%s`.\n", maze.numDimensions, stlFile);
-        maze_export_stl_solution(&maze, stlSolFile);
+        maze_export_stl_solution(&maze, stlSolFile, scale);
     }
     if( stlFileFlat ) {
         printf("Exporting %iD maze to flat-packed STL file `%s`.\n", maze.numDimensions, stlFileFlat);

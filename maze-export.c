@@ -1314,7 +1314,7 @@ int maze_add_solution(maze_t *maze, trig_list_t *list) {
 }
 
 
-int maze_export_stl(maze_t *maze, char *filename) {
+int maze_export_stl(maze_t *maze, char *filename, double scale) {
     if( maze->numDimensions != 3 ) {
         fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
         return -1;
@@ -1324,6 +1324,9 @@ int maze_export_stl(maze_t *maze, char *filename) {
     trig_list_init(&trigs);
     maze_add_maze(maze, &trigs);
     maze_add_maze_slider(maze, &trigs);
+
+    /* scale output */
+    trig_list_scale(&trigs, scale, scale, scale);
 
     /* open file */
     FILE *fp = fopen(filename,"w");
@@ -1388,7 +1391,7 @@ int maze_export_stl_flat(maze_t *maze, char *filename, double edgeWidth, double 
 }
 
 
-int maze_export_stl_solution(maze_t *maze, char *filename) {
+int maze_export_stl_solution(maze_t *maze, char *filename, double scale) {
     if( maze->numDimensions != 3 ) {
         fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
         return -1;
@@ -1397,6 +1400,9 @@ int maze_export_stl_solution(maze_t *maze, char *filename) {
     trig_list_t trigs;
     trig_list_init(&trigs);
     maze_add_solution(maze, &trigs);
+
+    /* scale output */
+    trig_list_scale(&trigs, scale, scale, scale);
 
     /* open file */
     FILE *fp = fopen(filename,"w");
