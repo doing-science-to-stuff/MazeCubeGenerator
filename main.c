@@ -15,6 +15,7 @@ static char *configStr = NULL;
 static char *inputFile = NULL;
 static char *outputFile = NULL;
 static char *stlFile = NULL;
+static char *stlPrintDir = NULL;
 static char *stlFileFlat = NULL;
 static char *stlSolFile = NULL;
 static char *gvFile = NULL;
@@ -24,6 +25,7 @@ static void free_buffers() {
     if(inputFile!=NULL) free(inputFile);
     if(outputFile!=NULL) free(outputFile);
     if(stlFile!=NULL) free(stlFile);
+    if(stlPrintDir!=NULL) free(stlPrintDir);
     if(stlFileFlat!=NULL) free(stlFileFlat);
     if(stlSolFile!=NULL) free(stlSolFile);
     if(gvFile!=NULL) free(gvFile);
@@ -32,7 +34,7 @@ static void free_buffers() {
 
 static void show_help(int argc, char **argv) {
     free_buffers();
-    printf("%s {-d l,w,h[:o] | -i file.txt} [-h] [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-f flat.stl] [-k maxSegments] [-p solution.stl] [-g graph.gv] [-e edgeWidth] [-x scale]\n\n",
+    printf("%s {-d l,w,h[:o] | -i file.txt} [-h] [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-f flat.stl] [-u printable.stl] [-k maxSegments] [-p solution.stl] [-g graph.gv] [-e edgeWidth] [-x scale]\n\n",
             argv[0]);
     exit(0);
 }
@@ -52,7 +54,8 @@ int main(int argc, char **argv) {
     genMaze = 0;
 
     char ch='\0';
-    while( (ch=getopt(argc, argv, "d:e:f:g:hi:k:l:m:o:p:r:sx:"))!=-1 ) {
+    /* remaining letters: abcjnqtvwyz */
+    while( (ch=getopt(argc, argv, "d:e:f:g:hi:k:l:m:o:p:r:su:x:"))!=-1 ) {
         switch(ch) {
             case 'd':
                 configStr = strdup(optarg);
@@ -89,6 +92,10 @@ int main(int argc, char **argv) {
                 /* output STL model to file given as argument */
                 stlFile = strdup(optarg);
                 break;
+            case 'u':
+                /* output maze with the top removed to directory */
+                stlPrintDir = strdup(optarg);
+                break;
             case 'o':
                 /* output maze to file given as argument */
                 outputFile = strdup(optarg);
@@ -116,8 +123,8 @@ int main(int argc, char **argv) {
         fprintf(stderr,"\n\nNo maze source given, use -i to specify an input filename or -g to generate a random maze.\n\n");
         show_help(argc,argv);
     }
-    if( outputFile==NULL && stlFile==NULL && stlSolFile==NULL && stlFileFlat==NULL && gvFile==NULL ) {
-        fprintf(stderr,"\n\nNo output specified, use -o and/or -m to specify an output filename.\n\n");
+    if( outputFile==NULL && stlFile==NULL && stlPrintDir==NULL && stlSolFile==NULL && stlFileFlat==NULL && gvFile==NULL ) {
+        fprintf(stderr,"\n\nNo output specified, use -o, -m, and/or -u to specify an output filename.\n\n");
         show_help(argc,argv);
     }
 
@@ -162,6 +169,10 @@ int main(int argc, char **argv) {
     if( stlFile ) {
         printf("Exporting %iD maze to STL file `%s`.\n", maze.numDimensions, stlFile);
         maze_export_stl(&maze, stlFile, scale);
+    }
+    if( stlPrintDir ) {
+        printf("Exporting %iD maze to hopefully printabl STL file `%s`.\n", maze.numDimensions, stlPrintDir);
+        maze_export_stl_printable(&maze, stlPrintDir, edgeWidth, scale);
     }
     if( stlSolFile ) {
         printf("Exporting %iD maze solution to STL file `%s`.\n", maze.numDimensions, stlFile);

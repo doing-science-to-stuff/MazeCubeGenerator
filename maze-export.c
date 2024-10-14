@@ -5,9 +5,11 @@
  * Copyright (c) 2020-2024 Bryan Franklin. All rights reserved.
  */
 #include <math.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "maze.h"
 
 const double epsilon = 1e-6;
@@ -1089,27 +1091,6 @@ int maze_add_maze(maze_t *maze, trig_list_t *list) {
     return 0;
 }
 
-static int maze_add_maze_slider(maze_t *maze, trig_list_t *list) {
-    double scale = 1.0;
-
-    /* add slider */
-    double startX = maze->startPos[0] + 0.5;
-    double startY = maze->startPos[1] + 0.5;
-    double startZ = maze->startPos[2] + 0.5;
-    double sizeX = 2*maze->dimensions[0] - 0.5;
-    double sizeY = 2*maze->dimensions[1] - 0.5;
-    double sizeZ = 2*maze->dimensions[2] - 0.5;
-    double scale2 = scale*0.95;
-    maze_add_cube(list, startX, startY, startZ, 0, sizeX*scale, scale2, scale2);
-    maze_add_cube(list, startX, startY, startZ, 0, scale, sizeY*scale2, scale2);
-    maze_add_cube(list, startX, startY, startZ, 0, scale, scale2, sizeZ*scale2);
-
-    trig_list_move(list, 0.5, 0.5, 0.5);
-
-    return 0;
-}
-
-
 static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffset, double xSize, double ySize, double edgeWidth, double scale) {
 
     #if 0
@@ -1185,6 +1166,112 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
                             xi[j], yi[j], z0,
                             xm[j], ym[j], z0);
     }
+
+    return 0;
+}
+
+
+int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, double edgeWidth, int face) {
+
+    int topOnly = 0;
+    if( face == 3 )     topOnly = 1;
+    face = face%3;
+
+    trig_list_t faceTrigs1, faceTrigs2;
+    trig_list_init(&faceTrigs1);
+    trig_list_init(&faceTrigs2);
+
+    /* add edges to faces */
+    trig_list_t border1, border2;
+    trig_list_init(&border1);
+    trig_list_init(&border2);
+
+    /* add perimeters */
+    int rows = maze->faces[face].rows;
+    int cols = maze->faces[face].cols;
+    if( face != 0 || topOnly ) {
+        maze_add_maze_face(maze, face, &faceTrigs1);
+        maze_add_flat_border(&border1, -0.5, -0.5, cols, rows, (face==0 ? edgeWidth : 0.0), 1.0);
+    }
+    if( !topOnly ) {
+        maze_add_flat_border(&border2, -0.5, -0.5, cols, rows, 0.0, 1.0);
+        maze_add_maze_face(maze, face, &faceTrigs2);
+    }
+    trig_list_concatenate(&faceTrigs1, &border1);
+    trig_list_concatenate(&faceTrigs2, &border2);
+
+    #if 0
+    /* translate face to account for edgeWidth */
+    trig_list_move(&faceTrigs2, 0.0, 0.0, -edgeWidth);
+    #endif /* 0 */
+    #if 1
+    if( face == 0 ) {
+        //trig_list_move(&faceTrigs1, 0.0, 0.0, -edgeWidth);
+        double minZ = -0.5 + edgeWidth;
+        trig_list_set_minimum(&faceTrigs1, minZ, 2);
+    }
+    #endif /* 0 */
+
+    /* translate face */
+    if( face == 0 ) {
+        trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
+        trig_list_move(&faceTrigs2, 0.0, 0.0, 0.5);
+        trig_list_move(&faceTrigs2, 0.0, 0.0, -0.5);
+        trig_list_move(&faceTrigs1, maze->dimensions[0]+1.0, 0.0, 0.0);
+    } else if( face == 1 ) {
+        trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
+        trig_list_rotate_axial(&faceTrigs1, 0, M_PI/2.0);
+        trig_list_rotate_axial(&faceTrigs2, 0, M_PI/2.0);
+        trig_list_move(&faceTrigs1, 0.0, 0.0, 0.0);
+        trig_list_move(&faceTrigs2, 0.0, maze->dimensions[1]-1.0, 0.0);
+    } else if( face == 2 ) {
+        trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
+        trig_list_rotate_axial(&faceTrigs1, 2, M_PI/2.0);
+        trig_list_rotate_axial(&faceTrigs2, 2, M_PI/2.0);
+        trig_list_rotate_axial(&faceTrigs1, 1, -M_PI/2.0);
+        trig_list_rotate_axial(&faceTrigs2, 1, -M_PI/2.0);
+        trig_list_move(&faceTrigs2, 0.0, 0.0, 0.0);
+        trig_list_move(&faceTrigs1, maze->dimensions[0]-1.0, 0.0, 0.0);
+    }
+
+    /* update group ids for markers */
+    trig_list_replace_groupid(&faceTrigs1, 3*face+1, 3);
+    trig_list_replace_groupid(&faceTrigs1, 3*face+2, 4);
+    trig_list_replace_groupid(&faceTrigs2, 3*face+1 + 9, 3);
+    trig_list_replace_groupid(&faceTrigs2, 3*face+2 + 9, 4);
+
+    /* set group id for the rest of the face */
+    trig_list_replace_groupid(&faceTrigs1, 3*face, -1);
+    trig_list_replace_groupid(&faceTrigs2, 3*face + 9, -1);
+
+    /* add face to maze list */
+    trig_list_concatenate(list, &faceTrigs1);
+    trig_list_concatenate(list, &faceTrigs2);
+
+    trig_list_free(&faceTrigs1);
+    trig_list_free(&faceTrigs2);
+
+    trig_list_move(list, 0.5, 0.5, 0.5);
+
+    return 0;
+}
+
+static int maze_add_maze_slider(maze_t *maze, trig_list_t *list) {
+    double scale = 1.0;
+
+    /* add slider */
+    double startX = maze->startPos[0] + 0.5;
+    double startY = maze->startPos[1] + 0.5;
+    double startZ = maze->startPos[2] + 0.5;
+    double sizeX = 2*maze->dimensions[0] - 1.5;
+    double sizeY = 2*maze->dimensions[1] - 1.5;
+    double sizeZ = 2*maze->dimensions[2] - 1.5;
+    double scale2 = scale*0.75;
+    maze_add_cube(list, startX, startY, startZ, 0, sizeX*scale, scale2, scale2);
+    maze_add_cube(list, startX, startY, startZ, 0, scale2, sizeY*scale, scale2);
+    maze_add_cube(list, startX, startY, startZ, 0, scale2, scale2, sizeZ*scale);
+
+    trig_list_move(list, 0.5, 0.5, 0.5);
 
     return 0;
 }
@@ -1349,6 +1436,62 @@ int maze_export_stl(maze_t *maze, char *filename, double scale) {
 
     /* close file */
     fclose(fp); fp=NULL;
+
+    return 0;
+}
+
+
+int maze_export_stl_printable(maze_t *maze, char *dirname, double edgeWidth, double scale) {
+    if( maze->numDimensions != 3 ) {
+        fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
+        return -1;
+    }
+
+    /* construct filename */
+    if( dirname == NULL )   dirname = ".";
+    else                    mkdir(dirname, 0700);
+
+    trig_list_t trigs;
+    trig_list_init(&trigs);
+    char filename[PATH_MAX];
+    for(int face=-1; face<=maze->numFaces; ++face) {
+        if( face<0 ) {
+            snprintf(filename, sizeof(filename), "%s/slider.stl", dirname);
+            maze_add_maze_slider(maze, &trigs);
+            trig_list_move(&trigs, -0.5, -0.5, -0.5);
+        } else {
+            if( face < maze->numFaces )
+                snprintf(filename, sizeof(filename), "%s/face_%i.stl", dirname, face);
+            else
+                snprintf(filename, sizeof(filename), "%s/top.stl", dirname);
+            maze_add_maze_printable_face(maze, &trigs, edgeWidth, face);
+        }
+
+        /* scale output */
+        trig_list_scale(&trigs, scale, scale, scale);
+
+        /* open file */
+        FILE *fp = fopen(filename,"w");
+        if( fp == NULL ) {
+            perror("fopen");
+            continue;
+        }
+
+        /* start solid */
+        fprintf(fp,"solid MazeCube\n");
+
+        /* write triangles to output file */
+        trig_list_export_stl(fp, &trigs);
+
+        /* close solid */
+        fprintf(fp,"endsolid MazeCube\n");
+
+        /* close file */
+        fclose(fp); fp=NULL;
+
+        /* free triangle list */
+        trig_list_free(&trigs);
+    }
 
     return 0;
 }
