@@ -1465,25 +1465,33 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, double edgeWidth, dou
     trig_list_t trigs;
     trig_list_init(&trigs);
     char filename[PATH_MAX];
-    for(int face=-1; face<maze->numFaces; ++face) {
-        if( face<0 ) {
-            /* face "-1" is the slider, for convenience */
-            snprintf(filename, sizeof(filename), "%s/slider.stl", dirname);
-            maze_add_maze_slider(maze, &trigs);
-            trig_list_move(&trigs, -0.5, -0.5, -0.5);
+
+    /* write slider */
+    snprintf(filename, sizeof(filename), "%s/slider.stl", dirname);
+    maze_add_maze_slider(maze, &trigs);
+    trig_list_move(&trigs, -0.5, -0.5, -0.5);
+    trig_list_scale(&trigs, scale, scale, scale);
+    trig_list_write_stl(&trigs, filename, "Slider");
+    trig_list_free(&trigs);
+
+    char name[64];
+    for(int face=0; face<maze->numFaces; ++face) {
+        trig_list_init(&trigs);
+
+        if( face > 0 ) {
+            snprintf(filename, sizeof(filename), "%s/face_%i.stl", dirname, face);
+            snprintf(name, sizeof(name), "Face%i", face);
         } else {
-            if( face > 0 )
-                snprintf(filename, sizeof(filename), "%s/face_%i.stl", dirname, face);
-            else
-                snprintf(filename, sizeof(filename), "%s/ends.stl", dirname);
-            maze_add_maze_printable_face(maze, &trigs, edgeWidth/scale, face);
+            snprintf(filename, sizeof(filename), "%s/ends.stl", dirname);
+            snprintf(name, sizeof(name), "Ends");
         }
+        maze_add_maze_printable_face(maze, &trigs, edgeWidth/scale, face);
 
         /* scale output */
         trig_list_scale(&trigs, scale, scale, scale);
 
         /* write to file */
-        trig_list_write_stl(&trigs, filename, "MazeCube");
+        trig_list_write_stl(&trigs, filename, name);
 
         /* free triangle list */
         trig_list_free(&trigs);
@@ -1505,7 +1513,7 @@ int maze_export_stl_flat(maze_t *maze, char *filename, double edgeWidth, double 
     maze_add_maze_flat(maze, &trigs, edgeWidth, scale);
 
     /* write to file */
-    trig_list_write_stl(&trigs, filename, "MazeCube");
+    trig_list_write_stl(&trigs, filename, "MazeCubeFlat");
 
     /* free triangle list */
     trig_list_free(&trigs);
