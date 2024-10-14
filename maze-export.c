@@ -1173,13 +1173,15 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
 
 int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, double edgeWidth, int face) {
 
-    int topOnly = 0;
-    if( face == 3 )     topOnly = 1;
-    face = face%3;
+    int rows = maze->faces[face].rows;
+    int cols = maze->faces[face].cols;
 
+    /* add face */
     trig_list_t faceTrigs1, faceTrigs2;
     trig_list_init(&faceTrigs1);
     trig_list_init(&faceTrigs2);
+    maze_add_maze_face(maze, face, &faceTrigs1);
+    maze_add_maze_face(maze, face, &faceTrigs2);
 
     /* add edges to faces */
     trig_list_t border1, border2;
@@ -1187,37 +1189,29 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, double edgeWid
     trig_list_init(&border2);
 
     /* add perimeters */
-    int rows = maze->faces[face].rows;
-    int cols = maze->faces[face].cols;
-    if( face != 0 || topOnly ) {
-        maze_add_maze_face(maze, face, &faceTrigs1);
-        maze_add_flat_border(&border1, -0.5, -0.5, cols, rows, (face==0 ? edgeWidth : 0.0), 1.0);
-    }
-    if( !topOnly ) {
-        maze_add_flat_border(&border2, -0.5, -0.5, cols, rows, 0.0, 1.0);
-        maze_add_maze_face(maze, face, &faceTrigs2);
-    }
+    if( face != 0 ) edgeWidth = 0.0;
+    maze_add_flat_border(&border1, -0.5, -0.5, cols, rows, edgeWidth, 1.0);
+    maze_add_flat_border(&border2, -0.5, -0.5, cols, rows, edgeWidth, 1.0);
     trig_list_concatenate(&faceTrigs1, &border1);
     trig_list_concatenate(&faceTrigs2, &border2);
 
-    #if 0
-    /* translate face to account for edgeWidth */
-    trig_list_move(&faceTrigs2, 0.0, 0.0, -edgeWidth);
-    #endif /* 0 */
-    #if 1
-    if( face == 0 ) {
-        //trig_list_move(&faceTrigs1, 0.0, 0.0, -edgeWidth);
+    if( edgeWidth > 0.0 ) {
         double minZ = -0.5 + edgeWidth;
         trig_list_set_minimum(&faceTrigs1, minZ, 2);
+        trig_list_set_minimum(&faceTrigs2, minZ, 2);
+
+        /* translate face to account for edgeWidth */
+        /* i.e., move minZ to z=0.0 */
+        trig_list_move(&faceTrigs1, 0.0, 0.0, -minZ);
+        trig_list_move(&faceTrigs2, 0.0, 0.0, -minZ);
     }
-    #endif /* 0 */
 
     /* translate face */
     if( face == 0 ) {
-        trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
+        trig_list_scale(&faceTrigs2, -1.0, 1.0, 1.0);
         trig_list_move(&faceTrigs2, 0.0, 0.0, 0.5);
         trig_list_move(&faceTrigs2, 0.0, 0.0, -0.5);
-        trig_list_move(&faceTrigs1, maze->dimensions[0]+1.0, 0.0, 0.0);
+        trig_list_move(&faceTrigs1, 2.0, 0.0, 0.0);
     } else if( face == 1 ) {
         trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
         trig_list_rotate_axial(&faceTrigs1, 0, M_PI/2.0);
@@ -1454,17 +1448,18 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, double edgeWidth, dou
     trig_list_t trigs;
     trig_list_init(&trigs);
     char filename[PATH_MAX];
-    for(int face=-1; face<=maze->numFaces; ++face) {
+    for(int face=-1; face<maze->numFaces; ++face) {
         if( face<0 ) {
+            /* face "-1" is the slider, for convenience */
             snprintf(filename, sizeof(filename), "%s/slider.stl", dirname);
             maze_add_maze_slider(maze, &trigs);
             trig_list_move(&trigs, -0.5, -0.5, -0.5);
         } else {
-            if( face < maze->numFaces )
+            if( face > 0 )
                 snprintf(filename, sizeof(filename), "%s/face_%i.stl", dirname, face);
             else
-                snprintf(filename, sizeof(filename), "%s/top.stl", dirname);
-            maze_add_maze_printable_face(maze, &trigs, edgeWidth, face);
+                snprintf(filename, sizeof(filename), "%s/ends.stl", dirname);
+            maze_add_maze_printable_face(maze, &trigs, edgeWidth/scale, face);
         }
 
         /* scale output */
