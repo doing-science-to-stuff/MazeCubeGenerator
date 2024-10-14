@@ -1261,16 +1261,6 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, double edgeWid
         trig_list_move(&faceTrigs1, maze->dimensions[0]-1.0, 0.0, 0.0);
     }
 
-    /* update group ids for markers */
-    trig_list_replace_groupid(&faceTrigs1, 3*face+1, 3);
-    trig_list_replace_groupid(&faceTrigs1, 3*face+2, 4);
-    trig_list_replace_groupid(&faceTrigs2, 3*face+1 + 9, 3);
-    trig_list_replace_groupid(&faceTrigs2, 3*face+2 + 9, 4);
-
-    /* set group id for the rest of the face */
-    trig_list_replace_groupid(&faceTrigs1, 3*face, -1);
-    trig_list_replace_groupid(&faceTrigs2, 3*face + 9, -1);
-
     /* add face to maze list */
     trig_list_concatenate(list, &faceTrigs1);
     trig_list_concatenate(list, &faceTrigs2);
@@ -1475,25 +1465,63 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, double edgeWidth, dou
     trig_list_free(&trigs);
 
     char name[64];
+    char name1[64];
+    char name2[64];
+    char filename1[PATH_MAX];
+    char filename2[PATH_MAX];
     for(int face=0; face<maze->numFaces; ++face) {
         trig_list_init(&trigs);
 
         if( face > 0 ) {
             snprintf(filename, sizeof(filename), "%s/face_%i.stl", dirname, face);
+            snprintf(filename1, sizeof(filename1), "%s/face_%i_marker_1.stl", dirname, face);
+            snprintf(filename2, sizeof(filename2), "%s/face_%i_marker_2.stl", dirname, face);
             snprintf(name, sizeof(name), "Face%i", face);
+            snprintf(name1, sizeof(name1), "Face%iMarker1", face);
+            snprintf(name2, sizeof(name2), "Face%iMarker2", face);
         } else {
             snprintf(filename, sizeof(filename), "%s/ends.stl", dirname);
+            snprintf(filename1, sizeof(filename1), "%s/ends_marker_1.stl", dirname);
+            snprintf(filename2, sizeof(filename2), "%s/ends_marker_2.stl", dirname);
             snprintf(name, sizeof(name), "Ends");
+            snprintf(name1, sizeof(name1), "EndsMarker1");
+            snprintf(name2, sizeof(name2), "EndsMarker2");
         }
         maze_add_maze_printable_face(maze, &trigs, edgeWidth/scale, face);
 
         /* scale output */
         trig_list_scale(&trigs, scale, scale, scale);
 
+        trig_list_t marker1, marker2, face_trigs;
+        trig_list_init(&face_trigs);
+        trig_list_init(&marker1);
+        trig_list_init(&marker2);
+
+        for(int i=0; i<trigs.num; ++i) {
+            int groupId = trigs.trig[i].groupId;
+            trig_t *trig_i = &trigs.trig[i];
+            switch( groupId ) {
+                case 3:
+                    trig_list_append(&marker1, trig_i);
+                    break;
+                case 4:
+                    trig_list_append(&marker2, trig_i);
+                    break;
+                default:
+                    trig_list_append(&face_trigs, trig_i);
+                    break;
+            }
+        }
+
         /* write to file */
-        trig_list_write_stl(&trigs, filename, name);
+        trig_list_write_stl(&face_trigs, filename, name);
+        trig_list_write_stl(&marker1, filename1, name1);
+        trig_list_write_stl(&marker2, filename2, name2);
 
         /* free triangle list */
+        trig_list_free(&marker2);
+        trig_list_free(&marker1);
+        trig_list_free(&face_trigs);
         trig_list_free(&trigs);
     }
 
