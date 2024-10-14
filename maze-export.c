@@ -1260,7 +1260,7 @@ static int maze_add_maze_slider(maze_t *maze, trig_list_t *list) {
     double sizeX = 2*maze->dimensions[0] - 1.5;
     double sizeY = 2*maze->dimensions[1] - 1.5;
     double sizeZ = 2*maze->dimensions[2] - 1.5;
-    double scale2 = scale*0.75;
+    double scale2 = scale*0.85;
     maze_add_cube(list, startX, startY, startZ, 0, sizeX*scale, scale2, scale2);
     maze_add_cube(list, startX, startY, startZ, 0, scale2, sizeY*scale, scale2);
     maze_add_cube(list, startX, startY, startZ, 0, scale2, scale2, sizeZ*scale);
