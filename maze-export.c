@@ -435,6 +435,30 @@ static void trig_list_replace_groupid(trig_list_t *list, int id, int target_id) 
 }
 
 
+static int trig_list_write_stl(trig_list_t *trigs, char *filename, char *name) {
+    /* open file */
+    FILE *fp = fopen(filename,"w");
+    if( fp == NULL ) {
+        perror("fopen");
+        return -1;
+    }
+
+    /* start solid */
+    fprintf(fp,"solid %s\n", name);
+
+    /* write triangles to output file */
+    trig_list_export_stl(fp, trigs);
+
+    /* close solid */
+    fprintf(fp,"endsolid %s\n", name);
+
+    /* close file */
+    fclose(fp); fp=NULL;
+
+    return 0;
+}
+
+
 /* circular marker */
 static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position_t pos, double radius, double scale) {
     trig_list_t marker;
@@ -1418,27 +1442,11 @@ int maze_export_stl(maze_t *maze, char *filename, double scale) {
     /* scale output */
     trig_list_scale(&trigs, scale, scale, scale);
 
-    /* open file */
-    FILE *fp = fopen(filename,"w");
-    if( fp == NULL ) {
-        perror("fopen");
-        return -1;
-    }
-
-    /* start solid */
-    fprintf(fp,"solid MazeCube\n");
-
-    /* write triangles to output file */
-    trig_list_export_stl(fp, &trigs);
+    /* write to file */
+    trig_list_write_stl(&trigs, filename, "MazeCube");
 
     /* free triangle list */
     trig_list_free(&trigs);
-
-    /* close solid */
-    fprintf(fp,"endsolid MazeCube\n");
-
-    /* close file */
-    fclose(fp); fp=NULL;
 
     return 0;
 }
@@ -1474,24 +1482,8 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, double edgeWidth, dou
         /* scale output */
         trig_list_scale(&trigs, scale, scale, scale);
 
-        /* open file */
-        FILE *fp = fopen(filename,"w");
-        if( fp == NULL ) {
-            perror("fopen");
-            continue;
-        }
-
-        /* start solid */
-        fprintf(fp,"solid MazeCube\n");
-
-        /* write triangles to output file */
-        trig_list_export_stl(fp, &trigs);
-
-        /* close solid */
-        fprintf(fp,"endsolid MazeCube\n");
-
-        /* close file */
-        fclose(fp); fp=NULL;
+        /* write to file */
+        trig_list_write_stl(&trigs, filename, "MazeCube");
 
         /* free triangle list */
         trig_list_free(&trigs);
@@ -1512,27 +1504,11 @@ int maze_export_stl_flat(maze_t *maze, char *filename, double edgeWidth, double 
     trig_list_init(&trigs);
     maze_add_maze_flat(maze, &trigs, edgeWidth, scale);
 
-    /* open file */
-    FILE *fp = fopen(filename,"w");
-    if( fp == NULL ) {
-        perror("fopen");
-        return -1;
-    }
-
-    /* start solid */
-    fprintf(fp,"solid MazeCubeFaces\n");
-
-    /* write triangles to output file */
-    trig_list_export_stl(fp, &trigs);
+    /* write to file */
+    trig_list_write_stl(&trigs, filename, "MazeCube");
 
     /* free triangle list */
     trig_list_free(&trigs);
-
-    /* close solid */
-    fprintf(fp,"endsolid MazeCubeFaces\n");
-
-    /* close file */
-    fclose(fp); fp=NULL;
 
     return 0;
 }
@@ -1551,26 +1527,11 @@ int maze_export_stl_solution(maze_t *maze, char *filename, double scale) {
     /* scale output */
     trig_list_scale(&trigs, scale, scale, scale);
 
-    /* open file */
-    FILE *fp = fopen(filename,"w");
-    if( fp == NULL ) {
-        perror("fopen");
-        return -1;
-    }
-
-    /* start solid */
-    fprintf(fp,"solid MazeCubeSolution\n");
-
-    /* write triangles to output file */
-    trig_list_export_stl(fp, &trigs);
+    /* write to file */
+    trig_list_write_stl(&trigs, filename, "MazeCubeSolution");
 
     /* free triangle list */
     trig_list_free(&trigs);
-
-    /* close solid */
-    fprintf(fp,"endsolid MazeCubeSolution\n");
-
-    fclose(fp); fp=NULL;
 
     return 1;
 }
