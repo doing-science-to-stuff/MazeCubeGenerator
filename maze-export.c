@@ -469,9 +469,12 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
         int cell2 = face_get_cell(&maze->faces[face], row2, col2);
 
         double xc0 = 0.0, yc0 = 0.0, zc0 = 0.0;
-        for(int j=0; j<numSegsJ; ++j) {
+        for(int j=0; j<=numSegsJ; ++j) {
             double thetaJ1 =  M_PI * j / numSegsJ;
             double thetaJ2 =  M_PI * (j+1) / numSegsJ;
+
+            /* deal with back-side */
+            if( j == numSegsJ ) { thetaJ2 = 0.0;; }
 
             /* compute raw torus coordinates */
             double x11 = cos(thetaI1) * (1+radius*cos(thetaJ1)) + r;
@@ -634,9 +637,12 @@ static void maze_add_corner(trig_list_t *list, maze_t *maze, int r, int c, int d
     double x30 = 0.0, y30 = 0.0, z30 = 0.0;
 
     int numSegs = 32;
-    for(int i=0; i<numSegs; ++i) {
+    for(int i=0; i<=numSegs; ++i) {
         double thetaI1 = M_PI * i / numSegs;
         double thetaI2 = M_PI * (i+1) / numSegs;
+
+        /* deal with back-side */
+        if( i == numSegs ) { thetaI2 = 0.0; }
 
         /* compute raw segment coordinates */
         double x11 = radius*cos(thetaI1)+1.0;
@@ -782,9 +788,12 @@ static void maze_add_edge(trig_list_t *list, maze_t *maze, int r, int c, int fac
     trig_list_init(&edge);
 
     int numSegs = 32;
-    for(int i=0; i<numSegs; ++i) {
+    for(int i=0; i<=numSegs; ++i) {
         double thetaI1 = M_PI * i / numSegs;
         double thetaI2 = M_PI * (i+1) / numSegs;
+
+        /* deal with back-side */
+        if( i == numSegs ) { thetaI2 = 0.0; }
 
         /* compute raw segment coordinates */
         double x11 = radius*cos(thetaI1);
