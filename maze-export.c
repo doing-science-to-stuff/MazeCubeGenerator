@@ -1191,13 +1191,15 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
                             xm[j], ym[j], z0,
                             xo[j], yo[j], z1);
 
-        /* flat section for build-plate */
-        trig_list_add(list, xm[i], ym[i], z0,
-                            xi[i], yi[i], z0,
-                            xi[j], yi[j], z0);
-        trig_list_add(list, xm[i], ym[i], z0,
-                            xi[j], yi[j], z0,
-                            xm[j], ym[j], z0);
+        if( edgeWidth > 0.0 ) {
+            /* flat section for build-plate */
+            trig_list_add(list, xm[i], ym[i], z0,
+                    xi[i], yi[i], z0,
+                    xi[j], yi[j], z0);
+            trig_list_add(list, xm[i], ym[i], z0,
+                    xi[j], yi[j], z0,
+                    xm[j], ym[j], z0);
+        }
     }
 
     return 0;
