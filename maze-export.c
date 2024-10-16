@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "maze.h"
 
 const double epsilon = 1e-6;
@@ -436,6 +437,11 @@ static void trig_list_replace_groupid(trig_list_t *list, int id, int target_id) 
 
 
 static int trig_list_write_stl(trig_list_t *trigs, char *filename, char *name) {
+    /* remove destination if list is empty. */
+    if( trigs-> num <= 0 ) {
+        return unlink(filename);
+    }
+
     /* open file */
     FILE *fp = fopen(filename,"w");
     if( fp == NULL ) {
