@@ -1059,7 +1059,14 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list) {
         }
     }
 
-    /* add end markers */
+    /* add markers to face to work around slicer glitch (PrusaSlicer 2.8.1)*/
+    double hiddenRadius = 0.05;
+    maze_add_marker2(list, maze, face, maze->startPos, hiddenRadius, scale);
+    maze_add_marker1(list, maze, face, maze->endPos, hiddenRadius, scale);
+    /* re-tag markers as part of the face */
+    trig_list_set_groupid(list, -1);
+
+    /* re-add end markers again with original group Ids  */
     double markerRadius = 0.1;
     maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale);
     maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale);
