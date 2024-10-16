@@ -126,6 +126,20 @@ static void trig_move(trig_t *trig, double dx, double dy, double dz) {
 
 /* rescale triangle */
 static void trig_scale(trig_t *trig, double sx, double sy, double sz) {
+    #if 0
+    printf("Scaling trig:\t<%g, %g, %g>,\t<%g, %g, %g>,\t<%g, %g, %g> by %g, %g, %g\n",
+        trig->x[0], trig->y[0], trig->z[0],
+        trig->x[1], trig->y[1], trig->z[1],
+        trig->x[2], trig->y[2], trig->z[2],
+        sx, sy, sz);
+    #if 0
+    printf("normals: \t<%g, %g, %g>,\t<%g, %g, %g>,\t<%g, %g, %g>\n",
+            trig->nx[0], trig->ny[0], trig->nz[0],
+            trig->nx[1], trig->ny[1], trig->nz[1],
+            trig->nx[2], trig->ny[2], trig->nz[2]);
+    #endif /* 0 */
+    #endif /* 0 */
+
     for(int i=0; i<3; ++i) {
         trig->x[i] *= sx;
         trig->y[i] *= sy;
@@ -137,6 +151,9 @@ static void trig_scale(trig_t *trig, double sx, double sy, double sz) {
     }
 
     if( sx*sy*sz < 0.0 ) {
+        #if 0
+        printf("swapping vertices due to normal.\n");
+        #endif /* 0 */
         /* normal will be reversed, so vertex order needs to reverse as well */
         double temp;
         temp = trig->x[1]; trig->x[1] = trig->x[2]; trig->x[2] = temp;
@@ -151,6 +168,18 @@ static void trig_scale(trig_t *trig, double sx, double sy, double sz) {
     /* "normalize" the normals */
     trig_unitize_normals(trig);
 
+    #if 0
+    printf("\t->\t<%g, %g, %g>,\t<%g, %g, %g>,\t<%g, %g, %g>\n",
+        trig->x[0], trig->y[0], trig->z[0],
+        trig->x[1], trig->y[1], trig->z[1],
+        trig->x[2], trig->y[2], trig->z[2]);
+    #if 0
+    printf("normals: \t<%g, %g, %g>,\t<%g, %g, %g>,\t<%g, %g, %g>\n",
+            trig->nx[0], trig->ny[0], trig->nz[0],
+            trig->nx[1], trig->ny[1], trig->nz[1],
+            trig->nx[2], trig->ny[2], trig->nz[2]);
+    #endif /* 0 */
+    #endif /* 0 */
 }
 
 
@@ -322,6 +351,11 @@ static int trig_list_add(trig_list_t *list,
     double x1, double y1, double z1,
     double x2, double y2, double z2,
     double x3, double y3, double z3) {
+
+    #if 0
+    printf("Adding trig: <%g, %g, %g>, <%g, %g, %g>, <%g, %g, %g>\n",
+        x1, y1, z1, x2, y2, z2, x3, y3, z3);
+    #endif /* 0 */
 
     /* reallocate list, if needed */
     trig_list_resize(list);
@@ -1025,6 +1059,13 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list) {
                 x1 = row;
                 y1 = col;
                 z1 = 0;
+
+                #if 0
+                /* FOR DEBUGGING PURPOSES ONLY */
+                /* spaces out cubes */
+                x1 *= 2.0;
+                y1 *= 2.0;
+                #endif /* 0 */
 
                 /* compute face mask for cube */
                 char mask1 = 0;
