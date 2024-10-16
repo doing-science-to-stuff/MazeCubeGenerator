@@ -31,16 +31,20 @@ behavior.  Below is a list of command-line options and their purpose.
 `-i filename.txt` Load an existing maze from `filename.txt` as produced by `-o`.<br/>
 `-m filename.stl` Write maze as STL to `filename.stl`.<br/>
 `-f filename.stl` Write flattened maze as STL to `filename.stl`.<br/>
-`-o filename.txt` Write maze as text to `filename.txt`.<br/>
+`-u filename.stl` Write maze as more easily printable STL to `filename.stl`.<br/>
+`-o filename.txt` Write maze as reloadable (-i) text to `filename.txt`.<br/>
 `-p solution.stl` Write solution as STL to `solution.stl` (implies `-s`).<br/>
 `-r num` Seed random number generator using `num`.<br/>
 `-s` Find a solution to the maze.<br/>
+`-x` Scale factor when exporting to STL.<br/>
 
 **Advanced:**
 
 `-l num` Generate mazes until a solution with length &geq;`num` is found.<br/>
 `-k num` Generate mazes until at most `num` disconnected regions in maze.<br/>
-`-g filename.gv` Writes an input file for [graphviz](https://graphviz.org/) to `filename.gv`.
+`-g filename.gv` Writes an input file for [graphviz](https://graphviz.org/) to `filename.gv`.<br/>
+`-e width` Specified minimum edge width for faces that are printed flat (-f &
+-u) (default: 0.4).
 
 ## Examples
 Basic random maze generation:<br/>
@@ -71,7 +75,12 @@ model of the solution to `solution.stl`.
 Write unfolded/flattened model:<br/>
 `$ ./mcg -i maze.txt -f maze_flat.stl`<br/>
 Loads a maze from `maze.txt` and writes a flat-pack style 3D model to
-`maze_flat.stl` for easier 3D printing.
+`maze_flat.stl` for fast 3D printing.
+
+Write mostly assembled model:<br/>
+`$ ./mcg -i maze.txt -u printable.stl -x 5.0`<br/>
+Loads a maze from `maze.txt` and writes a mostly assembled 3D model to
+`printable.stl` for easy to assemble 3D printing at 5x scale.
 
 Hyper-dimensional maze:<br/>
 `$ ./mcg -r 1 -d 11,11,11,11:o -s -o maze4d.txt`<br/>
