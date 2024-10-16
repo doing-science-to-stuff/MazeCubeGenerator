@@ -978,68 +978,73 @@ static void maze_add_cube(trig_list_t *list, double x, double y, double z, char 
     double dy = scaleY/2.0;
     double dz = scaleZ/2.0;
 
+    double lx, ly, lz;
+    double ux, uy, uz;
+    lx = x - dx; ly = y - dy; lz = z - dz;
+    ux = x + dx; uy = y + dy; uz = z + dz;
+
     #if 0
     printf("%s:\n", __FUNCTION__);
     printf("cube centered at %g,%g,%g\n", x, y, z);
     printf("cube sizes are %g,%g,%g\n", scaleX, scaleY, scaleZ);
-    printf("cube extents are %g,%g,%g to %g,%g,%g\n", x-dx, y-dy, z-dz, x+dx, y+dy, z+dz);
+    printf("cube extents are %g,%g,%g to %g,%g,%g\n", lx, ly, lz, ux, uy, uz);
     #endif /* 0 */
 
     if( (face_mask & (1<<0)) == 0) {
         /* left (-x) */
-        trig_list_add(list, x-dx, y-dy, z-dz,
-                x-dx, y-dy, z+dz,
-                x-dx, y+dy, z+dz);
-        trig_list_add(list, x-dx, y-dy, z-dz,
-                x-dx, y+dy, z+dz,
-                x-dx, y+dy, z-dz);
+        trig_list_add(list, lx, ly, lz,
+                            lx, ly, uz,
+                            lx, uy, uz);
+        trig_list_add(list, lx, ly, lz,
+                            lx, uy, uz,
+                            lx, uy, lz);
     }
     if( (face_mask & (1<<1)) == 0) {
         /* right (+x) */
-        trig_list_add(list, x+dx, y-dy, z-dz,
-                x+dx, y+dy, z+dz,
-                x+dx, y-dy, z+dz);
-        trig_list_add(list, x+dx, y-dy, z-dz,
-                x+dx, y+dy, z-dz,
-                x+dx, y+dy, z+dz);
+        trig_list_add(list, ux, ly, lz,
+                            ux, uy, uz,
+                            ux, ly, uz);
+        trig_list_add(list, ux, ly, lz,
+                            ux, uy, lz,
+                            ux, uy, uz);
     }
 
     if( (face_mask & (1<<2)) == 0) {
         /* front (-y) */
-        trig_list_add(list, x-dx, y-dy, z-dz,
-                x+dx, y-dy, z+dz,
-                x-dx, y-dy, z+dz);
-        trig_list_add(list, x-dx, y-dy, z-dz,
-                x+dx, y-dy, z-dz,
-                x+dx, y-dy, z+dz);
+        trig_list_add(list, lx, ly, lz,
+                            ux, ly, uz,
+                            lx, ly, uz);
+        trig_list_add(list, lx, ly, lz,
+                            ux, ly, lz,
+                            ux, ly, uz);
     }
     if( (face_mask & (1<<3)) == 0) {
         /* back (+y) */
-        trig_list_add(list, x-dx, y+dy, z-dz,
-                x-dx, y+dy, z+dz,
-                x+dx, y+dy, z+dz);
-        trig_list_add(list, x-dx, y+dy, z-dz,
-                x+dx, y+dy, z+dz,
-                x+dx, y+dy, z-dz);
+        trig_list_add(list, lx, uy, lz,
+                            lx, uy, uz,
+                            ux, uy, uz);
+        trig_list_add(list, lx, uy, lz,
+                            ux, uy, uz,
+                            ux, uy, lz);
     }
 
     if( (face_mask & (1<<4)) == 0) {
         /* bottom (-z) */
-        trig_list_add(list, x-dx, y-dy, z-dz,
-                x+dx, y+dy, z-dz,
-                x+dx, y-dy, z-dz);
-        trig_list_add(list, x-dx, y+dy, z-dz,
-                x+dx, y+dy, z-dz,
-                x-dx, y-dy, z-dz);
+        trig_list_add(list, lx, ly, lz,
+                            ux, uy, lz,
+                            ux, ly, lz);
+        trig_list_add(list, lx, uy, lz,
+                            ux, uy, lz,
+                            lx, ly, lz);
     }
     if( (face_mask & (1<<5)) == 0) {
         /* top (+z face) */
-        trig_list_add(list, x-dx, y-dy, z+dz,
-                x+dx, y-dy, z+dz,
-                x+dx, y+dy, z+dz);
-        trig_list_add(list, x-dx, y+dy, z+dz,
-                x-dx, y-dy, z+dz,
-                x+dx, y+dy, z+dz);
+        trig_list_add(list, lx, ly, uz,
+                            ux, ly, uz,
+                            ux, uy, uz);
+        trig_list_add(list, lx, uy, uz,
+                            lx, ly, uz,
+                            ux, uy, uz);
     }
 }
 
