@@ -43,8 +43,7 @@ behavior.  Below is a list of command-line options and their purpose.
 `-l num` Generate mazes until a solution with length &geq;`num` is found.<br/>
 `-k num` Generate mazes until at most `num` disconnected regions in maze.<br/>
 `-g filename.gv` Writes an input file for [graphviz](https://graphviz.org/) to `filename.gv`.<br/>
-`-e width` Specified minimum edge width for faces that are printed flat (-f &
--u) (default: 0.4).
+`-e width` Specified minimum edge width for faces that are printed flat (-f & -u) (default: 0.4).
 
 ## Examples
 Basic random maze generation:<br/>
