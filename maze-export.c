@@ -1065,11 +1065,11 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list) {
         }
     }
 
-    /* add markers to face to work around slicer glitch (PrusaSlicer 2.8.1)*/
+    /* add markers to face, to work around slicer glitch (PrusaSlicer 2.8.1) */
     double hiddenRadius = 0.05;
     maze_add_marker2(list, maze, face, maze->startPos, hiddenRadius, scale);
     maze_add_marker1(list, maze, face, maze->endPos, hiddenRadius, scale);
-    /* re-tag markers as part of the face */
+    /* re-tag hidden markers as part of the face */
     trig_list_set_groupid(list, -1);
 
     /* re-add end markers again with original group Ids  */
@@ -1507,14 +1507,17 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, double edgeWidth, dou
         /* scale output */
         trig_list_scale(&trigs, scale, scale, scale);
 
+        /* initialize per group id trig lists */
         trig_list_t marker1, marker2, face_trigs;
         trig_list_init(&face_trigs);
         trig_list_init(&marker1);
         trig_list_init(&marker2);
 
+        /* split by group id into separate files. */
         for(int i=0; i<trigs.num; ++i) {
-            int groupId = trigs.trig[i].groupId;
             trig_t *trig_i = &trigs.trig[i];
+            trig_get_normal(trig_i);
+            int groupId = trig_i->groupId;
             switch( groupId ) {
                 case 3:
                     trig_list_append(&marker1, trig_i);
@@ -1528,7 +1531,7 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, double edgeWidth, dou
             }
         }
 
-        /* write to file */
+        /* write to files */
         trig_list_write_stl(&face_trigs, filename, name);
         trig_list_write_stl(&marker1, filename1, name1);
         trig_list_write_stl(&marker2, filename2, name2);

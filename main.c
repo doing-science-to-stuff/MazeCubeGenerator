@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
                 stlFile = strdup(optarg);
                 break;
             case 'u':
-                /* output maze with the top removed to directory */
+                /* output maze with the ends removed into directory */
                 stlPrintDir = strdup(optarg);
                 break;
             case 'o':
