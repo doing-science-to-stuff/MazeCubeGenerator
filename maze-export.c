@@ -978,10 +978,30 @@ static void maze_add_cube(trig_list_t *list, double x, double y, double z, char 
     double dy = scaleY/2.0;
     double dz = scaleZ/2.0;
 
+    #if 0
+    /* FOR DEBUGGING PURPOSES ONLY */
+    //face_mask = 0x3f;
+    face_mask = ((char)(x+11*y)) % 0x40;
+    /* set all bits other than face of interest to 1 */
+    printf("face_mask = %x, x,y: %g, %g (orig)\t", face_mask, x, y);
+    face_mask = ~(0x03 << (2 * 2));
+    printf("face_mask = %x (updated)\n", face_mask);
+    face_mask = 0x7e;
+    face_mask = 0x73;
+    face_mask = 0x4f;
+    face_mask = 0;
+    #endif /* 0 */
+
     double lx, ly, lz;
     double ux, uy, uz;
     lx = x - dx; ly = y - dy; lz = z - dz;
     ux = x + dx; uy = y + dy; uz = z + dz;
+
+    #if 0
+    /* FOR DEBUGGING PURPOSES ONLY */
+    lx = x; ly = y; lz = z;
+    ux = x + 2*dx; uy = y + 2*dy; uz = z + 2*dz;
+    #endif /* 0 */
 
     #if 0
     printf("%s:\n", __FUNCTION__);
