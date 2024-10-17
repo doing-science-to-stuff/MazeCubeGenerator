@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
         maze_export_stl(&maze, stlFile, scale);
     }
     if( stlPrintDir ) {
-        printf("Exporting %iD maze to hopefully printabl STL file `%s`.\n", maze.numDimensions, stlPrintDir);
+        printf("Exporting %iD maze to easily to assemble STL files into `%s`.\n", maze.numDimensions, stlPrintDir);
         maze_export_stl_printable(&maze, stlPrintDir, edgeWidth, scale);
     }
     if( stlSolFile ) {
