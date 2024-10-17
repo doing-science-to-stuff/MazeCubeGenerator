@@ -538,7 +538,7 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
             double thetaJ2 =  M_PI * (j+1) / numSegsJ;
 
             /* deal with back-side */
-            if( j == numSegsJ ) { thetaJ2 = 0.0;; }
+            if( j == numSegsJ ) { thetaJ2 = 0.0; }
 
             /* compute raw torus coordinates */
             double x11 = cos(thetaI1) * (1+radius*cos(thetaJ1)) + r;
