@@ -43,7 +43,7 @@ behavior.  Below is a list of command-line options and their purpose.
 `-l num` Generate mazes until a solution with length &geq;`num` is found.<br/>
 `-k num` Generate mazes until at most `num` disconnected regions in maze.<br/>
 `-g filename.gv` Writes an input file for [graphviz](https://graphviz.org/) to `filename.gv`.<br/>
-`-e width` Specified minimum edge width for faces that are printed flat (-f & -u) (default: 0.4).
+`-e width` Specified minimum edge width for faces that are printed flat (-f & -u) (default: 0.4).<br/>
 
 ## Examples
 Basic random maze generation:<br/>
@@ -74,12 +74,12 @@ model of the solution to `solution.stl`.
 Write unfolded/flattened model:<br/>
 `$ ./mcg -i maze.txt -f maze_flat.stl`<br/>
 Loads a maze from `maze.txt` and writes a flat-pack style 3D model to
-`maze_flat.stl` for fast 3D printing.
+`maze_flat.stl` for faster 3D printing.
 
 Write mostly assembled model:<br/>
 `$ ./mcg -i maze.txt -u printable.stl -x 5.0`<br/>
 Loads a maze from `maze.txt` and writes a mostly assembled 3D model to
-`printable.stl` for easy to assemble 3D printing at 5x scale.
+`printable.stl` for an easier to assemble 3D print at 5x scale.
 
 Hyper-dimensional maze:<br/>
 `$ ./mcg -r 1 -d 11,11,11,11:o -s -o maze4d.txt`<br/>
