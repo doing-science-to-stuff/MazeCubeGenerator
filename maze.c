@@ -819,7 +819,6 @@ static void maze_reset_faces(maze_t *maze) {
 int maze_generate(maze_t *maze) {
     printf("Generating %iD maze.\n", maze->numDimensions);
 
-    srand((unsigned int)time(NULL));
     int restarts = 0;
     do {
         maze_reset_faces(maze);
