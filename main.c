@@ -34,7 +34,7 @@ static void free_buffers() {
 
 static void show_help(int argc, char **argv) {
     free_buffers();
-    printf("%s {-d l,w,h[:o] | -i file.txt} [-h] [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-c] [-f flat.stl] [-u printable.stl] [-k maxSegments] [-p solution.stl] [-g graph.gv] [-e edgeWidth] [-x scale]\n\n",
+    printf("%s {-d l,w,h[:olb] | -i file.txt} [-h] [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-c] [-f flat.stl] [-u printable.stl] [-k maxSegments] [-p solution.stl] [-g graph.gv] [-e edgeWidth] [-x scale]\n\n",
             argv[0]);
     exit(0);
 }
@@ -46,6 +46,7 @@ int main(int argc, char **argv) {
     int doSolve = 0;
     int minSolutionLen = -1;
     int seed = 0;
+    int useSeed = 0;
     int maxSegments = -1;
     maze_output_opts_t maze_opts;
 
@@ -56,6 +57,8 @@ int main(int argc, char **argv) {
 
     /* set defaults */
     genMaze = 0;
+    seed = 0;
+    useSeed = 0;
 
     char ch='\0';
     /* remaining letters: abjnqtvwyz */
@@ -114,7 +117,7 @@ int main(int argc, char **argv) {
                 break;
             case 'r':
                 seed = atoi(optarg);
-                srand(seed);
+                useSeed = 1;
                 break;
             case 's':
                 /* generate a solution */
@@ -148,6 +151,10 @@ int main(int argc, char **argv) {
         if( minSolutionLen > 0 )
             maze_set_path_length(&maze, minSolutionLen);
         printf("Generating maze.\n");
+        if( useSeed ) {
+            printf("  using %i as the random seed.\n", seed);
+            srand(seed);
+        }
         int segments = maze_generate(&maze);
         if( maxSegments > 0 )
             printf("%i maze segment%s.\n", segments, (segments==1)?"":"s");
