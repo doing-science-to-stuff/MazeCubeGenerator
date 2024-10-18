@@ -8,11 +8,17 @@
 #define MAZE_EXPORT_H
 #include "maze.h"
 
+typedef struct maze_output_opts {
+    double scale;
+    double edgeWidth;
+    int separateMarkers;
+} maze_output_opts_t;
+
 /* export maze shape to an STL file */
-int maze_export_stl(maze_t *maze, char *filename, double scale);
-int maze_export_stl_printable(maze_t *maze, char *filename, double edgeWidth, double scale);
-int maze_export_stl_flat(maze_t *maze, char *filename, double edgeWidth, double scale);
-int maze_export_stl_solution(maze_t *maze, char *filename, double scale);
+int maze_export_stl(maze_t *maze, char *filename, maze_output_opts_t *opts);
+int maze_export_stl_printable(maze_t *maze, char *filename, maze_output_opts_t *opts);
+int maze_export_stl_flat(maze_t *maze, char *filename, maze_output_opts_t *opts);
+int maze_export_stl_solution(maze_t *maze, char *filename, maze_output_opts_t *opts);
 
 
 /* export maze shape as series of triangles */

@@ -47,22 +47,30 @@ int main(int argc, char **argv) {
     int minSolutionLen = -1;
     int seed = 0;
     int maxSegments = -1;
-    double scale = 1.0;
-    double edgeWidth = 0.4;
+    maze_output_opts_t maze_opts;
+
+    /* set default values */
+    maze_opts.scale = 1.0;
+    maze_opts.edgeWidth = 0.4;
+    maze_opts.separateMarkers = 1;
 
     /* set defaults */
     genMaze = 0;
 
     char ch='\0';
-    /* remaining letters: abcjnqtvwyz */
-    while( (ch=getopt(argc, argv, "d:e:f:g:hi:k:l:m:o:p:r:su:x:"))!=-1 ) {
+    /* remaining letters: abjnqtvwyz */
+    while( (ch=getopt(argc, argv, "cd:e:f:g:hi:k:l:m:o:p:r:su:x:"))!=-1 ) {
         switch(ch) {
+            case 'c':
+                /* combine markers into face */
+                maze_opts.separateMarkers = 0;
+                break;
             case 'd':
                 configStr = strdup(optarg);
                 genMaze = 1;
                 break;
             case 'e':
-                edgeWidth = atof(optarg);
+                maze_opts.edgeWidth = atof(optarg);
                 break;
             case 'f':
                 /* output flat STL model to file given as argument */
@@ -113,7 +121,7 @@ int main(int argc, char **argv) {
                 doSolve = 1;
                 break;
             case 'x':
-                scale = atof(optarg);
+                maze_opts.scale = atof(optarg);
                 break;
         }
     }
@@ -168,19 +176,19 @@ int main(int argc, char **argv) {
     }
     if( stlFile ) {
         printf("Exporting %iD maze to STL file `%s`.\n", maze.numDimensions, stlFile);
-        maze_export_stl(&maze, stlFile, scale);
+        maze_export_stl(&maze, stlFile, &maze_opts);
     }
     if( stlPrintDir ) {
         printf("Exporting %iD maze to easily to assemble STL files into `%s`.\n", maze.numDimensions, stlPrintDir);
-        maze_export_stl_printable(&maze, stlPrintDir, edgeWidth, scale);
+        maze_export_stl_printable(&maze, stlPrintDir, &maze_opts);
     }
     if( stlSolFile ) {
         printf("Exporting %iD maze solution to STL file `%s`.\n", maze.numDimensions, stlFile);
-        maze_export_stl_solution(&maze, stlSolFile, scale);
+        maze_export_stl_solution(&maze, stlSolFile, &maze_opts);
     }
     if( stlFileFlat ) {
         printf("Exporting %iD maze to flat-packed STL file `%s`.\n", maze.numDimensions, stlFileFlat);
-        maze_export_stl_flat(&maze, stlFileFlat, edgeWidth, scale);
+        maze_export_stl_flat(&maze, stlFileFlat, &maze_opts);
     }
     if( gvFile ) {
         printf("Exporting %iD maze to graphviz gv file `%s`.\n", maze.numDimensions, gvFile);

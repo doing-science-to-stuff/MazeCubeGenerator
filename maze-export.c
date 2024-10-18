@@ -1069,7 +1069,7 @@ static void maze_add_cube(trig_list_t *list, double x, double y, double z, char 
 }
 
 
-int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list) {
+int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list, maze_output_opts_t *opts) {
 
     double scale = 1.0;
 
@@ -1125,29 +1125,37 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list) {
                     mask1 |= 1<<4 | 1<<3;
                 }
 
-                /* export cube */
+                /* export cube, scaling will happen later */
                 maze_add_cube(list, x1, y1, z1, mask1, scale, scale, scale);
             }
         }
     }
 
-    /* add markers to face, to work around slicer glitch (PrusaSlicer 2.8.1) */
-    double hiddenRadius = 0.05;
-    maze_add_marker2(list, maze, face, maze->startPos, hiddenRadius, scale);
-    maze_add_marker1(list, maze, face, maze->endPos, hiddenRadius, scale);
-    /* re-tag hidden markers as part of the face */
-    trig_list_set_groupid(list, -1);
+    if( opts->separateMarkers ) {
+        /* add markers to face, to work around slicer glitch (PrusaSlicer 2.8.1) */
+        double hiddenRadius = 0.05;
+        maze_add_marker2(list, maze, face, maze->startPos, hiddenRadius, scale);
+        maze_add_marker1(list, maze, face, maze->endPos, hiddenRadius, scale);
+        /* re-tag hidden markers as part of the face */
+        trig_list_set_groupid(list, -1);
+    }
 
     /* re-add end markers again with original group Ids  */
     double markerRadius = 0.1;
     maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale);
     maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale);
+    if( !opts->separateMarkers ) {
+        /* re-tag hidden markers as part of the face */
+        trig_list_set_groupid(list, -1);
+    }
 
     return 1;
 }
 
 
-int maze_add_maze(maze_t *maze, trig_list_t *list) {
+int maze_add_maze(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts) {
+
+    opts->separateMarkers = 0;
 
     /* for each face */
     for(int face=0; face<maze->numFaces; ++face) {
@@ -1155,8 +1163,8 @@ int maze_add_maze(maze_t *maze, trig_list_t *list) {
         trig_list_t faceTrigs1, faceTrigs2;
         trig_list_init(&faceTrigs1);
         trig_list_init(&faceTrigs2);
-        maze_add_maze_face(maze, face, &faceTrigs1);
-        maze_add_maze_face(maze, face, &faceTrigs2);
+        maze_add_maze_face(maze, face, &faceTrigs1, opts);
+        maze_add_maze_face(maze, face, &faceTrigs2, opts);
 
         /* translate face */
         if( face == 0 ) {
@@ -1285,7 +1293,11 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
 }
 
 
-int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, double edgeWidth, int face) {
+int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts, int face) {
+
+    double edgeWidth = opts->edgeWidth;
+    double scale = opts->scale;
+    printf("face: %i; edgeWidth: %g (0)\n", face, edgeWidth);
 
     int rows = maze->faces[face].rows;
     int cols = maze->faces[face].cols;
@@ -1294,8 +1306,8 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, double edgeWid
     trig_list_t faceTrigs1, faceTrigs2;
     trig_list_init(&faceTrigs1);
     trig_list_init(&faceTrigs2);
-    maze_add_maze_face(maze, face, &faceTrigs1);
-    maze_add_maze_face(maze, face, &faceTrigs2);
+    maze_add_maze_face(maze, face, &faceTrigs1, opts);
+    maze_add_maze_face(maze, face, &faceTrigs2, opts);
 
     /* add edges to faces */
     trig_list_t border1, border2;
@@ -1407,7 +1419,12 @@ static int maze_add_flat_slider(trig_list_t *list, double xOffset, double yOffse
 }
 
 
-int maze_add_maze_flat(maze_t *maze, trig_list_t *list, double edgeWidth, double scale) {
+int maze_add_maze_flat(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts) {
+
+    double scale = opts->scale;
+    double edgeWidth = opts->edgeWidth;
+    opts->separateMarkers = 0;
+
     /* write faces */
     /* for each face */
     for(int face=0; face<maze->numFaces; ++face) {
@@ -1417,8 +1434,8 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list, double edgeWidth, double
         trig_list_t faceTrigs1, faceTrigs2;
         trig_list_init(&faceTrigs1);
         trig_list_init(&faceTrigs2);
-        maze_add_maze_face(maze, face, &faceTrigs1);
-        maze_add_maze_face(maze, face, &faceTrigs2);
+        maze_add_maze_face(maze, face, &faceTrigs1, opts);
+        maze_add_maze_face(maze, face, &faceTrigs2, opts);
 
         /* scale face */
         trig_list_scale(&faceTrigs1, scale, scale, scale);
@@ -1499,15 +1516,17 @@ int maze_add_solution(maze_t *maze, trig_list_t *list) {
 }
 
 
-int maze_export_stl(maze_t *maze, char *filename, double scale) {
+int maze_export_stl(maze_t *maze, char *filename, maze_output_opts_t *opts) {
     if( maze->numDimensions != 3 ) {
         fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
         return -1;
     }
 
+    double scale = opts->scale;
+
     trig_list_t trigs;
     trig_list_init(&trigs);
-    maze_add_maze(maze, &trigs);
+    maze_add_maze(maze, &trigs, opts);
     maze_add_maze_slider(maze, &trigs);
 
     /* scale output */
@@ -1523,11 +1542,13 @@ int maze_export_stl(maze_t *maze, char *filename, double scale) {
 }
 
 
-int maze_export_stl_printable(maze_t *maze, char *dirname, double edgeWidth, double scale) {
+int maze_export_stl_printable(maze_t *maze, char *dirname, maze_output_opts_t *opts) {
     if( maze->numDimensions != 3 ) {
         fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
         return -1;
     }
+
+    double scale = opts->scale;
 
     /* construct filename */
     if( dirname == NULL )   dirname = ".";
@@ -1568,7 +1589,7 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, double edgeWidth, dou
             snprintf(name1, sizeof(name1), "EndsMarker1");
             snprintf(name2, sizeof(name2), "EndsMarker2");
         }
-        maze_add_maze_printable_face(maze, &trigs, edgeWidth/scale, face);
+        maze_add_maze_printable_face(maze, &trigs, opts, face);
 
         /* scale output */
         trig_list_scale(&trigs, scale, scale, scale);
@@ -1613,7 +1634,7 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, double edgeWidth, dou
 }
 
 
-int maze_export_stl_flat(maze_t *maze, char *filename, double edgeWidth, double scale) {
+int maze_export_stl_flat(maze_t *maze, char *filename, maze_output_opts_t *opts) {
 
     if( maze->numDimensions != 3 ) {
         fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
@@ -1622,7 +1643,7 @@ int maze_export_stl_flat(maze_t *maze, char *filename, double edgeWidth, double 
 
     trig_list_t trigs;
     trig_list_init(&trigs);
-    maze_add_maze_flat(maze, &trigs, edgeWidth, scale);
+    maze_add_maze_flat(maze, &trigs, opts);
 
     /* write to file */
     trig_list_write_stl(&trigs, filename, "MazeCubeFlat");
@@ -1634,11 +1655,13 @@ int maze_export_stl_flat(maze_t *maze, char *filename, double edgeWidth, double 
 }
 
 
-int maze_export_stl_solution(maze_t *maze, char *filename, double scale) {
+int maze_export_stl_solution(maze_t *maze, char *filename, maze_output_opts_t *opts) {
     if( maze->numDimensions != 3 ) {
         fprintf(stderr,"%s: STL export is only supported for 3D mazes.\n", __FUNCTION__);
         return -1;
     }
+
+    double scale = opts->scale;
 
     trig_list_t trigs;
     trig_list_init(&trigs);
@@ -1659,9 +1682,16 @@ int maze_export_stl_solution(maze_t *maze, char *filename, double scale) {
 
 /* Allocate opaque triangle list to be handed to the caller */
 void *maze_export_trig_list(maze_t *maze) {
+
     trig_list_t* trigs = calloc(1, sizeof(trig_list_t));
     trig_list_init(trigs);
-    maze_add_maze(maze, trigs);
+
+    /* set default values */
+    maze_output_opts_t maze_opts;
+    maze_opts.scale = 1.0;
+    maze_opts.edgeWidth = 0.4;
+    maze_opts.separateMarkers = 1;
+    maze_add_maze(maze, trigs, &maze_opts);
 
     return ((void*)trigs);
 }
