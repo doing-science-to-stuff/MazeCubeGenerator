@@ -472,10 +472,13 @@ static void trig_list_replace_groupid(trig_list_t *list, int id, int target_id) 
 
 
 static int trig_list_write_stl(trig_list_t *trigs, char *filename, char *name) {
+
     /* remove destination if list is empty. */
     if( trigs-> num <= 0 ) {
+        //printf("  skipping empty '%s'.\n", name);
         return unlink(filename);
     }
+    //printf("  writing '%s' to '%s'.\n", name, filename);
 
     /* open file */
     FILE *fp = fopen(filename,"w");
@@ -1073,6 +1076,7 @@ static void maze_add_cube(trig_list_t *list, double x, double y, double z, char 
 int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list, maze_output_opts_t *opts) {
 
     double scale = 1.0;
+    int separateMarkers = opts->separateMarkers;
 
     /* for each cell */
     int rows = maze->faces[face].rows;
@@ -1132,7 +1136,7 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list, maze_output_op
         }
     }
 
-    if( opts->separateMarkers ) {
+    if( separateMarkers ) {
         /* add markers to face, to work around slicer glitch (PrusaSlicer 2.8.1) */
         double hiddenRadius = 0.05;
         maze_add_marker2(list, maze, face, maze->startPos, hiddenRadius, scale);
@@ -1145,7 +1149,7 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list, maze_output_op
     double markerRadius = 0.1;
     maze_add_marker2(list, maze, face, maze->startPos, markerRadius, scale);
     maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale);
-    if( !opts->separateMarkers ) {
+    if( !separateMarkers ) {
         /* re-tag hidden markers as part of the face */
         trig_list_set_groupid(list, -1);
     }
@@ -1155,8 +1159,6 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list, maze_output_op
 
 
 int maze_add_maze(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts) {
-
-    opts->separateMarkers = 0;
 
     /* for each face */
     for(int face=0; face<maze->numFaces; ++face) {
@@ -1424,7 +1426,6 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts
 
     double scale = opts->scale;
     double edgeWidth = opts->edgeWidth;
-    opts->separateMarkers = 0;
 
     /* write faces */
     /* for each face */
