@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "maze.h"
+#include "maze-export.h"
 
 const double epsilon = 1e-6;
 
@@ -1211,12 +1212,13 @@ int maze_add_maze(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts) {
     return 0;
 }
 
+
 static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffset, double xSize, double ySize, double edgeWidth, double scale) {
 
     #if 0
     printf("%s\n", __FUNCTION__);
-    printf("tedgeWidth: %g\tscale: %g\n", edgeWidth, scale);
-    printf("x,y: %g,%g; w,h: %g,%g\n", xOffset, yOffset, xSize, ySize);
+    printf("\tedgeWidth: %g\tscale: %g\n", edgeWidth, scale);
+    printf("\tx,y: %g,%g; w,h: %g,%g\n", xOffset, yOffset, xSize, ySize);
     #endif /* 0 */
 
     double xi[4], yi[4], xm[4], ym[4], xo[4], yo[4];
@@ -1297,7 +1299,6 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_op
 
     double edgeWidth = opts->edgeWidth;
     double scale = opts->scale;
-    printf("face: %i; edgeWidth: %g (0)\n", face, edgeWidth);
 
     int rows = maze->faces[face].rows;
     int cols = maze->faces[face].cols;
@@ -1316,13 +1317,13 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_op
 
     /* add perimeters */
     if( face != 0 ) edgeWidth = 0.0;
-    maze_add_flat_border(&border1, -0.5, -0.5, cols, rows, edgeWidth, 1.0);
-    maze_add_flat_border(&border2, -0.5, -0.5, cols, rows, edgeWidth, 1.0);
+    maze_add_flat_border(&border1, -0.5, -0.5, cols, rows, edgeWidth/scale, 1.0);
+    maze_add_flat_border(&border2, -0.5, -0.5, cols, rows, edgeWidth/scale, 1.0);
     trig_list_concatenate(&faceTrigs1, &border1);
     trig_list_concatenate(&faceTrigs2, &border2);
 
     if( edgeWidth > 0.0 ) {
-        double minZ = -0.5 + edgeWidth;
+        double minZ = -0.5 + edgeWidth/scale;
         trig_list_set_minimum(&faceTrigs1, minZ, 2);
         trig_list_set_minimum(&faceTrigs2, minZ, 2);
 
