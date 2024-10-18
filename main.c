@@ -34,7 +34,7 @@ static void free_buffers() {
 
 static void show_help(int argc, char **argv) {
     free_buffers();
-    printf("%s {-d l,w,h[:o] | -i file.txt} [-h] [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-f flat.stl] [-u printable.stl] [-k maxSegments] [-p solution.stl] [-g graph.gv] [-e edgeWidth] [-x scale]\n\n",
+    printf("%s {-d l,w,h[:o] | -i file.txt} [-h] [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-c] [-f flat.stl] [-u printable.stl] [-k maxSegments] [-p solution.stl] [-g graph.gv] [-e edgeWidth] [-x scale]\n\n",
             argv[0]);
     exit(0);
 }
