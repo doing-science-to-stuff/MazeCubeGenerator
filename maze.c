@@ -724,7 +724,10 @@ static int maze_pick_goals_optimal(maze_t *maze, char mode) {
                 if( abs(path.positions[0][k] - path.positions[last][k]) <= 3 )
                     markerOverlap = 1;
             }
-            if( markerOverlap ) continue;
+            if( markerOverlap ) {
+                printf("Rejecting path of length %i dues to overlapping end markers.\n", path.num);
+                continue;
+            }
 
             /* pick endpoints, if better than current best */
             if( value > best_value ) {
