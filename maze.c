@@ -717,6 +717,15 @@ static int maze_pick_goals_optimal(maze_t *maze, char mode) {
                 fprintf(stderr, "Unrecognized path metric mode '%c'.\n", mode);
             }
 
+            /* check that endpoint markers won't overlap */
+            int last = path.num-1;
+            int markerOverlap  =0;
+            for(int k=0; k<maze->numDimensions; ++k) {
+                if( abs(path.positions[0][k] - path.positions[last][k]) <= 3 )
+                    markerOverlap = 1;
+            }
+            if( markerOverlap ) continue;
+
             /* pick endpoints, if better than current best */
             if( value > best_value ) {
                 printf("  new best path metric value (%i).\n", value);
