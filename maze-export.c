@@ -1318,7 +1318,6 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_op
     trig_list_init(&border2);
 
     /* add perimeters */
-    if( face != 0 ) edgeWidth = 0.0;
     maze_add_flat_border(&border1, -0.5, -0.5, cols, rows, edgeWidth/scale, 1.0);
     maze_add_flat_border(&border2, -0.5, -0.5, cols, rows, edgeWidth/scale, 1.0);
     trig_list_concatenate(&faceTrigs1, &border1);
@@ -1331,8 +1330,10 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_op
 
         /* translate face to account for edgeWidth */
         /* i.e., move minZ to z=0.0 */
-        trig_list_move(&faceTrigs1, 0.0, 0.0, -minZ);
-        trig_list_move(&faceTrigs2, 0.0, 0.0, -minZ);
+        if( face == 0 ) {
+            trig_list_move(&faceTrigs1, 0.0, 0.0, -minZ);
+            trig_list_move(&faceTrigs2, 0.0, 0.0, -minZ);
+        }
     }
 
     /* translate face */
@@ -1584,6 +1585,7 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, maze_output_opts_t *o
             snprintf(name1, sizeof(name1), "Face%iMarker1", face);
             snprintf(name2, sizeof(name2), "Face%iMarker2", face);
         } else {
+            // Face 0 (i.e. end)
             snprintf(filename, sizeof(filename), "%s/ends.stl", dirname);
             snprintf(filename1, sizeof(filename1), "%s/ends_marker_1.stl", dirname);
             snprintf(filename2, sizeof(filename2), "%s/ends_marker_2.stl", dirname);
