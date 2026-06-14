@@ -130,11 +130,17 @@ int main(int argc, char **argv) {
     }
 
     /* check that sufficient settings exist */
-    if( inputFile==NULL && !genMaze ) {
+    if( inputFile==NULL
+        && !genMaze ) {
         fprintf(stderr,"\n\nNo maze source given, use -i to specify an input filename or -g to generate a random maze.\n\n");
         show_help(argc,argv);
     }
-    if( outputFile==NULL && stlFile==NULL && stlPrintDir==NULL && stlSolFile==NULL && stlFileFlat==NULL && gvFile==NULL ) {
+    if( outputFile==NULL
+        && stlFile==NULL
+        && stlPrintDir==NULL
+        && stlSolFile==NULL
+        && stlFileFlat==NULL
+        && gvFile==NULL ) {
         fprintf(stderr,"\n\nNo output specified, use -o, -m, and/or -u to specify an output filename.\n\n");
         show_help(argc,argv);
     }
