@@ -16,10 +16,23 @@
 
 const double epsilon = 1e-6;
 
+typedef enum face_group {
+    FACE_NONE = -1,
+    FACE_0A,
+    FACE_0B,
+    FACE_1A,
+    FACE_1B,
+    FACE_2A,
+    FACE_2B,
+    FACE_MARKER_1,
+    FACE_MARKER_2
+} face_group_t;
+
+
 typedef struct trig {
     double x[3], y[3], z[3];    /* vertex coordinates */
     double nx[3], ny[3], nz[3];   /* vertex normals */
-    int groupId;
+    face_group_t groupId;
 } trig_t;
 
 
@@ -90,7 +103,7 @@ static void trig_get_normal(trig_t *trig) {
 static void trig_init(trig_t *trig) {
     if( !trig ) return;
     memset(trig, '\0', sizeof(*trig));
-    trig->groupId = -1;
+    trig->groupId = FACE_NONE;
 }
 
 
@@ -109,7 +122,7 @@ static void trig_fill(trig_t *trig,
 
 
 /* set a grouping id to aid in color assignment */
-static void trig_set_group(trig_t *trig, int id) {
+static void trig_set_group(trig_t *trig, face_group_t id) {
     if( !trig ) return;
     trig->groupId = id;
 }
@@ -452,7 +465,7 @@ static void trig_list_export_stl(FILE *fp, trig_list_t *list) {
 
 
 /* set group id for all triangles in a list */
-static void trig_list_set_groupid(trig_list_t *list, int id) {
+static void trig_list_set_groupid(trig_list_t *list, face_group_t id) {
     if( !list ) return;
     for(int i=0; i<list->num; ++i) {
         trig_set_group(&list->trig[i], id);
@@ -461,7 +474,7 @@ static void trig_list_set_groupid(trig_list_t *list, int id) {
 
 
 /* replace group ids for all triangles with the target group id */
-static void trig_list_replace_groupid(trig_list_t *list, int id, int target_id) {
+static void trig_list_replace_groupid(trig_list_t *list, face_group_t id, face_group_t target_id) {
     if( !list ) return;
     for(int i=0; i<list->num; ++i) {
         if( list->trig[i].groupId == target_id ) {
@@ -686,7 +699,7 @@ static void maze_add_marker1(trig_list_t *list, maze_t *maze, int face, position
     }
     
     /* assign marker to a group */
-    trig_list_set_groupid(&marker, 4);
+    trig_list_set_groupid(&marker, FACE_MARKER_1);
     
     /* append marker into passed-in list */
     trig_list_concatenate(list, &marker);
@@ -970,7 +983,7 @@ static void maze_add_marker2(trig_list_t *list, maze_t *maze, int face, position
         maze_add_edge(&marker, maze, r, c, face, radius, scale, 1, 0, 1);
     
     /* assign marker to a group */
-    trig_list_set_groupid(&marker, 3);
+    trig_list_set_groupid(&marker, FACE_MARKER_2);
     
     /* append marker into passed-in list */
     trig_list_concatenate(list, &marker);
@@ -1142,7 +1155,7 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list, maze_output_op
         maze_add_marker2(list, maze, face, maze->startPos, hiddenRadius, scale);
         maze_add_marker1(list, maze, face, maze->endPos, hiddenRadius, scale);
         /* re-tag hidden markers as part of the face */
-        trig_list_set_groupid(list, -1);
+        trig_list_set_groupid(list, FACE_NONE);
     }
 
     /* re-add end markers again with original group Ids  */
@@ -1151,7 +1164,7 @@ int maze_add_maze_face(maze_t *maze, int face, trig_list_t *list, maze_output_op
     maze_add_marker1(list, maze, face, maze->endPos, markerRadius, scale);
     if( !separateMarkers ) {
         /* re-tag hidden markers as part of the face */
-        trig_list_set_groupid(list, -1);
+        trig_list_set_groupid(list, FACE_NONE);
     }
 
     return 1;
@@ -1608,12 +1621,12 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, maze_output_opts_t *o
         for(int i=0; i<trigs.num; ++i) {
             trig_t *trig_i = &trigs.trig[i];
             trig_get_normal(trig_i);
-            int groupId = trig_i->groupId;
+            face_group_t groupId = trig_i->groupId;
             switch( groupId ) {
-                case 3:
+                case FACE_MARKER_1:
                     trig_list_append(&marker1, trig_i);
                     break;
-                case 4:
+                case FACE_MARKER_2:
                     trig_list_append(&marker2, trig_i);
                     break;
                 default:
