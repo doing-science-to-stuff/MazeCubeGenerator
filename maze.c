@@ -710,8 +710,12 @@ static int maze_pick_goals_optimal(maze_t *maze, char mode) {
             /* find solution, if possible */
             pos_list_clear(&path);
             maze_find_path(maze, dead_ends.positions[i], &path, dead_ends.positions[j]);
-            if( path.num == 0 )
+            if( path.num == 0 ) {
+                printf("Unable to find path between dead ends %i and %i\n", i, j);
+                position_print("\tend 1: ", &dead_ends.positions[i], maze->numDimensions);
+                position_print("\tend 2: ", &dead_ends.positions[j], maze->numDimensions);
                 continue;
+            }
 
             /* compute metrics for solution */
             int value=0;
@@ -737,6 +741,8 @@ static int maze_pick_goals_optimal(maze_t *maze, char mode) {
             }
             if( markerOverlap ) {
                 printf("Rejecting path of length %i dues to overlapping end markers.\n", path.num);
+                position_print("\tend 1: ", &dead_ends.positions[i], maze->numDimensions);
+                position_print("\tend 2: ", &dead_ends.positions[j], maze->numDimensions);
                 continue;
             }
 
