@@ -9,7 +9,9 @@
 #include "../../MazeCubeGenerator/maze.c"
 
 #if 1
-#define WITH_MIRRORS
+#define WITH_MIRRORS 1
+#else
+#define WITH_MIRRORS 0
 #endif /* 1 */
 
 static maze_t maze;
