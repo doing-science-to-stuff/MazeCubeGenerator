@@ -80,6 +80,17 @@ int position_compare(position_t *pos1, position_t *pos2, int numDimensions) {
 }
 
 
+int position_print(char *prefix, position_t *pos, int numDimensions) {
+    printf("%s", prefix);
+    for(int k=0; k<numDimensions; ++k) {
+        printf("%i", (*pos)[k]);
+        if( k<numDimensions-1 )   printf(", ");
+    }
+    printf("\n");
+
+    return 0;
+}
+
 int position_free(position_t *pos) {
     if( *pos != NULL ) {
         free(*pos); *pos = NULL;

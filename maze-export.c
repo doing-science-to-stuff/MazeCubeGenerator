@@ -1186,7 +1186,7 @@ int maze_add_maze(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts) {
         if( face == 0 ) {
             trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
             trig_list_move(&faceTrigs2, 0.0, 0.0, 0.5);
-            trig_list_move(&faceTrigs2, 0.0, 0.0, -0.5);
+            trig_list_move(&faceTrigs2, 0.0, 0.0, -maze->dimensions[2]);
             trig_list_move(&faceTrigs1, 0.0, 0.0, maze->dimensions[2]-1.0);
         } else if( face == 1 ) {
             trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
@@ -1314,6 +1314,8 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_op
 
     double edgeWidth = opts->edgeWidth;
     double scale = opts->scale;
+    int realFace = face;
+    if( face < 0 ) face = 0;
 
     int rows = maze->faces[face].rows;
     int cols = maze->faces[face].cols;
@@ -1336,8 +1338,9 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_op
     trig_list_concatenate(&faceTrigs1, &border1);
     trig_list_concatenate(&faceTrigs2, &border2);
 
+    double minZ = 0.0;
     if( edgeWidth > 0.0 ) {
-        double minZ = -0.5 + edgeWidth/scale;
+        minZ = -0.5 + edgeWidth/scale;
         trig_list_set_minimum(&faceTrigs1, minZ, 2);
         trig_list_set_minimum(&faceTrigs2, minZ, 2);
 
@@ -1350,11 +1353,15 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_op
     }
 
     /* translate face */
-    if( face == 0 ) {
+    if( realFace == -1 ) {
         trig_list_scale(&faceTrigs2, -1.0, 1.0, 1.0);
         trig_list_move(&faceTrigs2, 0.0, 0.0, 0.5);
-        trig_list_move(&faceTrigs2, 0.0, 0.0, -0.5);
-        trig_list_move(&faceTrigs1, 2.0, 0.0, 0.0);
+        double deltaZ = maze->startPos[2]-(maze->dimensions[2]-0.75)-0.5;
+        printf("deltaZ = %g\n", deltaZ);
+        trig_list_move(&faceTrigs2, 2.5*maze->dimensions[0], 1.5*maze->dimensions[1], deltaZ);
+    } if( realFace == 0 ) {
+        trig_list_move(&faceTrigs1, 0.0, 0.0, 0.0);
+        trig_list_move(&faceTrigs1, 0.0, 0.0, maze->dimensions[2]-1.0+minZ);
     } else if( face == 1 ) {
         trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
         trig_list_rotate_axial(&faceTrigs1, 0, M_PI/2.0);
@@ -1372,8 +1379,10 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_op
     }
 
     /* add face to maze list */
-    trig_list_concatenate(list, &faceTrigs1);
-    trig_list_concatenate(list, &faceTrigs2);
+    if( realFace >= 0 )
+        trig_list_concatenate(list, &faceTrigs1);
+    if( realFace != 0 )
+        trig_list_concatenate(list, &faceTrigs2);
 
     trig_list_free(&faceTrigs1);
     trig_list_free(&faceTrigs2);
@@ -1587,10 +1596,10 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, maze_output_opts_t *o
     char name2[64];
     char filename1[PATH_MAX];
     char filename2[PATH_MAX];
-    for(int face=0; face<maze->numFaces; ++face) {
+    for(int face=-1; face<maze->numFaces; ++face) {
         trig_list_init(&trigs);
 
-        if( face > 0 ) {
+        if( face >= 0 ) {
             snprintf(filename, sizeof(filename), "%s/face_%i.stl", dirname, face);
             snprintf(filename1, sizeof(filename1), "%s/face_%i_marker_1.stl", dirname, face);
             snprintf(filename2, sizeof(filename2), "%s/face_%i_marker_2.stl", dirname, face);
@@ -1598,13 +1607,13 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, maze_output_opts_t *o
             snprintf(name1, sizeof(name1), "Face%iMarker1", face);
             snprintf(name2, sizeof(name2), "Face%iMarker2", face);
         } else {
-            // Face 0 (i.e. end)
-            snprintf(filename, sizeof(filename), "%s/ends.stl", dirname);
-            snprintf(filename1, sizeof(filename1), "%s/ends_marker_1.stl", dirname);
-            snprintf(filename2, sizeof(filename2), "%s/ends_marker_2.stl", dirname);
-            snprintf(name, sizeof(name), "Ends");
-            snprintf(name1, sizeof(name1), "EndsMarker1");
-            snprintf(name2, sizeof(name2), "EndsMarker2");
+            // Face -1 (i.e. end)
+            snprintf(filename, sizeof(filename), "%s/end.stl", dirname);
+            snprintf(filename1, sizeof(filename1), "%s/end_marker_1.stl", dirname);
+            snprintf(filename2, sizeof(filename2), "%s/end_marker_2.stl", dirname);
+            snprintf(name, sizeof(name), "End");
+            snprintf(name1, sizeof(name1), "EndMarker1");
+            snprintf(name2, sizeof(name2), "EndMarker2");
         }
         maze_add_maze_printable_face(maze, &trigs, opts, face);
 
