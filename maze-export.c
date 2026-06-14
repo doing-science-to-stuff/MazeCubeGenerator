@@ -433,7 +433,7 @@ static void trig_list_scale(trig_list_t *list, double sx, double sy, double sz) 
 
 
 /* set minimum value in specified dimension for all points */
-static void trig_list_set_minimum(trig_list_t *list, double min, double dim) {
+static void trig_list_set_minimum(trig_list_t *list, double min, int dim) {
     for(int i=0; i<list->num; ++i) {
         trig_set_minimum(&list->trig[i], min, dim);
     }
