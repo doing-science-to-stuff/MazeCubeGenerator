@@ -1360,8 +1360,9 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_op
         printf("deltaZ = %g\n", deltaZ);
         trig_list_move(&faceTrigs2, 2.5*maze->dimensions[0], 1.5*maze->dimensions[1], deltaZ);
     } if( realFace == 0 ) {
-        trig_list_move(&faceTrigs1, 0.0, 0.0, 0.0);
-        trig_list_move(&faceTrigs1, 0.0, 0.0, maze->dimensions[2]-1.0+minZ);
+        trig_list_move(&faceTrigs1, 0.0, 0.0, 0.5);
+        double deltaZ = maze->startPos[2]-(maze->dimensions[2]-0.75)-0.5;
+        trig_list_move(&faceTrigs1, 2.5*maze->dimensions[0], -0.5*maze->dimensions[1], deltaZ);
     } else if( face == 1 ) {
         trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
         trig_list_rotate_axial(&faceTrigs1, 0, M_PI/2.0);
@@ -1599,21 +1600,29 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, maze_output_opts_t *o
     for(int face=-1; face<maze->numFaces; ++face) {
         trig_list_init(&trigs);
 
-        if( face >= 0 ) {
+        if( face > 0 ) {
             snprintf(filename, sizeof(filename), "%s/face_%i.stl", dirname, face);
             snprintf(filename1, sizeof(filename1), "%s/face_%i_marker_1.stl", dirname, face);
             snprintf(filename2, sizeof(filename2), "%s/face_%i_marker_2.stl", dirname, face);
             snprintf(name, sizeof(name), "Face%i", face);
             snprintf(name1, sizeof(name1), "Face%iMarker1", face);
             snprintf(name2, sizeof(name2), "Face%iMarker2", face);
-        } else {
+        } else if( face == 0 ) {
             // Face -1 (i.e. end)
-            snprintf(filename, sizeof(filename), "%s/end.stl", dirname);
-            snprintf(filename1, sizeof(filename1), "%s/end_marker_1.stl", dirname);
-            snprintf(filename2, sizeof(filename2), "%s/end_marker_2.stl", dirname);
-            snprintf(name, sizeof(name), "End");
-            snprintf(name1, sizeof(name1), "EndMarker1");
-            snprintf(name2, sizeof(name2), "EndMarker2");
+            snprintf(filename, sizeof(filename), "%s/end1.stl", dirname);
+            snprintf(filename1, sizeof(filename1), "%s/end1_marker_1.stl", dirname);
+            snprintf(filename2, sizeof(filename2), "%s/end1_marker_2.stl", dirname);
+            snprintf(name, sizeof(name), "End1");
+            snprintf(name1, sizeof(name1), "End1Marker1");
+            snprintf(name2, sizeof(name2), "End1Marker2");
+        } else if( face < 0 ) {
+            // Face -1 (i.e. end)
+            snprintf(filename, sizeof(filename), "%s/end2.stl", dirname);
+            snprintf(filename1, sizeof(filename1), "%s/end2_marker_1.stl", dirname);
+            snprintf(filename2, sizeof(filename2), "%s/end2_marker_2.stl", dirname);
+            snprintf(name, sizeof(name), "End2");
+            snprintf(name1, sizeof(name1), "End2Marker1");
+            snprintf(name2, sizeof(name2), "End2Marker2");
         }
         maze_add_maze_printable_face(maze, &trigs, opts, face);
 
