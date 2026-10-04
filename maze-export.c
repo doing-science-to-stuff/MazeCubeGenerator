@@ -794,15 +794,33 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
         int j = (i+1)%4;
 
         /* outer sloped face */
+        #if 1
         trig_list_add(list, xo[i], yo[i], z1,
                             xm[i], ym[i], z0,
                             xm[j], ym[j], z0);
+        #endif
+        #if 0
         trig_list_add(list, xo[i], yo[i], z1,
                             xm[j], ym[j], z0,
                             xo[j], yo[j], z1);
+        #else
+        double edgeSize=(11);    // TODO: this needs to be dynamic
+        for(int k=0; k<edgeSize; k+=1) {
+            double xo_diff = xo[j]-xo[i];
+            double yo_diff = yo[j]-yo[i];
+            double xo_mid_i = k*xo_diff/edgeSize+xo[i];
+            double yo_mid_i = k*yo_diff/edgeSize+yo[i];
+            double xo_mid_j = (k+1)*xo_diff/edgeSize+xo[i];
+            double yo_mid_j = (k+1)*yo_diff/edgeSize+yo[i];
+            //printf("x,y -> %g, %g; %g, %g\n", xo_mid_i, yo_mid_i, xo_mid_j, yo_mid_j);
+            trig_list_add(list, xm[j], ym[j], z0,
+                                xo_mid_j, yo_mid_j, z1,
+                                xo_mid_i, yo_mid_i, z1);
+        }
+        #endif
 
+        /* flat section for build-plate */
         if( edgeWidth > 0.0 ) {
-            /* flat section for build-plate */
             #if 0
             trig_list_add(list, xm[i], ym[i], z0,
                                 xi[i], yi[i], z0,
@@ -1174,10 +1192,14 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, maze_output_opts_t *o
         trig_list_scale(&trigs, scale, scale, scale);
 
         /* initialize per group id trig lists */
-        trig_list_t marker1, marker2, face_trigs;
+        trig_list_t open_trigs, marker1, marker2, face_trigs;
+        trig_list_init(&open_trigs);
         trig_list_init(&face_trigs);
         trig_list_init(&marker1);
         trig_list_init(&marker2);
+
+    int num_open = find_open_edges(&trigs);
+    printf("%i open edges in model.\n", num_open);
 
         /* split by group id into separate files. */
         for(int i=0; i<trigs.num; ++i) {
@@ -1185,6 +1207,9 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, maze_output_opts_t *o
             trig_get_normal(trig_i);
             face_group_t groupId = trig_i->groupId;
             switch( groupId ) {
+                case FACE_OPEN:
+                    trig_list_append(&open_trigs, trig_i);
+                    break;
                 case FACE_MARKER_1:
                     trig_list_append(&marker1, trig_i);
                     break;
@@ -1197,15 +1222,32 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, maze_output_opts_t *o
             }
         }
 
+    num_open = find_open_edges(&face_trigs);
+    printf("\t%i open edges in faces model.\n", num_open);
+
+    num_open = find_open_edges(&marker1);
+    printf("\t%i open edges in marker1 model.\n", num_open);
+
+    num_open = find_open_edges(&marker2);
+    printf("\t%i open edges in marker2 model.\n", num_open);
+
         /* write to files */
         trig_list_write_stl(&face_trigs, filename, name);
         trig_list_write_stl(&marker1, filename1, name1);
         trig_list_write_stl(&marker2, filename2, name2);
+        if( open_trigs.num > 0 ) {
+            char name[64];
+            char filename[PATH_MAX];
+            snprintf(filename, sizeof(filename), "errors_%i.stl", face);
+            snprintf(name, sizeof(name), "errors_%i", face);
+            trig_list_write_stl(&open_trigs, filename, name);
+        }
 
         /* free triangle list */
         trig_list_free(&marker2);
         trig_list_free(&marker1);
         trig_list_free(&face_trigs);
+        trig_list_free(&open_trigs);
         trig_list_free(&trigs);
     }
 
