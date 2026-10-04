@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2020-2024 Bryan Franklin. All rights reserved.
  */
+#include <errno.h>
 #include <math.h>
 #include <limits.h>
 #include <stdio.h>
