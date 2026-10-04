@@ -12,6 +12,7 @@ typedef struct maze_output_opts {
     double scale;
     double edgeWidth;
     int separateMarkers;
+    char *flatPackDirName;
 } maze_output_opts_t;
 
 /* export maze shape to an STL file */

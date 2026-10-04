@@ -1450,6 +1450,13 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts
 
     double scale = opts->scale;
     double edgeWidth = opts->edgeWidth;
+    char stlName[PATH_MAX];
+
+    if( opts->flatPackDirName ) {
+        if( mkdir(opts->flatPackDirName, 0755) ) {
+            fprintf(stderr, "mkdir: %s\n", strerror(errno));
+        }
+    }
 
     /* write faces */
     /* for each face */
@@ -1498,6 +1505,16 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts
         trig_list_set_minimum(&faceTrigs1, minZ, 2);
         trig_list_set_minimum(&faceTrigs2, minZ, 2);
         
+        if( opts->flatPackDirName != NULL ) {
+            /* write to files */
+            snprintf(stlName, sizeof(stlName), "%s/Face_%da.stl",
+                opts->flatPackDirName, face+1);
+            trig_list_write_stl(&faceTrigs1, stlName, "MazeCubeFace");
+            snprintf(stlName, sizeof(stlName), "%s/Face_%db.stl",
+                opts->flatPackDirName, face+1);
+            trig_list_write_stl(&faceTrigs2, stlName, "MazeCubeFace");
+        }
+
         /* add face to maze list */
         trig_list_concatenate(list, &faceTrigs1);
         trig_list_concatenate(list, &faceTrigs2);
@@ -1520,6 +1537,12 @@ int maze_add_maze_flat(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts
 
     /* move slider to account for edgeWidth */
     trig_list_move(&slider, 0.0, 0.0, edgeWidth);
+    if( opts->flatPackDirName != NULL ) {
+        /* write to file */
+        snprintf(stlName, sizeof(stlName), "%s/slider.stl",
+                opts->flatPackDirName);
+        trig_list_write_stl(&slider, stlName, "MazeCubeSlider");
+    }
     trig_list_concatenate(list, &slider);
     trig_list_free(&slider);
 
@@ -1680,8 +1703,10 @@ int maze_export_stl_flat(maze_t *maze, char *filename, maze_output_opts_t *opts)
     trig_list_init(&trigs);
     maze_add_maze_flat(maze, &trigs, opts);
 
-    /* write to file */
-    trig_list_write_stl(&trigs, filename, "MazeCubeFlat");
+    if( filename != NULL ) {
+        /* write to file */
+        trig_list_write_stl(&trigs, filename, "MazeCubeFlat");
+    }
 
     /* free triangle list */
     trig_list_free(&trigs);

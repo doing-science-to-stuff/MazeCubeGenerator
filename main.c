@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
     maze_opts.scale = 1.0;
     maze_opts.edgeWidth = 0.4;
     maze_opts.separateMarkers = 1;
+    maze_opts.flatPackDirName = NULL;
 
     /* set defaults */
     genMaze = 0;
@@ -62,7 +63,7 @@ int main(int argc, char **argv) {
 
     char ch='\0';
     /* remaining letters: abjnqtvwyz */
-    while( (ch=getopt(argc, argv, "cd:e:f:g:hi:k:l:m:o:p:r:su:x:"))!=-1 ) {
+    while( (ch=getopt(argc, argv, "cd:e:F:f:g:hi:k:l:m:o:p:r:su:x:"))!=-1 ) {
         switch(ch) {
             case 'c':
                 /* combine markers into face */
@@ -74,6 +75,10 @@ int main(int argc, char **argv) {
                 break;
             case 'e':
                 maze_opts.edgeWidth = atof(optarg);
+                break;
+            case 'F':
+                /* output flat STL model to directory given as argument */
+                maze_opts.flatPackDirName = strdup(optarg);
                 break;
             case 'f':
                 /* output flat STL model to file given as argument */
@@ -140,6 +145,7 @@ int main(int argc, char **argv) {
         && stlPrintDir==NULL
         && stlSolFile==NULL
         && stlFileFlat==NULL
+        && maze_opts.flatPackDirName==NULL
         && gvFile==NULL ) {
         fprintf(stderr,"\n\nNo output specified, use -o, -m, and/or -u to specify an output filename.\n\n");
         show_help(argc,argv);
@@ -199,8 +205,11 @@ int main(int argc, char **argv) {
         printf("Exporting %iD maze solution to STL file `%s`.\n", maze.numDimensions, stlFile);
         maze_export_stl_solution(&maze, stlSolFile, &maze_opts);
     }
-    if( stlFileFlat ) {
-        printf("Exporting %iD maze to flat-packed STL file `%s`.\n", maze.numDimensions, stlFileFlat);
+    if( stlFileFlat || maze_opts.flatPackDirName ) {
+        if( stlFileFlat )
+            printf("Exporting %iD maze to flat-packed STL file `%s`.\n", maze.numDimensions, stlFileFlat);
+        if( maze_opts.flatPackDirName )
+            printf("Exporting %iD maze to flat-packed STL directory `%s`.\n", maze.numDimensions, maze_opts.flatPackDirName);
         maze_export_stl_flat(&maze, stlFileFlat, &maze_opts);
     }
     if( gvFile ) {
