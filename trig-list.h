@@ -4,6 +4,7 @@
 const double epsilon = 1e-4;
 
 typedef enum face_group {
+    FACE_OPEN = -2,
     FACE_NONE = -1,
     FACE_0A,
     FACE_0B,
@@ -502,5 +503,86 @@ static int trig_list_write_stl(trig_list_t *trigs, char *filename, char *name) {
     return 0;
 }
 
+
+int is_same_point(double x1, double y1, double z1,
+                  double x2, double y2, double z2) {
+    if( fabs(x2-x1) < epsilon 
+        && fabs(y2-y1) < epsilon
+        && fabs(z2-z1) < epsilon)
+            return 1;
+    return 0;
+}
+
+
+int trig_has_vertex(trig_t *trig, double x, double y, double z) {
+    for(int i=0; i<3; ++i) {
+        if( is_same_point(trig->x[i], trig->y[i], trig->z[i], x, y, z) )
+            return 1;
+    }
+
+    return 0;
+}
+
+int is_same_trig(trig_t *trig1, trig_t *trig2) {
+    for(int i=0; i<3; ++i) {
+        int found = 0;
+        for(int k=0; k<3; ++k) {
+            if( is_same_point(trig1->x[i], trig1->y[i], trig1->z[i],
+                              trig2->x[k], trig2->y[k], trig2->z[k]) )
+                found = 1;
+        }
+        if( !found )
+            return 0;
+    }
+
+    return 1;   // all points in trig1 found in trig2
+}
+
+
+int trig_shares_edge_num(trig_t *trig1, int edge1, trig_t *trig2) {
+    unsigned int i=edge1%3;
+    unsigned int j=(i+1)%3;
+    if( trig_has_vertex(trig2, trig1->x[i], trig1->y[i], trig1->z[i])
+            && trig_has_vertex(trig2, trig1->x[j], trig1->y[j], trig1->z[j]) )
+            return 1;
+
+    return 0;
+}
+
+
+int trig_shares_edge(trig_t *trig1, trig_t *trig2) {
+    for(int i=0; i<3; ++i) {
+        if( trig_shares_edge_num(trig1, i, trig2) )
+            return 1;
+    }
+
+    return 0;
+}
+
+
+int trig_has_open_edge(trig_t *trig, trig_list_t *trigs){
+    for(int i=0; i<trigs->num; ++i) {
+        // check is trigs[i] shares edge with trig
+        if( trig_shares_edge(trig, &trigs->trig[i])
+            && !is_same_trig(trig, &trigs->trig[i]) )
+            return 0;
+    }
+
+    return 1;
+}
+
+
+int find_open_edges(trig_list_t *trigs) {
+    // for each trig
+    int count=0;
+    for(int i=0; i<trigs->num; ++i) {
+        if( trig_has_open_edge(&trigs->trig[i], trigs) ) {
+            trigs->trig[i].groupId = FACE_OPEN;
+            ++count;
+        }
+    }
+
+    return count;
+}
 
 #endif // TRIG_LIST_H
