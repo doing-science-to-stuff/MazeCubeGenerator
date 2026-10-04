@@ -561,14 +561,20 @@ int trig_shares_edge(trig_t *trig1, trig_t *trig2) {
 
 
 int trig_has_open_edge(trig_t *trig, trig_list_t *trigs){
-    for(int i=0; i<trigs->num; ++i) {
-        // check is trigs[i] shares edge with trig
-        if( trig_shares_edge(trig, &trigs->trig[i])
-            && !is_same_trig(trig, &trigs->trig[i]) )
-            return 0;
+    // for each edge in trig
+    for(int j=0; j<3; ++j) {
+        int found=0;
+        for(int i=0; i<trigs->num; ++i) {
+            // check is trigs[i] shares edge j with another trig
+            if( trig_shares_edge_num(trig, j, &trigs->trig[i])
+                    && !is_same_trig(trig, &trigs->trig[i]) )
+                found = 1;
+        }
+        if( !found )
+            return 1;
     }
 
-    return 1;
+    return 0;
 }
 
 
