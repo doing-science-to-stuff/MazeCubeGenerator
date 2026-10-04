@@ -1321,36 +1321,36 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_op
     int cols = maze->faces[face].cols;
 
     /* add face */
-    trig_list_t faceTrigs1, faceTrigs2;
+    trig_list_t faceTrigs0, faceTrigs1, faceTrigs2;
+    trig_list_init(&faceTrigs0);
     trig_list_init(&faceTrigs1);
     trig_list_init(&faceTrigs2);
-    maze_add_maze_face(maze, face, &faceTrigs1, opts);
-    maze_add_maze_face(maze, face, &faceTrigs2, opts);
+    maze_add_maze_face(maze, face, &faceTrigs0, opts);
 
     /* add edges to faces */
-    trig_list_t border1, border2;
-    trig_list_init(&border1);
-    trig_list_init(&border2);
+    trig_list_t border0;
+    trig_list_init(&border0);
 
     /* add perimeters */
-    maze_add_flat_border(&border1, -0.5, -0.5, cols, rows, edgeWidth/scale, 1.0);
-    maze_add_flat_border(&border2, -0.5, -0.5, cols, rows, edgeWidth/scale, 1.0);
-    trig_list_concatenate(&faceTrigs1, &border1);
-    trig_list_concatenate(&faceTrigs2, &border2);
+    maze_add_flat_border(&border0, -0.5, -0.5, cols, rows, edgeWidth/scale, 1.0);
+    trig_list_concatenate(&faceTrigs0, &border0);
+    trig_list_free(&border0);
 
     double minZ = 0.0;
     if( edgeWidth > 0.0 ) {
         minZ = -0.5 + edgeWidth/scale;
-        trig_list_set_minimum(&faceTrigs1, minZ, 2);
-        trig_list_set_minimum(&faceTrigs2, minZ, 2);
+        trig_list_set_minimum(&faceTrigs0, minZ, 2);
 
         /* translate face to account for edgeWidth */
         /* i.e., move minZ to z=0.0 */
         if( face == 0 ) {
-            trig_list_move(&faceTrigs1, 0.0, 0.0, -minZ);
-            trig_list_move(&faceTrigs2, 0.0, 0.0, -minZ);
+            trig_list_move(&faceTrigs0, 0.0, 0.0, -minZ);
         }
     }
+
+    trig_list_concatenate(&faceTrigs1, &faceTrigs0);
+    trig_list_concatenate(&faceTrigs2, &faceTrigs0);
+    trig_list_free(&faceTrigs0);
 
     /* translate face */
     if( realFace == -1 ) {
