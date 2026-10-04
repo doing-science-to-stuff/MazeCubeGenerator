@@ -1297,12 +1297,30 @@ static int maze_add_flat_border(trig_list_t *list, double xOffset, double yOffse
 
         if( edgeWidth > 0.0 ) {
             /* flat section for build-plate */
+            #if 0
             trig_list_add(list, xm[i], ym[i], z0,
-                    xi[i], yi[i], z0,
-                    xi[j], yi[j], z0);
+                                xi[i], yi[i], z0,
+                                xi[j], yi[j], z0);
+            #else
+            double edgeSize=(11-2);    // TODO: this needs to be dynamic
+            for(int k=0; k<edgeSize; k+=1) {
+                double xi_diff = xi[j]-xi[i];
+                double yi_diff = yi[j]-yi[i];
+                double xi_mid_i = k*xi_diff/edgeSize+xi[i];
+                double yi_mid_i = k*yi_diff/edgeSize+yi[i];
+                double xi_mid_j = (k+1)*xi_diff/edgeSize+xi[i];
+                double yi_mid_j = (k+1)*yi_diff/edgeSize+yi[i];
+                printf("mid x,y: %g,%g -> %g,%g\n", xi_mid_i, yi_mid_i,
+                                                    xi_mid_j, yi_mid_j);
+                trig_list_add(list, xm[i], ym[i], z0,
+                                    xi_mid_i, yi_mid_i, z0,
+                                    xi_mid_j, yi_mid_j, z0);
+            }
+            printf("\n");
+            #endif // 0
             trig_list_add(list, xm[i], ym[i], z0,
-                    xi[j], yi[j], z0,
-                    xm[j], ym[j], z0);
+                                xi[j], yi[j], z0,
+                                xm[j], ym[j], z0);
         }
     }
 
