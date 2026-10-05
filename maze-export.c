@@ -692,7 +692,7 @@ int maze_add_maze(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts) {
         if( face == 0 ) {
             trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
             trig_list_move(&faceTrigs2, 0.0, 0.0, 0.5);
-            trig_list_move(&faceTrigs2, 0.0, 0.0, -maze->dimensions[2]);
+            trig_list_move(&faceTrigs2, 0.0, 0.0, 0.0);
             trig_list_move(&faceTrigs1, 0.0, 0.0, maze->dimensions[2]-1.0);
         } else if( face == 1 ) {
             trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
