@@ -27,15 +27,16 @@ behavior.  Below is a list of command-line options and their purpose.
 **Basic:**
 
 `-d size` Generate a new maze with given size (`size` format: `l,w,h` or `l,w,h:options`, e.g., `11,11,11` or `11,11,11:r`).<br/>
+`-f filename.stl` Write flattened maze as STL to `filename.stl`.<br/>
+`-F dir` Write flattened maze as STL to directory `dir`.<br/>
 `-h` Print usage information.<br/>
 `-i filename.txt` Load an existing maze from `filename.txt` as produced by `-o`.<br/>
 `-m filename.stl` Write maze as STL to `filename.stl`.<br/>
-`-f filename.stl` Write flattened maze as STL to `filename.stl`.<br/>
-`-u filename.stl` Write maze as more easily printable STL to `filename.stl`.<br/>
 `-o filename.txt` Write maze as reloadable (-i) text to `filename.txt`.<br/>
 `-p solution.stl` Write solution as STL to `solution.stl` (implies `-s`).<br/>
 `-r num` Seed random number generator using `num`.<br/>
 `-s` Find a solution to the maze.<br/>
+`-u dir` Write maze as more easily printable STL to `dir`.<br/>
 `-x` Scale factor when exporting to STL.<br/>
 
 **Advanced:**
