@@ -11,6 +11,8 @@
 #include "maze.h"
 #include "maze-export.h"
 
+// clear; cmake . && make && ./mcg -i mazes/oskars.txt -s -m oskars.stl -f oskars_flat.stl -F oskars_flat/ -u oskars -x 5 -e 1.2
+
 static char *configStr = NULL;
 static char *inputFile = NULL;
 static char *outputFile = NULL;
