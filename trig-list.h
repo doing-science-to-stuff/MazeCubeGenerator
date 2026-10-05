@@ -1,7 +1,13 @@
+/*
+ * trig-list.h
+ * MazeCubeGen: maze cube generator
+ *
+ * Copyright (c) 2026 Bryan Franklin. All rights reserved.
+ */
 #ifndef TRIG_LIST_H
 #define TRIG_LIST_H
 
-const double epsilon = 1e-4;
+const double epsilon = 1e-8;
 
 typedef enum face_group {
     FACE_OPEN = -2,
