@@ -313,6 +313,7 @@ static void trig_export_stl(FILE *fp, trig_t *trig) {
 typedef struct trig_list {
     int num;    /* number of triangles in list */
     int cap;    /* allocated capacity of list */
+    int export_open;    /* flag to toggle exporting of trigs with open edges */
     trig_t *trig;   /* list buffer */
 } trig_list_t;
 
@@ -323,6 +324,7 @@ static int trig_list_init(trig_list_t *list) {
     int initial_cap = 10;
     list->trig = calloc(initial_cap, sizeof(trig_t));
     list->cap = initial_cap;
+    list->export_open = 1;
 
     return 1;
 }
@@ -389,6 +391,13 @@ static int trig_list_add(trig_list_t *list,
     return 0;
 }
 
+static int trig_list_remove(trig_list_t *list, int pos) {
+    memcpy(&list->trig[pos], &list->trig[list->num], sizeof(trig_t));
+    --list->num;
+    return 0;
+}
+
+
 static int trig_list_append(trig_list_t *list, trig_t *t) {
 
     /* reallocate list, if needed */
@@ -449,11 +458,14 @@ static void trig_list_rotate_axial_around(trig_list_t *list, int axis, double ra
     }
 }
 
+static int trig_list_tag_open_edges(trig_list_t *trigs);
 
 /* export list of triangles as STL */
 static void trig_list_export_stl(FILE *fp, trig_list_t *list) {
+    trig_list_tag_open_edges(list);
     for(int i=0; i<list->num; ++i) {
-        trig_export_stl(fp, &list->trig[i]);
+        if( list->export_open || list->trig[i].groupId!=FACE_OPEN )
+            trig_export_stl(fp, &list->trig[i]);
     }
 }
 
@@ -590,6 +602,20 @@ int find_open_edges(trig_list_t *trigs) {
     for(int i=0; i<trigs->num; ++i) {
         if( trig_has_open_edge(&trigs->trig[i], trigs) ) {
             trigs->trig[i].groupId = FACE_OPEN;
+            ++count;
+        }
+    }
+
+    return count;
+}
+
+int trig_list_remove_open_edges(trig_list_t *trigs) {
+    // for each trig
+    int count=0;
+    for(int i=0; i<trigs->num; ++i) {
+        if( trig_has_open_edge(&trigs->trig[i], trigs) ) {
+            trig_list_remove(trigs, i);
+            --i;
             ++count;
         }
     }

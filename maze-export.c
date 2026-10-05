@@ -1120,6 +1120,9 @@ int maze_export_stl(maze_t *maze, char *filename, maze_output_opts_t *opts) {
     /* scale output */
     trig_list_scale(&trigs, scale, scale, scale);
 
+    int num_open = trig_list_tag_open_edges(&trigs);
+    printf("%i open edges in model.\n", num_open);
+
     /* write to file */
     trig_list_write_stl(&trigs, filename, "MazeCube");
 
@@ -1198,8 +1201,9 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, maze_output_opts_t *o
         trig_list_init(&marker1);
         trig_list_init(&marker2);
 
-    int num_open = find_open_edges(&trigs);
-    printf("%i open edges in model.\n", num_open);
+        int num_open = trig_list_tag_open_edges(&trigs);
+        if( num_open > 0 )
+            printf("%i open edges in model.\n", num_open);
 
         /* split by group id into separate files. */
         for(int i=0; i<trigs.num; ++i) {
@@ -1222,26 +1226,30 @@ int maze_export_stl_printable(maze_t *maze, char *dirname, maze_output_opts_t *o
             }
         }
 
-    num_open = find_open_edges(&face_trigs);
-    printf("\t%i open edges in faces model.\n", num_open);
+        #if 0
+        num_open = trig_list_tag_open_edges(&face_trigs);
+        printf("\t%i open edges in faces model.\n", num_open);
 
-    num_open = find_open_edges(&marker1);
-    printf("\t%i open edges in marker1 model.\n", num_open);
+        num_open = trig_list_tag_open_edges(&marker1);
+        printf("\t%i open edges in marker1 model.\n", num_open);
 
-    num_open = find_open_edges(&marker2);
-    printf("\t%i open edges in marker2 model.\n", num_open);
+        num_open = trig_list_tag_open_edges(&marker2);
+        printf("\t%i open edges in marker2 model.\n", num_open);
+        #endif /* 0 */
 
         /* write to files */
         trig_list_write_stl(&face_trigs, filename, name);
         trig_list_write_stl(&marker1, filename1, name1);
         trig_list_write_stl(&marker2, filename2, name2);
+        #if 0
         if( open_trigs.num > 0 ) {
             char name[64];
             char filename[PATH_MAX];
-            snprintf(filename, sizeof(filename), "errors_%i.stl", face);
+            snprintf(filename, sizeof(filename), "%s/errors_%i.stl", dirname, face);
             snprintf(name, sizeof(name), "errors_%i", face);
             trig_list_write_stl(&open_trigs, filename, name);
         }
+        #endif /* 0 */
 
         /* free triangle list */
         trig_list_free(&marker2);
