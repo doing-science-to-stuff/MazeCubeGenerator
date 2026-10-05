@@ -596,11 +596,12 @@ int trig_has_open_edge(trig_t *trig, trig_list_t *trigs){
 }
 
 
-int find_open_edges(trig_list_t *trigs) {
+int trig_list_tag_open_edges(trig_list_t *trigs) {
     // for each trig
     int count=0;
     for(int i=0; i<trigs->num; ++i) {
         if( trig_has_open_edge(&trigs->trig[i], trigs) ) {
+            //printf("open face %i was a %i.\n", i, trigs->trig[i].groupId);
             trigs->trig[i].groupId = FACE_OPEN;
             ++count;
         }
