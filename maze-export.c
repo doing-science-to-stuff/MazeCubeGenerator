@@ -897,11 +897,11 @@ int maze_add_maze_printable_face(maze_t *maze, trig_list_t *list, maze_output_op
         trig_list_move(&faceTrigs2, 0.0, 0.0, 0.5);
         double deltaZ = maze->startPos[2]-(maze->dimensions[2]-0.75)-0.5;
         printf("deltaZ = %g\n", deltaZ);
-        trig_list_move(&faceTrigs2, 2.5*maze->dimensions[0], 1.5*maze->dimensions[1], deltaZ);
+        trig_list_move(&faceTrigs2, 2.5*maze->dimensions[0], 1.0*maze->dimensions[1], deltaZ);
     } if( realFace == 0 ) {
         trig_list_move(&faceTrigs1, 0.0, 0.0, 0.5);
         double deltaZ = maze->startPos[2]-(maze->dimensions[2]-0.75)-0.5;
-        trig_list_move(&faceTrigs1, 2.5*maze->dimensions[0], -0.5*maze->dimensions[1], deltaZ);
+        trig_list_move(&faceTrigs1, 1.5*maze->dimensions[0], -1.0*maze->dimensions[1], deltaZ);
     } else if( face == 1 ) {
         trig_list_scale(&faceTrigs2, 1.0, 1.0, -1.0);
         trig_list_rotate_axial(&faceTrigs1, 0, M_PI/2.0);
