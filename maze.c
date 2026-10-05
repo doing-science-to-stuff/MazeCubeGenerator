@@ -1187,35 +1187,42 @@ int maze_export_gv(maze_t *maze, char *filename) {
 }
 
 
+int maze_face_coverage(maze_t *maze) {
+    // TODO: Fill this in
+    printf("%p", (void*)maze);
+    return 0;
+}
+
+
+int maze_cell_is_corner(maze_t *maze, int pos) {
+    if( pos <= 1 || pos >= (maze->solution.num-1) )
+        return 0;
+
+    int *prev = maze->solution.positions[pos-1];
+    //int *curr = maze->solution.positions[i];
+    int *next = maze->solution.positions[pos+1];
+
+    int diffs = 0;
+    for(int j=0; j<maze->numDimensions; ++j) {
+        //printf("%i -> %i; ", prev[j], next[j]);
+        if( prev[j] != next[j] )
+            ++diffs;
+    }
+    //printf("  diffs: %i\n", diffs);
+    if( diffs >= 2 )
+        return 1;
+
+    return 0;
+}
+
+
 int maze_metrics(maze_t *maze) {
 
     /* some of these are based on:
      * https://puzzling.stackexchange.com/a/5922
      */
 
-    printf("Maze metrics:\n");
-
-    /* solution metrics */
-    if( maze->solution.num > 0 ) {
-        /* simple solution length */
-        printf("  solution length: %i\n", maze->solution.num);
-
-        int sol_dead_ends = 0;
-        int sol_branches = 0;
-        for(int i=0; i<maze->solution.num; ++i) {
-            size_t degree = maze_cell_degree(maze, maze->solution.positions[i]);
-
-            /* number of dead ends */
-            if( degree == 1 )
-                ++sol_dead_ends;
-
-            /* count decision points along solution */
-            if( degree > 2 )
-                ++sol_branches;
-        }
-        printf("  dead ends: %i (solution)\n", sol_dead_ends);
-        printf("  branch points: %i (solution)\n", sol_branches);
-    }
+    printf("\nMaze metrics:\n");
 
     /* entire cube metrics */
     /* start position counter at all 1s */
@@ -1242,8 +1249,44 @@ int maze_metrics(maze_t *maze) {
         /* update pos */
         done = position_increment(maze, pos);
     }
-    printf("  dead ends: %i\n", dead_ends);
-    printf("  branch points: %i\n", branches);
+    printf("        dead ends: %i\n", dead_ends);
+    printf("    branch points: %i\n", branches);
+
+    /* solution metrics */
+    if( maze->solution.num > 0 ) {
+        printf("\nSolution metrics:\n");
+
+        /* simple solution length */
+        printf("           length: %i\n", maze->solution.num);
+
+        int sol_dead_ends = 0;
+        int sol_branches = 0;
+        int total_sol_degree = 0;
+        int dir_changes = 0;
+        int corner_sum = 0;
+        for(int i=0; i<maze->solution.num; ++i) {
+            size_t degree = maze_cell_degree(maze, maze->solution.positions[i]);
+            total_sol_degree += degree;
+            if( maze_cell_is_corner(maze, i) ) {
+                dir_changes += 1;
+                corner_sum += degree;
+            }
+
+            /* number of dead ends */
+            if( degree == 1 )
+                ++sol_dead_ends;
+
+            /* count decision points along solution */
+            if( degree > 2 )
+                ++sol_branches;
+        }
+        double avg_sol_deg = total_sol_degree/(double)maze->solution.num;
+        printf("        dead ends: %i\n", sol_dead_ends);
+        printf("    branch points: %i\n", sol_branches);
+        printf("          corners: %i\n", dir_changes);
+        printf("   avg. sol. deg.: %g\n", avg_sol_deg);
+        printf(" avg. corner deg.: %g\n", corner_sum/(double)dir_changes);
+    }
 
     /* surface cell reuse */
 
