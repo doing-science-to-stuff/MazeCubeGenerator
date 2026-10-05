@@ -716,7 +716,7 @@ int maze_add_maze(maze_t *maze, trig_list_t *list, maze_output_opts_t *opts) {
         trig_list_replace_groupid(&faceTrigs2, 3*face+1 + 9, 3);
         trig_list_replace_groupid(&faceTrigs2, 3*face+2 + 9, 4);
 
-        /* set group id for the rest of the face */
+        /* set group id for the rest of the faces */
         trig_list_replace_groupid(&faceTrigs1, 3*face, -1);
         trig_list_replace_groupid(&faceTrigs2, 3*face + 9, -1);
 
