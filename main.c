@@ -21,6 +21,7 @@ static char *stlPrintDir = NULL;
 static char *stlFileFlat = NULL;
 static char *stlSolFile = NULL;
 static char *gvFile = NULL;
+static char *csvFile = NULL;
 
 static void free_buffers() {
     if(configStr!=NULL) free(configStr);
@@ -61,11 +62,11 @@ int main(int argc, char **argv) {
     /* set defaults */
     genMaze = 0;
     seed = 0;
-    useSeed = 0;
+    seed_ptr = NULL;
 
     char ch='\0';
     /* remaining letters: abjnqtvwyz */
-    while( (ch=getopt(argc, argv, "cd:e:F:f:g:hi:k:l:m:o:p:r:su:x:"))!=-1 ) {
+    while( (ch=getopt(argc, argv, "cd:e:F:f:g:hi:k:l:m:o:p:r:su:v:x:"))!=-1 ) {
         switch(ch) {
             case 'c':
                 /* combine markers into face */
@@ -110,10 +111,6 @@ int main(int argc, char **argv) {
                 /* output STL model to file given as argument */
                 stlFile = strdup(optarg);
                 break;
-            case 'u':
-                /* output maze with the ends removed into directory */
-                stlPrintDir = strdup(optarg);
-                break;
             case 'o':
                 /* output maze to file given as argument */
                 outputFile = strdup(optarg);
@@ -124,11 +121,19 @@ int main(int argc, char **argv) {
                 break;
             case 'r':
                 seed = atoi(optarg);
-                useSeed = 1;
+                seed_ptr = &seed;
                 break;
             case 's':
                 /* generate a solution */
                 doSolve = 1;
+                break;
+            case 'u':
+                /* output maze with the ends removed into directory */
+                stlPrintDir = strdup(optarg);
+                break;
+            case 'v':
+                /* output statistics for maze into given file */
+                csvFile = strdup(optarg);
                 break;
             case 'x':
                 maze_opts.scale = atof(optarg);
@@ -148,7 +153,8 @@ int main(int argc, char **argv) {
         && stlSolFile==NULL
         && stlFileFlat==NULL
         && maze_opts.flatPackDirName==NULL
-        && gvFile==NULL ) {
+        && gvFile==NULL 
+        && csvFile==NULL ) {
         fprintf(stderr,"\n\nNo output specified, use -o, -m, and/or -u to specify an output filename.\n\n");
         show_help(argc,argv);
     }
@@ -217,6 +223,10 @@ int main(int argc, char **argv) {
     if( gvFile ) {
         printf("Exporting %iD maze to graphviz gv file `%s`.\n", maze.numDimensions, gvFile);
         maze_export_gv(&maze, gvFile);
+    }
+    if( csvFile ) {
+        printf("Exporting %iD maze to CSV file `%s`.\n", maze.numDimensions, csvFile);
+        maze_metrics_csv(&maze, csvFile);
     }
 
     maze_metrics(&maze);

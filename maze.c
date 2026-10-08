@@ -1292,6 +1292,49 @@ int maze_metrics(maze_t *maze) {
 
     /* min/max extents of solution for each dimension */
 
-
     return 0;
 }
+
+
+int maze_metrics_csv(maze_t *maze, char *filename) {
+    FILE *fp = fopen(filename, "a");
+    if(fp==NULL ) {
+        fprintf(stderr, "fopen: '%s' for '%s'\n", strerror(errno), filename);
+        return -1;
+    }
+    int dead_ends = 0, branches = 0;
+    maze_count_branches(maze, &branches, &dead_ends);
+    int dir_changes = maze_solution_num_corners(maze);
+    double coverage = maze_face_coverage(maze);
+    int longest = maze_longest_wall(maze);
+    
+    /* add header, if needed */
+    fseek (fp, 0, SEEK_END);
+    int size = ftell(fp);
+    if( size == 0 ) {
+        fprintf(fp, "seed,");
+        fprintf(fp, "path selection mode,");
+        fprintf(fp, "dead ends,");
+        fprintf(fp, "branches,");
+        fprintf(fp, "solution length,");
+        fprintf(fp, "solution corners,");
+        fprintf(fp, "coverage,");
+        fprintf(fp, "longest wall,");
+        fprintf(fp, "\n");
+    }
+
+    /* output row os CSV */
+    fprintf(fp, "%i,", maze->seed);
+    fprintf(fp, "%c,", maze->pathSelMode);
+    fprintf(fp, "%i,", dead_ends);
+    fprintf(fp, "%i,", branches);
+    fprintf(fp, "%i,", maze->solution.num);
+    fprintf(fp, "%i,", dir_changes);
+    fprintf(fp, "%g,", coverage);
+    fprintf(fp, "%i,", longest);
+    fprintf(fp, "\n");
+    
+    fclose(fp); fp=NULL;
+    return 0;
+}
+
