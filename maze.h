@@ -34,11 +34,14 @@ typedef struct position_list {
 } position_list_t;
 
 typedef struct maze {
+    unsigned int seed;
     int numFaces;
     int numDimensions;
     int *dimensions;
     int maxSegments;
+    int segments;
     int minPathLength;
+    int minCornerNum;
     position_t startPos;
     position_t endPos;
     position_list_t reachable;
