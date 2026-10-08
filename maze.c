@@ -978,7 +978,7 @@ int maze_write(maze_t *maze, char *filename) {
     /* open file */
     FILE *fp = fopen(filename,"w");
     if(fp==NULL ) {
-        perror("fopen");
+        fprintf(stderr, "fopen: '%s' for '%s'\n", strerror(errno), filename);
         return -1;
     }
 
@@ -1029,7 +1029,7 @@ int maze_load(maze_t *maze, char *filename) {
     /* open file */
     FILE *fp = fopen(filename,"r");
     if(fp==NULL ) {
-        perror("fopen");
+        fprintf(stderr, "fopen: '%s' for '%s'\n", strerror(errno), filename);
         return -1;
     }
 
@@ -1140,7 +1140,7 @@ int maze_export_gv(maze_t *maze, char *filename) {
     /* open file */
     FILE *fp = fopen(filename,"w");
     if(fp==NULL ) {
-        perror("fopen");
+        fprintf(stderr, "fopen: '%s' for '%s'\n", strerror(errno), filename);
         return -1;
     }
 
