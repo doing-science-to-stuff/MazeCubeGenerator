@@ -1,3 +1,9 @@
+/*
+ * bst.h
+ * MazeCubeGen: maze cube generator
+ *
+ * Copyright (c) 2026 Bryan Franklin. All rights reserved.
+ */
 #ifndef BST_H
 #define BST_H
 

@@ -2,7 +2,7 @@
  * maze-export.c
  * MazeCubeGen: maze cube generator
  *
- * Copyright (c) 2020-2024 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020-2026 Bryan Franklin. All rights reserved.
  */
 #include <errno.h>
 #include <math.h>

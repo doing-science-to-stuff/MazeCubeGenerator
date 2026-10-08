@@ -2,7 +2,7 @@
  * maze.h
  * MazeCubeGen: maze cube generator
  *
- * Copyright (c) 2020-2021 Bryan Franklin. All rights reserved.
+ * Copyright (c) 2020-2026 Bryan Franklin. All rights reserved.
  */
 #ifndef MAZE_H
 #define MAZE_H
