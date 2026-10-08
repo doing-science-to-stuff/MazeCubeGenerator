@@ -8,8 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <time.h>
 #include "maze.h"
+#include "bst.h"
 
 int face_init(face_t *face, int *sizes, int d1, int d2) {
     face->d1 = d1;
@@ -672,6 +674,42 @@ static int maze_find_path(maze_t *maze, position_t pos, position_list_t* path, p
 }
 
 
+static int maze_cell_is_corner(maze_t *maze, int pos) {
+    if( pos <= 1 || pos >= (maze->solution.num-1) )
+        return 0;
+
+    int *prev = maze->solution.positions[pos-1];
+    //int *curr = maze->solution.positions[i];
+    int *next = maze->solution.positions[pos+1];
+
+    int diffs = 0;
+    for(int j=0; j<maze->numDimensions; ++j) {
+        //printf("%i -> %i; ", prev[j], next[j]);
+        if( prev[j] != next[j] )
+            ++diffs;
+    }
+    //printf("  diffs: %i\n", diffs);
+    if( diffs >= 2 )
+        return 1;
+
+    return 0;
+}
+
+
+static int maze_solution_num_corners(maze_t *maze) {
+    int dir_changes = 0;
+    if( maze->solution.num <= 0 ) {
+        maze_solve(maze);
+    }
+    for(int i=0; i<maze->solution.num; ++i) {
+        if( maze_cell_is_corner(maze, i) ) {
+            dir_changes += 1;
+        }
+    }
+    return dir_changes;
+}
+
+
 static int maze_pick_goals_optimal(maze_t *maze, char mode) {
 
     /* TODO Add parameter to allow selecting of solution metric */
@@ -891,8 +929,19 @@ int maze_generate(maze_t *maze) {
             done = maze_solve(maze);
             if( done )
                 printf("\tsolution length: %i\n", maze->solution.num);
-        } while( --retries
-            && (!done || maze->solution.num < maze->minPathLength) );
+            int corners = maze_solution_num_corners(maze);
+            if( corners < maze->minCornerNum ) {
+                printf("\tinsufficient corners in solution (%i).\n", corners);
+                done = 0;
+            }
+            if( maze->solution.num < maze->minPathLength ) {
+                printf("\tinsufficient solution length (%i).\n", maze->solution.num);
+                done = 0;
+            }
+        } while( --retries && !done );
+        if( !retries ) {
+            printf("Ran out of retries.\n");
+        }
 
         /* while not completely full (i.e., any uncleared 2x2 region exists) */
         restarts = 0;
@@ -917,7 +966,8 @@ int maze_generate(maze_t *maze) {
         position_free(&restartPos); restartPos=NULL;
     } while( maze->maxSegments>0
         && (restarts+1)>maze->maxSegments );
-    printf("\t%i segments\n", restarts+1);
+    maze->segments = restarts+1;
+    printf("\t%i segments\n", maze->segments);
 
     return restarts+1;
 }
@@ -1192,30 +1242,152 @@ int maze_export_gv(maze_t *maze, char *filename) {
 }
 
 
-int maze_face_coverage(maze_t *maze) {
-    // TODO: Fill this in
-    printf("%p", (void*)maze);
-    return 0;
+int string_compar(const void *a, const void *b) {
+    if( a==NULL && b != NULL )
+        return -1;
+    if( a!=NULL && b == NULL )
+        return 1;
+    if( a==NULL && b == NULL )
+        return 0;
+    return strcmp((char*)a, (char*)b);
 }
 
 
-int maze_cell_is_corner(maze_t *maze, int pos) {
-    if( pos <= 1 || pos >= (maze->solution.num-1) )
-        return 0;
+double maze_face_coverage(maze_t *maze) {
 
-    int *prev = maze->solution.positions[pos-1];
-    //int *curr = maze->solution.positions[i];
-    int *next = maze->solution.positions[pos+1];
+    bst_t facePos;
+    int sum = 0;
+    char *posStr=NULL;
+    bst_init(&facePos);
+    bst_set_comparitor(&facePos, string_compar);
+    int faceTotal = 0;
+    for(int i=0; i<maze->numDimensions-1; ++i) {
+        for(int j=i+1; j<maze->numDimensions; ++j) {
+            int faceSize = maze->dimensions[i] * maze->dimensions[j];
+            faceTotal += faceSize;
 
-    int diffs = 0;
-    for(int j=0; j<maze->numDimensions; ++j) {
-        //printf("%i -> %i; ", prev[j], next[j]);
-        if( prev[j] != next[j] )
-            ++diffs;
+            //bst_clear(&facePos);
+            for(int k=0; k<maze->solution.num; ++k) {
+                posStr = calloc(64, sizeof(char));
+                snprintf(posStr, 64, "%i,%i; %i,%i", i, j,
+                                maze->solution.positions[k][i],
+                                maze->solution.positions[k][j]);
+                if( bst_find(&facePos, posStr) == NULL )
+                    bst_insert(&facePos, posStr);
+            }
+            sum += facePos.count;
+        }
     }
-    //printf("  diffs: %i\n", diffs);
-    if( diffs >= 2 )
-        return 1;
+    //bst_print(&facePos);
+    bst_clear(&facePos);
+    return sum/(double)faceTotal;
+}
+
+
+int maze_longest_wall(maze_t *maze) {
+    /* for each face */
+    int max = -1;
+    for(int face=0; face<maze->numFaces; ++face) {
+        int rows = maze->faces[face].rows;
+        int cols = maze->faces[face].cols;
+        /* make 2d array of -1s (walls) and -2s (open) */
+        int **cell = calloc(cols, sizeof(int*));
+        for(int i=0; i<rows; ++i) {
+            cell[i] = calloc(cols, sizeof(int));
+            for(int j=0; j<cols; ++j) {
+                if( i==0 || j==0 || i==(cols-1) || j==(rows-1) )
+                    cell[i][j] = 0;
+                else if( face_get_cell(&maze->faces[face], j, i) != 0 )
+                    cell[i][j] = -1;
+                else
+                    cell[i][j] = -2;
+            }
+        }
+
+        /* loop through face multiple times */
+        int done = 0;
+        while(!done) {
+            done = 1;
+            /* mark each wall cell with 1+neighbor if -1 */
+            for(int i=1; i<cols-1; ++i) {
+                for(int j=1; j<rows-1; ++j) {
+                    if( cell[i][j] != -1 )
+                        continue;
+                    done = 0;
+                    if( cell[i+1][j] >= 0 )
+                        cell[i][j] = cell[i+1][j]+1;
+                    if( cell[i][j+1] >= 0 )
+                        cell[i][j] = cell[i][j+1]+1;
+                    if( cell[i-1][j] >= 0 )
+                        cell[i][j] = cell[i-1][j]+1;
+                    if( cell[i][j-1] >= 0 )
+                        cell[i][j] = cell[i][j-1]+1;
+
+                    if( cell[i][j] > max )
+                        max = cell[i][j];
+                }
+            }
+        }
+
+            
+        #if 0
+        /* print array */
+        for(int i=0; i<cols; ++i) {
+            for(int j=0; j<rows; ++j) {
+                printf(" % 3i", cell[i][j]);
+            }
+            printf("\n");
+        }
+        printf("max: %i\n", max);
+        printf("done: %i\n", done);
+        printf("\n\n");
+        #endif /* 0 */
+
+        /* free array */
+        for(int i=0; i<rows; ++i) {
+            free(cell[i]); cell[i]=NULL;
+        }
+        free(cell); cell=NULL;
+    }
+
+    return max;
+}
+
+
+int maze_count_branches(maze_t *maze, int *branches, int *dead_ends) {
+    
+    /* start position counter at all 1s */
+    position_t pos = NULL;
+    pos = malloc(maze->numDimensions * sizeof(*pos));
+    for(int i = 0; i<maze->numDimensions; ++i) {
+        pos[i] = 1;
+    }
+
+    int done = 0;
+    int lbranches = 0, lends = 0;
+    if( branches != NULL )
+        lbranches = *branches;
+    if( dead_ends != NULL )
+        lends = *dead_ends;
+    while(!done) {
+        size_t degree = maze_cell_degree(maze, pos);
+
+        /* number of dead ends */
+        if( degree == 1 )
+            ++lends;
+
+        /* count decision points along solution */
+        if( degree > 2 )
+            ++lbranches;
+
+        /* update pos */
+        done = position_increment(maze, pos);
+    }
+
+    if( branches != NULL )
+        *branches = lbranches;
+    if( dead_ends != NULL )
+        *dead_ends = lends;
 
     return 0;
 }
@@ -1230,32 +1402,13 @@ int maze_metrics(maze_t *maze) {
     printf("\nMaze metrics:\n");
 
     /* entire cube metrics */
-    /* start position counter at all 1s */
-    position_t pos = NULL;
-    pos = malloc(maze->numDimensions * sizeof(*pos));
-    for(int i = 0; i<maze->numDimensions; ++i) {
-        pos[i] = 1;
-    }
-
-    int done = 0;
     int dead_ends = 0;
     int branches = 0;
-    while(!done) {
-        size_t degree = maze_cell_degree(maze, pos);
-
-        /* number of dead ends */
-        if( degree == 1 )
-            ++dead_ends;
-
-        /* count decision points along solution */
-        if( degree > 2 )
-            ++branches;
-
-        /* update pos */
-        done = position_increment(maze, pos);
-    }
+    maze_count_branches(maze, &branches, &dead_ends);
+    int longest = maze_longest_wall(maze);
     printf("        dead ends: %i\n", dead_ends);
     printf("    branch points: %i\n", branches);
+    printf("     longest wall: %i\n", longest);
 
     /* solution metrics */
     if( maze->solution.num > 0 ) {
@@ -1269,9 +1422,12 @@ int maze_metrics(maze_t *maze) {
         int total_sol_degree = 0;
         int dir_changes = 0;
         int corner_sum = 0;
+        double coverage = maze_face_coverage(maze);
         for(int i=0; i<maze->solution.num; ++i) {
             size_t degree = maze_cell_degree(maze, maze->solution.positions[i]);
             total_sol_degree += degree;
+
+            /* count corners */
             if( maze_cell_is_corner(maze, i) ) {
                 dir_changes += 1;
                 corner_sum += degree;
@@ -1289,6 +1445,7 @@ int maze_metrics(maze_t *maze) {
         printf("        dead ends: %i\n", sol_dead_ends);
         printf("    branch points: %i\n", sol_branches);
         printf("          corners: %i\n", dir_changes);
+        printf("         coverage: %g\n", coverage);
         printf("   avg. sol. deg.: %g\n", avg_sol_deg);
         printf(" avg. corner deg.: %g\n", corner_sum/(double)dir_changes);
     }
