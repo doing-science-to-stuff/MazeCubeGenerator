@@ -49,8 +49,8 @@ int main(int argc, char **argv) {
     int genMaze = 0;
     int doSolve = 0;
     int minSolutionLen = -1;
-    int seed = 0;
-    int useSeed = 0;
+    unsigned int seed = 0;
+    unsigned int *seed_ptr = NULL;
     int maxSegments = -1;
     maze_output_opts_t maze_opts;
 
@@ -172,9 +172,10 @@ int main(int argc, char **argv) {
         if( minSolutionLen > 0 )
             maze_set_path_length(&maze, minSolutionLen);
         printf("Generating maze.\n");
-        if( useSeed ) {
-            printf("  using %i as the random seed.\n", seed);
-            srand(seed);
+        if( seed_ptr != NULL ) {
+            printf("  using %i as the random seed.\n", *seed_ptr);
+            SRAND(*seed_ptr);
+            maze.seed = *seed_ptr;
         }
         int segments = maze_generate(&maze);
         if( maxSegments > 0 )

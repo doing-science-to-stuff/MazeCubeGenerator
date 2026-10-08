@@ -165,7 +165,7 @@ static int pos_list_clear(position_list_t *list) {
 static int pos_list_random(position_list_t *list, position_t pos) {
     if( list->num <= 0 )
         return 0;
-    int which = rand()%list->num;
+    int which = RAND()%list->num;
     position_copy(&pos, &list->positions[which], list->numDimensions);
     return 1;
 }
@@ -277,7 +277,11 @@ int maze_init(maze_t *maze, int numDimensions, int *sizes, char *options) {
     maze->numFaces = (numDimensions*(numDimensions-1))/2;
     maze->dimensions = calloc(numDimensions,sizeof(int));
     maze->maxSegments = -1;
+    maze->segments = -1;
     maze->minPathLength = -1;
+    maze->minCornerNum = -1;
+    maze->pathSelMode = 'l';
+    maze->seed = 0;
     for(int i=0; i<numDimensions; ++i) {
         if( sizes[i] < 3 ) {
             fprintf(stderr, "Warning: edge sizes must be at least 3, adjusting dimension %i from %i to %i.\n", i, sizes[i], 3);
@@ -464,7 +468,7 @@ static int maze_gen_step(maze_t *maze, position_t pos) {
     /* if valid move to neighbor found */
     if( numMoves > 0) {
         /* pick move randomly */
-        int move = validMoves[rand()%numMoves];
+        int move = validMoves[RAND()%numMoves];
 
         /* recurse to new position */
         position_t nextPos;
@@ -755,7 +759,7 @@ static int maze_pick_goals_optimal(maze_t *maze, char mode) {
                     position_init(&maze->endPos, maze->numDimensions);
 
                 /* randomly assign start/end to the dead ends */
-                if( rand()%2 ) {
+                if( RAND()%2 ) {
                     position_copy(&maze->startPos, &dead_ends.positions[i], maze->numDimensions);
                     position_copy(&maze->endPos, &dead_ends.positions[j], maze->numDimensions);
                 } else {
@@ -848,6 +852,7 @@ static void maze_reset_faces(maze_t *maze) {
 int maze_generate(maze_t *maze) {
     printf("Generating %iD maze.\n", maze->numDimensions);
 
+    SRAND(maze->seed);
     int restarts = 0;
     do {
         maze_reset_faces(maze);
@@ -857,7 +862,7 @@ int maze_generate(maze_t *maze) {
         position_t start;
         position_init(&start, maze->numDimensions);
         for(int i=0; i<maze->numDimensions; ++i) {
-            start[i] = rand()%(maze->dimensions[i]-2)+1;
+            start[i] = RAND()%(maze->dimensions[i]-2)+1;
             start[i] |= 1;  // force initial coordinate to be all odd
         }
 

@@ -7,6 +7,9 @@
 #ifndef MAZE_H
 #define MAZE_H
 
+#define RAND    lrand48
+#define SRAND   srand48
+
 typedef struct maze_face {
     int d1, d2;
     int rows, cols;
