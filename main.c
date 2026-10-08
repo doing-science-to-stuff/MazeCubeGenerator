@@ -11,7 +11,7 @@
 #include "maze.h"
 #include "maze-export.h"
 
-// clear; cmake . && make && ./mcg -i mazes/oskars.txt -s -m oskars.stl -f oskars_flat.stl -F oskars_flat/ -u oskars -x 5 -e 1.2
+// clear; cmake . && make && ./mcg -i mazes/oskars.txt -s -m oskars.stl -f oskars_flat.stl -F oskars_flat/ -u oskars -p oskars_sol.stl -g oskars.gv -x 5 -e 1.2
 
 static char *configStr = NULL;
 static char *inputFile = NULL;
@@ -32,12 +32,13 @@ static void free_buffers() {
     if(stlFileFlat!=NULL) free(stlFileFlat);
     if(stlSolFile!=NULL) free(stlSolFile);
     if(gvFile!=NULL) free(gvFile);
+    if(csvFile!=NULL) free(gvFile);
 }
 
 
 static void show_help(int argc, char **argv) {
     free_buffers();
-    printf("%s {-d l,w,h[:olb] | -i file.txt} [-h] [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-c] [-f flat.stl] [-u printable_stl_dir] [-k maxSegments] [-p solution.stl] [-g graph.gv] [-e edgeWidth] [-x scale]\n\n",
+    printf("%s {-d l,w,h[:bclo] | -i file.txt} [-h] [-s] [-r seed] [-l length] {-m file.stl | -o file.txt} [-c] [-f flat.stl] [-u printable_stl_dir] [-k maxSegments] [-p solution.stl] [-g graph.gv] [-e edgeWidth] [-x scale]\n\n",
             argv[0]);
     exit(0);
 }
